@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm 10mm 12mm 10mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+    line-height: 1.35 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide interactive header, sidebar, toasts, modals, non-print controls */
+  header,
+  aside,
+  nav,
+  #toast-notification,
+  .print\\:hidden,
+  button,
+  input[type="checkbox"],
+  .no-print {
+    display: none !important;
+  }
+
+  /* Make sure the memo container fits cleanly on pages */
+  #memo-paper,
+  .print-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+  }
+
+  /* Ensure tables render nicely with clean borders across page breaks */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto;
+  }
+
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tfoot {
+    display: table-footer-group;
+  }
+
+  /* Header and signatures avoid orphan splits */
+  .memo-header,
+  .memo-footer {
+    page-break-inside: avoid;
+  }
+}
+
+.editable-cell {
+  min-height: 1.5em;
+  outline: none;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+[contenteditable]:empty:before {
+  content: attr(placeholder);
+  color: #a0aec0;
+  pointer-events: none;
+  display: block; /* For Firefox */
+}
