@@ -216,25 +216,25 @@ export interface LogEntry {
 }
 
 const DEFAULT_TIMETABLE_ROWS: TimetableGridRow[] = [
-  { id: 'r1', time: '08:00 - 09:00', cells: { الأحد: '2م2', الإثنين: '1م1', الثلاثاء: '4م3 - فوج 1', الأربعاء: '2م1', الخميس: '3م2' } },
-  { id: 'r2', time: '09:00 - 10:00', cells: { الأحد: '1م2', الإثنين: '1م2', الثلاثاء: '4م3 - فوج 2', الأربعاء: '1م3', الخميس: '4م2' } },
-  { id: 'r3', time: '10:00 - 11:00', cells: { الأحد: '3م1', الإثنين: '2م2', الثلاثاء: '', الأربعاء: '2م1', الخميس: '3م1' } },
-  { id: 'r4', time: '11:00 - 12:00', cells: { الأحد: '4م1', الإثنين: '2م3', الثلاثاء: '', الأربعاء: '1م1', الخميس: '1م4' } },
-  { id: 'r5', time: '13:30 - 14:30', cells: { الأحد: '', الإثنين: '', الثلاثاء: '1م3', الأربعاء: '', الخميس: '' } },
-  { id: 'r6', time: '14:30 - 15:30', cells: { الأحد: '', الإثنين: '3م1', الثلاثاء: '3م3', الأربعاء: '4م2', الخميس: '' } },
-  { id: 'r7', time: '15:30 - 16:30', cells: { الأحد: '', الإثنين: '3م2', الثلاثاء: '', الأربعاء: '4م2', الخميس: '' } },
-  { id: 'r8', time: '16:30 - 17:30', cells: { الأحد: '', الإثنين: '', الثلاثاء: '', الأربعاء: '4م2', الخميس: '' } },
+  { id: 'r1', time: '08:00 - 09:00', cells: { الأحد: '4م1 - المخبر', الإثنين: '', الثلاثاء: '1م1 - قاعة 13/9', الأربعاء: '', الخميس: '2م2 - المخبر' } },
+  { id: 'r2', time: '09:00 - 10:00', cells: { الأحد: '4م1 - المخبر', الإثنين: '', الثلاثاء: '1م1 - قاعة 13/9', الأربعاء: '', الخميس: '2م2 - المخبر' } },
+  { id: 'r3', time: '10:00 - 11:00', cells: { الأحد: '2م1 - المخبر', الإثنين: '', الثلاثاء: '', الأربعاء: '', الخميس: '3م1 - قاعة 11' } },
+  { id: 'r4', time: '11:00 - 12:00', cells: { الأحد: '2م1 - المخبر', الإثنين: '', الثلاثاء: '', الأربعاء: '', الخميس: '' } },
+  { id: 'r5', time: '13:30 - 14:30', cells: { الأحد: '3م1 - المخبر', الإثنين: '2م2 - قاعة 4', الثلاثاء: '', الأربعاء: '', الخميس: '1م1 - قاعة 9' } },
+  { id: 'r6', time: '14:30 - 15:30', cells: { الأحد: '3م1 - المخبر', الإثنين: '2م1 - قاعة 10', الثلاثاء: '', الأربعاء: '', الخميس: '4م1 - قاعة 12' } },
+  { id: 'r7', time: '15:30 - 16:30', cells: { الأحد: '', الإثنين: '', الثلاثاء: '', الأربعاء: '', الخميس: '' } },
+  { id: 'r8', time: '16:30 - 17:30', cells: { الأحد: '', الإثنين: '', الثلاثاء: '', الأربعاء: '', الخميس: '' } },
 ];
 
 const AUTO_FILLED_TIMETABLE_ROWS: TimetableGridRow[] = [
-  { id: 'r1', time: '08:00 - 09:00', cells: { الأحد: '2م2', الإثنين: '1م1', الثلاثاء: '4م3 - فوج 1', الأربعاء: '2م1', الخميس: '3م2' } },
-  { id: 'r2', time: '09:00 - 10:00', cells: { الأحد: '1م2', الإثنين: '1م2', الثلاثاء: '4م3 - فوج 2', الأربعاء: '1م3', الخميس: '4م2' } },
-  { id: 'r3', time: '10:00 - 11:00', cells: { الأحد: '3م1', الإثنين: '2م2', الثلاثاء: '', الأربعاء: '2م1', الخميس: '3م1' } },
-  { id: 'r4', time: '11:00 - 12:00', cells: { الأحد: '4م1', الإثنين: '2م3', الثلاثاء: '', الأربعاء: '1م1', الخميس: '1م4' } },
-  { id: 'r5', time: '13:30 - 14:30', cells: { الأحد: '', الإثنين: '', الثلاثاء: '1م3', الأربعاء: '', الخميس: '' } },
-  { id: 'r6', time: '14:30 - 15:30', cells: { الأحد: '', الإثنين: '3م1', الثلاثاء: '3م3', الأربعاء: '4م2', الخميس: '' } },
-  { id: 'r7', time: '15:30 - 16:30', cells: { الأحد: '', الإثنين: '3م2', الثلاثاء: '', الأربعاء: '4م2', الخميس: '' } },
-  { id: 'r8', time: '16:30 - 17:30', cells: { الأحد: '', الإثنين: '', الثلاثاء: '', الأربعاء: '4م2', الخميس: '' } },
+  { id: 'r1', time: '08:00 - 09:00', cells: { الأحد: '4م1 - المخبر', الإثنين: '', الثلاثاء: '1م1 - قاعة 13/9', الأربعاء: '', الخميس: '2م2 - المخبر' } },
+  { id: 'r2', time: '09:00 - 10:00', cells: { الأحد: '4م1 - المخبر', الإثنين: '', الثلاثاء: '1م1 - قاعة 13/9', الأربعاء: '', الخميس: '2م2 - المخبر' } },
+  { id: 'r3', time: '10:00 - 11:00', cells: { الأحد: '2م1 - المخبر', الإثنين: '', الثلاثاء: '', الأربعاء: '', الخميس: '3م1 - قاعة 11' } },
+  { id: 'r4', time: '11:00 - 12:00', cells: { الأحد: '2م1 - المخبر', الإثنين: '', الثلاثاء: '', الأربعاء: '', الخميس: '' } },
+  { id: 'r5', time: '13:30 - 14:30', cells: { الأحد: '3م1 - المخبر', الإثنين: '2م2 - قاعة 4', الثلاثاء: '', الأربعاء: '', الخميس: '1م1 - قاعة 9' } },
+  { id: 'r6', time: '14:30 - 15:30', cells: { الأحد: '3م1 - المخبر', الإثنين: '2م1 - قاعة 10', الثلاثاء: '', الأربعاء: '', الخميس: '4م1 - قاعة 12' } },
+  { id: 'r7', time: '15:30 - 16:30', cells: { الأحد: '', الإثنين: '', الثلاثاء: '', الأربعاء: '', الخميس: '' } },
+  { id: 'r8', time: '16:30 - 17:30', cells: { الأحد: '', الإثنين: '', الثلاثاء: '', الأربعاء: '', الخميس: '' } },
 ];
 
 const DEFAULT_HOLIDAYS: HolidayEntry[] = [
@@ -277,8 +277,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
   const [school, setSchool] = useState<string>(config.schoolName || 'متوسطة الشهيد...');
   const [teacher, setTeacher] = useState<string>(config.teacherName || 'الأستاذ(ة): ...');
   const [subject, setSubject] = useState<string>('علوم الطبيعة والحياة');
-  const [schoolYear, setSchoolYear] = useState<string>(config.schoolYear || '2025 - 2026');
-  const [showSubjectInHeader, setShowSubjectInHeader] = useState<boolean>(true);
+    const [showSubjectInHeader, setShowSubjectInHeader] = useState<boolean>(true);
   const [showYearInHeader, setShowYearInHeader] = useState<boolean>(false); // احذف السنة الدراسية والمادة اتركها اختيارية
 
   // Timetable grid rows
@@ -320,7 +319,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
 
   // Load saved state from localStorage
   useEffect(() => {
-    const keys = ['daftar_table_final', 'daftar_simple_final'];
+    const keys = ['daftar_table_v2027', 'daftar_simple_final'];
     for (const key of keys) {
       const item = localStorage.getItem(key);
       if (!item) continue;
@@ -330,8 +329,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
         if (parsed.school) setSchool(parsed.school);
         if (parsed.teacher) setTeacher(parsed.teacher);
         if (parsed.subject !== undefined) setSubject(parsed.subject);
-        if (parsed.schoolYear !== undefined) setSchoolYear(parsed.schoolYear);
-        if (parsed.showSubjectInHeader !== undefined) setShowSubjectInHeader(parsed.showSubjectInHeader);
+                if (parsed.showSubjectInHeader !== undefined) setShowSubjectInHeader(parsed.showSubjectInHeader);
         if (parsed.showYearInHeader !== undefined) setShowYearInHeader(parsed.showYearInHeader);
         if (parsed.holidays && Array.isArray(parsed.holidays)) {
           // Normalize old single-date holidays to ranges if needed
@@ -373,14 +371,13 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
   // Save to localStorage on change
   useEffect(() => {
     localStorage.setItem(
-      'daftar_table_final',
+      'daftar_table_v2027',
       JSON.stringify({
         wilaya,
         school,
         teacher,
         subject,
-        schoolYear,
-        showSubjectInHeader,
+                showSubjectInHeader,
         showYearInHeader,
         gridRows,
         holidays,
@@ -389,7 +386,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
         period,
       })
     );
-  }, [wilaya, school, teacher, subject, schoolYear, showSubjectInHeader, showYearInHeader, gridRows, holidays, rows, startDate, period]);
+  }, [wilaya, school, teacher, subject, config.schoolYear, showSubjectInHeader, showYearInHeader, gridRows, holidays, rows, startDate, period]);
 
   // Keyboard navigation for preview modal
   useEffect(() => {
@@ -406,21 +403,30 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
   // اكتشاف المستويات المسندة للأستاذ آلياً من جدول استعمال الزمن
   const assignedLevels = useMemo<'1م' | '2م' | '3م' | '4م'[]>(() => {
     const levelsSet = new Set<string>();
-    gridRows.forEach((row) => {
-      WEEK_DAYS.forEach((day) => {
-        const sec = row.cells[day]?.trim();
-        if (sec) {
-          const lvl = detectLevelFromSection(sec);
-          if (lvl) levelsSet.add(lvl);
-        }
+    if (config.assignedClasses && config.assignedClasses.length > 0) {
+      config.assignedClasses.forEach(sec => {
+        const lvl = detectLevelFromSection(sec);
+        if (lvl) levelsSet.add(lvl);
       });
-    });
-    const standardOrder: ('1م' | '2م' | '3م' | '4م')[] = ['1م', '2م', '3م', '4م'];
-    return standardOrder.filter((lvl) => levelsSet.has(lvl));
-  }, [gridRows]);
+    } else {
+      gridRows.forEach((row) => {
+        WEEK_DAYS.forEach((day) => {
+          const sec = row.cells[day]?.trim();
+          if (sec) {
+            const lvl = detectLevelFromSection(sec);
+            if (lvl) levelsSet.add(lvl);
+          }
+        });
+      });
+    }
+    return Array.from(levelsSet).sort() as any;
+  }, [gridRows, config.assignedClasses]);
 
   // الأقسام الفرعية المسندة بالتفصيل
   const assignedSectionsList = useMemo<string[]>(() => {
+    if (config.assignedClasses && config.assignedClasses.length > 0) {
+      return [...config.assignedClasses].sort();
+    }
     const secSet = new Set<string>();
     gridRows.forEach((row) => {
       WEEK_DAYS.forEach((day) => {
@@ -429,7 +435,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
       });
     });
     return Array.from(secSet).sort();
-  }, [gridRows]);
+  }, [gridRows, config.assignedClasses]);
 
   // Structured Timetable lookup
   const timetableSchedule = useMemo(() => {
@@ -497,8 +503,8 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
   const handleGenerateSmartLogbook = () => {
     if (!startDate) return;
 
-    if (assignedLevels.length === 0) {
-      displayUserAlert('يرجى تعبئة حصة واحدة على الأقل في جدول استعمال الزمن لتحديد الأقسام المسندة');
+    if (assignedLevels.length === 0 || gridRows.every(r => Object.values(r.cells).every((c: any) => !c || !c.trim()))) {
+      displayUserAlert('يرجى تعبئة حصة واحدة على الأقل في جدول استعمال الزمن لتوليد الحصص');
       return;
     }
 
@@ -601,7 +607,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
   // Paginate into 20 rows per page
   const handleExportWord = async () => {
     try {
-      const blob = await generateLogbookDocx(rows, config);
+      const blob = await generateLogbookDocx(rows, config, gridRows, holidays, assignedLevels);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -848,9 +854,9 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
             <div className="text-[13px] font-medium opacity-95 mt-1">
               مرحلة التعليم المتوسط {showSubjectInHeader && subject ? `• مادة ${subject}` : ''}
             </div>
-            {showYearInHeader && schoolYear && (
+            {showYearInHeader && config.schoolYear && (
               <div className="inline-block mt-2 bg-white/20 px-3 py-0.5 rounded-full text-[11px] font-bold">
-                السنة الدراسية: {schoolYear}
+                السنة الدراسية: {config.schoolYear}
               </div>
             )}
           </div>
@@ -873,10 +879,10 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                   </>
                 )}
 
-                {showYearInHeader && schoolYear && (
+                {showYearInHeader && config.schoolYear && (
                   <>
                     <span className="text-zinc-500 font-medium">السنة الدراسية:</span>
-                    <span className="font-bold">{schoolYear}</span>
+                    <span className="font-bold">{config.schoolYear}</span>
                   </>
                 )}
 
@@ -1066,6 +1072,130 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
       </div>
     </div>
   );
+
+
+  const renderFrontPage = (isPreview = false) => {
+    return (
+      <div
+        key="front-page"
+        className={
+          isPreview 
+            ? "print-page bg-white shadow-[0_25px_80px_rgba(0,0,0,0.5),0_0_0_1px_rgba(0,0,0,0.1)] rounded-[2px] overflow-hidden shrink-0 flex flex-col" 
+            : "print-page bg-white shadow-[0_20px_60px_rgba(0,0,0,0.12)] rounded-[2px] border border-zinc-200 overflow-hidden mx-auto mb-8 flex flex-col"
+        }
+        style={{
+          width: `${PAGE_DIMENSIONS_MM.w}mm`,
+          minHeight: `${PAGE_DIMENSIONS_MM.h}mm`,
+          maxWidth: isPreview ? undefined : '100%',
+        }}
+      >
+        <div style={{ padding: PAGE_INNER_PADDING }} className="h-full flex flex-col">
+          <div className="w-full border-b border-zinc-200 mb-8">
+            <div className="h-1 flex">
+              <div className="flex-1 bg-[#006233]" />
+              <div className="flex-1 bg-[#D21034]" />
+            </div>
+            <div className="px-5 py-4 text-center space-y-1">
+              <div className="font-bold text-[12px] flex items-center justify-center gap-1 text-zinc-900">
+                <span>🇩🇿</span> الجمهورية الجزائرية الديمقراطية الشعبية
+              </div>
+              <div className="text-zinc-700 font-medium text-[12px]">وزارة التربية الوطنية</div>
+            </div>
+          </div>
+          
+          <div className="flex-1 flex flex-col items-center">
+            <div className="text-[26px] font-extrabold text-zinc-900 mb-8 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-[#006233] text-white grid place-items-center"><BookOpen className="w-4 h-4" /></div>
+              الدفتر اليومي
+              <div className="w-8 h-8 rounded-full bg-[#D21034] text-white grid place-items-center"><Calendar className="w-4 h-4" /></div>
+            </div>
+
+            <div className="w-full max-w-3xl text-[12px] mb-10 flex flex-wrap justify-center gap-x-6 gap-y-3 bg-[#f9faf6] p-4 border border-zinc-200 rounded-[2px]">
+              <span className="flex items-center gap-1.5"><span className="text-zinc-500 font-medium">الأستاذ(ة):</span> <span className="font-bold text-zinc-900">{teacher || '—'}</span></span>
+              <span className="flex items-center gap-1.5"><span className="text-zinc-500 font-medium">المادة:</span> <span className="font-bold text-zinc-900">{subject || '—'}</span></span>
+              <span className="flex items-center gap-1.5"><span className="text-zinc-500 font-medium">المتوسطة:</span> <span className="font-bold text-zinc-900">{school || '—'}</span></span>
+              <span className="flex items-center gap-1.5"><span className="text-zinc-500 font-medium">السنة الدراسية:</span> <span className="font-bold text-zinc-900">{config.schoolYear || '2025 - 2026'}</span></span>
+              <span className="flex items-center gap-1.5"><span className="text-zinc-500 font-medium">المستويات المسندة:</span> <span className="font-bold text-zinc-900" dir="ltr">{assignedLevels.join(' ، ')}</span></span>
+            </div>
+
+            <div className="w-full mb-8">
+              <div className="text-[13px] font-bold text-[#064e3b] mb-3 flex items-center gap-2">
+                <div className="w-1.5 h-1.5 bg-[#006233] rounded-full" />
+                جدول استعمال الزمن
+              </div>
+              <table className="w-full border-collapse border border-zinc-200">
+                <thead>
+                  <tr>
+                    <th className="border border-zinc-200 px-2 py-2 text-center w-[80px] bg-[#f0fdf4] font-bold text-[#064e3b] text-[11px]">اليوم \ التوقيت</th>
+                    {gridRows.map(r => (
+                      <th key={r.id} className="border border-zinc-200 px-2 py-2 text-center font-bold text-[10px] text-zinc-700 bg-[#f9faf6] font-mono">{r.time}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {WEEK_DAYS.map((day, idx) => (
+                    <tr key={day} className={idx % 2 === 0 ? 'bg-white' : 'bg-[#f9faf6]'}>
+                      <td className="border border-zinc-200 px-2 py-2 text-center font-bold text-[11px] text-zinc-900 w-[80px]">{day}</td>
+                      {gridRows.map(r => {
+                        const cellVal = r.cells[day] || '';
+                        const lvl = detectLevelFromSection(cellVal);
+                        return (
+                          <td key={r.id} className="border border-zinc-200 px-1 py-1 text-center font-bold">
+                            {cellVal ? (
+                              <span
+                                className={`inline-block px-1.5 py-0.5 rounded text-[10px] border ${
+                                  lvl === '4م'
+                                    ? 'bg-red-50 text-red-800 border-red-200'
+                                    : lvl === '3م'
+                                    ? 'bg-amber-50 text-amber-800 border-amber-200'
+                                    : lvl === '2م'
+                                    ? 'bg-blue-50 text-blue-800 border-blue-200'
+                                    : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                }`}
+                              >
+                                {cellVal}
+                              </span>
+                            ) : ''}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {holidays.length > 0 && (
+              <div className="w-full max-w-3xl mx-auto">
+                <div className="text-[13px] font-bold text-[#991b1b] mb-3 flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-[#D21034] rounded-full" />
+                  جدول العطل
+                </div>
+                <table className="w-full border-collapse border border-zinc-200">
+                  <thead>
+                    <tr>
+                      <th className="border border-zinc-200 px-2 py-2 text-center bg-[#fef2f2] font-bold text-[#991b1b] text-[11px] w-[50%]">العطلة</th>
+                      <th className="border border-zinc-200 px-2 py-2 text-center bg-[#f9faf6] font-bold text-zinc-700 text-[11px] w-[25%]">من</th>
+                      <th className="border border-zinc-200 px-2 py-2 text-center bg-[#f9faf6] font-bold text-zinc-700 text-[11px] w-[25%]">إلى</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {holidays.map((h, idx) => (
+                      <tr key={h.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-[#f9faf6]'}>
+                        <td className="border border-zinc-200 px-2 py-1.5 text-center font-bold text-[11px] text-zinc-900">{h.label}</td>
+                        <td className="border border-zinc-200 px-2 py-1.5 text-center font-mono font-medium text-[10px] text-zinc-700" dir="ltr">{h.start}</td>
+                        <td className="border border-zinc-200 px-2 py-1.5 text-center font-mono font-medium text-[10px] text-zinc-700" dir="ltr">{h.end}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div
@@ -1771,6 +1901,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
 
           {/* Render Pages */}
           <div className="space-y-8">
+            {renderFrontPage(false)}
             {paginatedPages.map((pageRows, pageIdx) => {
               const tableBodyRows: React.ReactNode[] = [];
               let prevDateStr = '';
@@ -2107,7 +2238,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
               </div>
               <div>
                 <div className="text-white font-extrabold text-[13px] md:text-[14px] leading-none flex items-center gap-2">
-                  <span>معاينة الطباعة الرسمية - {paginatedPages.length} صفحات</span>
+                  <span>معاينة الطباعة الرسمية - {paginatedPages.length + 1} صفحات</span>
                   {previewMode === 'single' && (
                     <span className="bg-emerald-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
                       صفحة واحدة (عينة)
@@ -2194,6 +2325,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                 className="flex flex-col items-center gap-8 md:gap-10 w-full"
                 style={{ transform: `scale(${previewZoom / 100})`, transformOrigin: 'top center' }}
               >
+                {renderFrontPage(true)}
                 {previewPagesToDisplay.map((pageRows, pageIdx) => (
                   <div
                     key={pageIdx}

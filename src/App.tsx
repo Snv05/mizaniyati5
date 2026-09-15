@@ -72,7 +72,7 @@ export const App: React.FC = () => {
   // 3. Configuration / Teacher Profile State (Stored in sessionStorage for privacy & auto-cleanup on exit)
   const [config, setConfig] = useState<MemoConfig>(() => {
     try {
-      const sessionSaved = sessionStorage.getItem('algeria_sciences_session_config');
+      const sessionSaved = sessionStorage.getItem('algeria_sciences_session_config_v3');
       if (sessionSaved) {
         return JSON.parse(sessionSaved);
       }
@@ -94,7 +94,7 @@ export const App: React.FC = () => {
       inspectorName: 'مفتش مادة علوم الطبيعة والحياة',
       signDate: new Date().toISOString().split('T')[0],
       teacherStamp: null,
-      assignedClasses: ['4 م 1', '4 م 2', '3 م 1', '2 م 1', '1 م 1'],
+      assignedClasses: ['4 م 1', '3 م 1', '2 م 1', '2 م 2', '1 م 1'],
       weeklyHours: 18,
     };
   });
@@ -102,7 +102,7 @@ export const App: React.FC = () => {
   // Sync config to sessionStorage whenever updated
   useEffect(() => {
     try {
-      sessionStorage.setItem('algeria_sciences_session_config', JSON.stringify(config));
+      sessionStorage.setItem('algeria_sciences_session_config_v3', JSON.stringify(config));
     } catch {
       // ignore
     }
@@ -284,7 +284,7 @@ export const App: React.FC = () => {
       inspectorName: 'مفتش مادة علوم الطبيعة والحياة',
       signDate: new Date().toISOString().split('T')[0],
       teacherStamp: null,
-      assignedClasses: ['4 م 1', '4 م 2', '3 م 1', '2 م 1', '1 م 1'],
+      assignedClasses: ['4 م 1', '3 م 1', '2 م 1', '2 م 2', '1 م 1'],
       weeklyHours: 18,
     };
     setConfig(defaultData);

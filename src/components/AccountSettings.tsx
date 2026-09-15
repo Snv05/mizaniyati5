@@ -103,7 +103,7 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
         inspectorName: '',
         signDate: new Date().toISOString().split('T')[0],
         teacherStamp: null,
-        assignedClasses: ['4 م 1', '3 م 1', '2 م 1', '1 م 1'],
+        assignedClasses: ['4 م 1', '3 م 1', '2 م 1', '2 م 2', '1 م 1'],
         weeklyHours: 18,
       };
       setFormData(resetConfig);
