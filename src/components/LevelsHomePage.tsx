@@ -113,6 +113,45 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
   return (
     <div className="flex-1 bg-gradient-to-b from-slate-50 via-gray-100/50 to-slate-100 py-8 px-4 sm:px-6 lg:px-12 flex flex-col items-center">
       <div className="w-full max-w-4xl space-y-6">
+
+        {/* Designer Signature Top Banner */}
+        <div className="w-full bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-100 rounded-bl-full opacity-50 pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-teal-50 rounded-tr-full opacity-60 pointer-events-none" />
+          
+          <div className="flex items-center gap-4 relative z-10 text-right">
+            <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-emerald-500 p-0.5 shadow-sm bg-white shrink-0">
+              <img 
+                src="/formal_studio_portrait.jpg" 
+                alt="مصمم المنصة بغداد الطيب" 
+                className="w-full h-full rounded-full object-cover"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  if (target.src !== "https://ui-avatars.com/api/?name=بغداد+الطيب&background=047857&color=fff&size=128&bold=true") {
+                    target.src = "https://ui-avatars.com/api/?name=بغداد+الطيب&background=047857&color=fff&size=128&bold=true";
+                  }
+                }}
+              />
+            </div>
+            <div>
+              <div className="text-[12px] sm:text-[13px] text-gray-500 font-bold mb-0.5 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-500" /> تصميم وتطوير
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black text-gray-900 leading-tight">بغداد الطيب</h2>
+              <div className="text-[12px] font-extrabold text-emerald-800 bg-emerald-100/80 px-3 py-1 rounded-full inline-flex items-center gap-1.5 mt-1.5 border border-emerald-200/50">
+                <UserCog className="w-3.5 h-3.5" /> مصمم المنصة
+              </div>
+            </div>
+          </div>
+          
+          <div className="hidden sm:flex relative z-10 text-left items-center">
+            <div className="bg-gray-50 px-5 py-3 rounded-xl border border-gray-200 shadow-2xs">
+              <div className="text-[13px] font-bold text-gray-800">المنصة البيداغوجية الوطنية</div>
+              <div className="text-[11.5px] font-medium text-gray-500 mt-0.5">لأساتذة علوم الطبيعة والحياة</div>
+            </div>
+          </div>
+        </div>
+
         
         {/* Section Header with Graduation Icon */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-gray-200">
@@ -260,26 +299,7 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
 
 
         
-        {/* Designer Signature Section */}
-        <div className="mt-8 pt-6 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-center gap-4 text-center sm:text-right pb-4">
-          <div className="relative w-16 h-16 rounded-full border-2 border-emerald-600 p-0.5 shadow-sm bg-white shrink-0">
-            <img 
-              src="/formal_studio_portrait.jpg" 
-              alt="مصمم المنصة بغداد الطيب" 
-              className="w-full h-full rounded-full object-cover"
-              onError={(e) => {
-                e.currentTarget.src = "https://ui-avatars.com/api/?name=بغداد+الطيب&background=047857&color=fff&size=128&bold=true";
-              }}
-            />
-          </div>
-          <div>
-            <div className="text-[12px] text-gray-500 font-medium">تصميم وتطوير</div>
-            <div className="text-[16px] font-black text-gray-900 mt-0.5">بغداد الطيب</div>
-            <div className="text-[11.5px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full inline-block mt-1.5 border border-emerald-100">
-              مصمم المنصة
-            </div>
-          </div>
-        </div>
+        
       </div>
     </div>
   );
