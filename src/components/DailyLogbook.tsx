@@ -318,7 +318,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
   };
 
   // Load saved state from localStorage
-  useEffect(() => {
+  const loadFromStorage = () => {
     const keys = ['daftar_table_v2027', 'daftar_simple_final'];
     for (const key of keys) {
       const item = localStorage.getItem(key);
@@ -329,10 +329,9 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
         if (parsed.school) setSchool(parsed.school);
         if (parsed.teacher) setTeacher(parsed.teacher);
         if (parsed.subject !== undefined) setSubject(parsed.subject);
-                if (parsed.showSubjectInHeader !== undefined) setShowSubjectInHeader(parsed.showSubjectInHeader);
+        if (parsed.showSubjectInHeader !== undefined) setShowSubjectInHeader(parsed.showSubjectInHeader);
         if (parsed.showYearInHeader !== undefined) setShowYearInHeader(parsed.showYearInHeader);
         if (parsed.holidays && Array.isArray(parsed.holidays)) {
-          // Normalize old single-date holidays to ranges if needed
           const normalized: HolidayEntry[] = parsed.holidays.map((h: any, idx: number) => ({
             id: h.id || `h-${idx}`,
             startDate: h.startDate || h.date || '',
@@ -351,7 +350,6 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
             if (!row.time || !isValidSchoolPeriod(row.time)) continue;
             if (seen.has(row.time)) continue;
             seen.add(row.time);
-            // clean out Saturday if present
             const cleanCells = { ...row.cells };
             delete cleanCells['السبت'];
             valid.push({ ...row, cells: cleanCells });
@@ -366,26 +364,37 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
         // ignore
       }
     }
+  };
+
+  useEffect(() => {
+    loadFromStorage();
+    const handleSync = () => loadFromStorage();
+    window.addEventListener('firebase-sync-complete', handleSync);
+    return () => window.removeEventListener('firebase-sync-complete', handleSync);
   }, []);
 
   // Save to localStorage on change
   useEffect(() => {
+    const dataToSave = {
+      wilaya,
+      school,
+      teacher,
+      subject,
+      showSubjectInHeader,
+      showYearInHeader,
+      gridRows,
+      holidays,
+      rows,
+      startDate,
+      period,
+    };
     localStorage.setItem(
       'daftar_table_v2027',
-      JSON.stringify({
-        wilaya,
-        school,
-        teacher,
-        subject,
-                showSubjectInHeader,
-        showYearInHeader,
-        gridRows,
-        holidays,
-        rows,
-        startDate,
-        period,
-      })
+      JSON.stringify(dataToSave)
     );
+    if ((window as any).syncToCloud) {
+      (window as any).syncToCloud('logbook', dataToSave);
+    }
   }, [wilaya, school, teacher, subject, config.schoolYear, showSubjectInHeader, showYearInHeader, gridRows, holidays, rows, startDate, period]);
 
   // Keyboard navigation for preview modal

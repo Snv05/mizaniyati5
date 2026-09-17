@@ -37,7 +37,7 @@ export function buildLessons3AM(): any[] {
           markaba: lu.markaba,
           marifa: lu.marifa,
           manhaji: lu.manhaji,
-          qayimi: lu.qayimi,
+          ma3ayirTaqwim: lu.qayimi,
           mostalahat: lu.mostalahat,
           wasail: lu.wasail,
           zamanKoli: firstAct ? firstAct.zaman : '1 ساعة',
@@ -46,22 +46,19 @@ export function buildLessons3AM(): any[] {
           wadiya: lu.wadiya,
           moshkila: lu.moshkila,
           faradiyat: lu.faradiyat,
-          ustadhNashat: {
-            inilitaq: 'يعرض الوضعية الانطلاقية ويوجه التلاميذ للمناقشة.',
-            taqasi: firstAct ? firstAct.ustadh_activity : '',
-            irsae: lu.irsae,
-            taqwim: lu.taqwim
-          },
-          mutaalimNashat: {
-            inilitaq: 'يستمع ويقترح فرضيات.',
-            taqasi: firstAct ? firstAct.mutaalim_activity : '',
-            irsae: 'يدون الحصيلة في الكراس.',
-            taqwim: 'ينجز التقويم.'
-          },
+          irsae: lu.irsae,
+          taqwim: lu.taqwim,
+          wadiyaTables: lu.wadiya_tables,
+          irsaeTables: lu.irsae_tables,
+          taqwimTables: lu.taqwim_tables,
           anshita: lu.activities.map(a => ({
             title: a.activity_title,
             asila: a.ustadh_activity,
-            ajwiba: a.mutaalim_activity
+            ajwiba: a.mutaalim_activity,
+            zaman: a.zaman,
+            mola7adha: '',
+            diagrams: a.diagrams,
+            tables: a.tables
           }))
         });
         memoCounter++;

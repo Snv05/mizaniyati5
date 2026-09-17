@@ -1,4 +1,4 @@
-import { DB_Level } from './schema2am';
+import { DB_Level } from './schema';
 
 export const OFFICIAL_2AM_DB: DB_Level = {
   "level_id": "level_2am",

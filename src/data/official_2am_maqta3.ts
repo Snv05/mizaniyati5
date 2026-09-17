@@ -1,4 +1,4 @@
-import { DB_Sequence } from './schema2am';
+import { DB_Sequence } from './schema';
 
 export const seq_3: DB_Sequence = {
   sequence_id: 'seq_03',

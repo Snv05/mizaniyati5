@@ -19,6 +19,7 @@ export const FirebaseDataSync: React.FC = () => {
           const data = configDoc.data();
           if (data.config) {
             sessionStorage.setItem('algeria_sciences_session_config', JSON.stringify(data.config));
+            localStorage.setItem('algeria_sciences_config', JSON.stringify(data.config));
           }
         }
 
@@ -27,7 +28,7 @@ export const FirebaseDataSync: React.FC = () => {
         if (distDoc.exists()) {
           const data = distDoc.data();
           if (data.items) {
-            localStorage.setItem('algeria_sciences_annual_dist', JSON.stringify(data.items));
+            localStorage.setItem('algeria_sciences_annual_dist_v4', JSON.stringify(data.items));
           }
         }
 
@@ -36,11 +37,14 @@ export const FirebaseDataSync: React.FC = () => {
         if (logbookDoc.exists()) {
           const data = logbookDoc.data();
           if (data.data) {
-            localStorage.setItem('algeria_sciences_logbook', JSON.stringify(data.data));
+            localStorage.setItem('daftar_table_v2027', JSON.stringify(data.data));
           }
         }
 
         setLastSync(new Date().toLocaleTimeString());
+        
+        // Dispatch event to force re-render across the app if needed
+        window.dispatchEvent(new Event('firebase-sync-complete'));
       } catch (error) {
         console.error("Error syncing from cloud:", error);
       }

@@ -13,17 +13,15 @@ let memoCounter = 1;
 for (const seq of DB_1AM) {
   for (const res of seq.resources) {
     for (const unit of res.learning_units) {
-      const anshita: Activity[] = unit.activities
-        .filter(act => act.ustadh_activity && act.ustadh_activity.trim() !== '')
-        .map(act => ({
-          title: act.activity_title,
-          asila: act.ustadh_activity,
-          ajwiba: act.mutaalim_activity,
-          zaman: act.zaman || '30 د',
-          mola7adha: '',
-          diagrams: act.diagrams,
-          tables: act.tables
-        }));
+      const anshita: Activity[] = unit.activities.map(act => ({
+        title: act.activity_title,
+        asila: act.ustadh_activity,
+        ajwiba: act.mutaalim_activity,
+        zaman: act.zaman,
+        mola7adha: '',
+        diagrams: act.diagrams,
+        tables: act.tables
+      }));
 
       // Find if any activity has diagrams, pass the first one up for UI compatibility if needed
       let diagramSvg = undefined;
@@ -54,34 +52,22 @@ for (const seq of DB_1AM) {
         ta3alom: unit.learning_unit_name,
         markaba: unit.markaba,
         kafaaKhitamiya: kafaa,
-        ma3ayirTaqwim: unit.qayimi || 'يتبنى سلوكات إيجابية تجاه صحته وبيئته.',
+        ma3ayirTaqwim: unit.qayimi,
         marifa: unit.marifa,
         manhaji: unit.manhaji,
-        mostalahat: unit.mostalahat || 'مصطلحات علمية',
-        wasail: unit.wasail || 'الكتاب المدرسي، جهاز العرض',
-        wadiya: unit.wadiya || 'وضعية انطلاقية مناسبة للمورد',
-        moshkila: unit.moshkila || 'ما هو المشكل العلمي المطروح؟',
-        faradiyat: unit.faradiyat || 'اقتراح فرضيات منطقية',
-        irsae: unit.irsae || 'خلاصة تركيبية',
-        taqwim: unit.taqwim || 'تطبيق لتقويم مدى إرساء الموارد',
+        mostalahat: unit.mostalahat,
+        wasail: unit.wasail,
+        wadiya: unit.wadiya,
+        moshkila: unit.moshkila,
+        faradiyat: unit.faradiyat,
+        irsae: unit.irsae,
+        taqwim: unit.taqwim,
         wadiyaTables: unit.wadiya_tables,
         irsaeTables: unit.irsae_tables,
         taqwimTables: unit.taqwim_tables,
         anshita: anshita,
         diagramSvg: diagramSvg,
-        diagramTitle: diagramTitle,
-        ustadhNashat: {
-          inilitaq: 'يستعرض سياق الوضعية ويطرح المشكل، ويوجه التلاميذ نحو صياغة الفرضيات.',
-          taqasi: 'يوزع السندات التعليمية ويوجه استغلالها من خلال طرح تعليمات دقيقة ويراقب سير العمل.',
-          irsae: 'يدير المناقشة ويصوّب الإجابات لبناء الحصيلة المعرفية بشكل منهجي.',
-          taqwim: 'يطرح نشاطا تقويميا أو وضعية بسيطة لقياس مدى استيعاب المتعلمين للمورد المدروس.'
-        },
-        mutaalimNashat: {
-          inilitaq: 'يقرأ الوضعية بتمعن ويشارك في تحديد المشكل العلمي واقتراح الفرضيات المنطقية.',
-          taqasi: 'يعمل ضمن مجموعات أو فردياً على استغلال السندات وتحليلها للإجابة على التعليمات.',
-          irsae: 'يساهم في هيكلة المعارف وتدوين الحصيلة المشتركة المستخلصة في نهاية النشاط.',
-          taqwim: 'يوظف المعارف المكتسبة في حل تمرين التقويم وإثبات مدى تحكمه في المورد.'
-        }
+        diagramTitle: diagramTitle
       });
 
       memoCounter++;
