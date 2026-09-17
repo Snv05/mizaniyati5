@@ -36,3 +36,4 @@ Thumbs.db
 # ملفات الإصدار
 *.tgz
 *.zip
+firebase-applet-config.json
