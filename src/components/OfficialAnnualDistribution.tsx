@@ -2,7 +2,11 @@ import React, { useMemo, useState } from 'react';
 import { generateDistributionDocx } from "../utils/docxExportDistribution";
 import { MemoConfig } from '../types';
 import { TeacherOfficialStamp } from './TeacherOfficialStamp';
-import { CURRICULUM_1AM, CURRICULUM_2AM, CURRICULUM_3AM, CURRICULUM_4AM, CurriculumSession } from '../data/officialCurriculum';
+import { LESSONS_1AM } from '../data/lessons1am';
+import { LESSONS_2AM } from '../data/lessons2am';
+import { LESSONS_3AM } from '../data/lessons3am';
+import { LESSONS_4AM } from '../data/lessons4am';
+import { generateAnnualDistribution } from '../utils/annualDistributionGenerator';
 
 import { Printer, FileDown, Eye, X } from 'lucide-react';
 
@@ -21,41 +25,17 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
   
   
   const pages = useMemo(() => {
-    const start = new Date(startDate);
-    let currentDate = new Date(start);
+    let baseLessons = LESSONS_4AM;
+    if (level === '2am') baseLessons = LESSONS_2AM;
+    if (level === '3am') baseLessons = LESSONS_3AM;
+    if (level === '1am') baseLessons = LESSONS_1AM;
 
-    while (currentDate.getDay() !== 0) {
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-
-    const ARABIC_MONTHS = ['جانفي', 'فيفري', 'مارس', 'أفريل', 'ماي', 'جوان', 'جويلية', 'أوت', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
-
-    const getFormattedDateRange = (date: Date) => {
-      const thu = new Date(date);
-      thu.setDate(thu.getDate() + 4);
-      const d1 = date.getDate().toString().padStart(2, '0');
-      const d2 = thu.getDate().toString().padStart(2, '0');
-      return `${d1}-${d2}`;
-    };
-    
-    let baseCurriculum = CURRICULUM_4AM;
-    if (level === '2am') baseCurriculum = CURRICULUM_2AM;
-    if (level === '3am') baseCurriculum = CURRICULUM_3AM;
-    if (level === '1am') baseCurriculum = CURRICULUM_1AM;
-
-    const dynamicCurriculum = baseCurriculum.map((item) => {
-      if (item.isHoliday) {
-        const range = getFormattedDateRange(currentDate);
-        const month = ARABIC_MONTHS[currentDate.getMonth()];
-        currentDate.setDate(currentDate.getDate() + 14); 
-        return { ...item, month, dates: range };
-      }
-      
-      const range = getFormattedDateRange(currentDate);
-      const month = ARABIC_MONTHS[currentDate.getMonth()];
-      currentDate.setDate(currentDate.getDate() + 7);
-      return { ...item, month, dates: range };
-    });
+    // Use empty holidays array for now, or you could pass config.holidays if added to MemoConfig
+    const dynamicCurriculum = generateAnnualDistribution(baseLessons, startDate, [
+      { startDate: '2023-10-31', endDate: '2023-11-05', label: 'عطلة الخريف' },
+      { startDate: '2023-12-21', endDate: '2024-01-06', label: 'عطلة الشتاء' },
+      { startDate: '2024-03-21', endDate: '2024-04-06', label: 'عطلة الربيع' }
+    ]);
 
     if (level === '4am') {
       return [

@@ -29,9 +29,12 @@ import {
   ChevronDown,
   Info,
 } from 'lucide-react';
-import { MemoConfig } from '../types';
+import { LessonMemo, MemoConfig, Activity } from '../types';
 import { TeacherOfficialStamp } from './TeacherOfficialStamp';
-import { CURRICULUM_1AM, CURRICULUM_2AM, CURRICULUM_3AM, CURRICULUM_4AM, CurriculumSession } from '../data/officialCurriculum';
+import { LESSONS_1AM } from '../data/lessons1am';
+import { LESSONS_2AM } from '../data/lessons2am';
+import { LESSONS_3AM } from '../data/lessons3am';
+import { LESSONS_4AM } from '../data/lessons4am';
 
 interface DailyLogbookProps {
   selectedLevel?: '1am' | '2am' | '3am' | '4am';
@@ -51,60 +54,37 @@ export interface CurriculumResourceItem {
   activities: string[];
 }
 
-const transformCurriculumToLogbook = (curriculum: CurriculumSession[], levelLabel: '1م' | '2م' | '3م' | '4م'): CurriculumResourceItem[] => {
-  const flat: CurriculumResourceItem[] = [];
-  curriculum.forEach((item) => {
-    if (item.isHoliday) return;
+const transformLessonMemoToLogbook = (lessons: LessonMemo[], levelLabel: '1م' | '2م' | '3م' | '4م'): CurriculumResourceItem[] => {
+  return lessons.map(lesson => {
+    let txt = `<u>الميدان:</u> ${lesson.midan || ''}`;
+    if (lesson.maqta) txt += `\n<u>المقطع:</u> ${lesson.maqta}`;
+    if (lesson.mawrid) txt += `\n<u>المورد:</u> ${lesson.mawrid}`;
+    if (lesson.ta3alom) txt += `\n<u>تعلم المورد:</u> ${lesson.ta3alom}`;
     
-    // Helper to build formatted text
-    const buildText = (content: string) => {
-      let txt = `<u>الميدان:</u> ${item.midan || ''}`;
-      if (item.maqta) txt += `\n<u>المقطع:</u> ${item.maqta}`;
-      if (item.mawrid) txt += `\n<u>المورد:</u> ${item.mawrid}`;
-      txt += `\n<u>المحتوى:</u> ${content}`;
-      return txt;
+    const actText = lesson.anshita.map(a => a.title).join(' / ');
+    if (actText) {
+       txt += `\n<u>الأنشطة:</u> ${actText}`;
+    }
+    
+    return {
+      level: levelLabel,
+      memoNumber: lesson.memoNumber?.toString() || '',
+      midan: lesson.midan || '',
+      maqta: lesson.maqta || '',
+      mawrid: lesson.mawrid || '',
+      ta3alom: lesson.ta3alom || '',
+      activities: lesson.anshita.map(a => a.title),
+      formattedText: txt
     };
-
-    if (item.isExam) {
-       if (item.session1) flat.push({ level: levelLabel, memoNumber: '', midan: item.midan || '', maqta: item.maqta || '', mawrid: item.mawrid || '', ta3alom: item.session1, activities: [], formattedText: buildText(item.session1) });
-       if (item.session2) flat.push({ level: levelLabel, memoNumber: '', midan: item.midan || '', maqta: item.maqta || '', mawrid: item.mawrid || '', ta3alom: item.session2, activities: [], formattedText: buildText(item.session2) });
-       return;
-    }
-
-    if (item.session1) {
-      flat.push({
-        level: levelLabel,
-        memoNumber: '',
-        midan: item.midan || '',
-        maqta: item.maqta || '',
-        mawrid: item.mawrid || '',
-        ta3alom: item.session1,
-        activities: [],
-        formattedText: buildText(item.session1)
-      });
-    }
-    if (item.session2) {
-      flat.push({
-        level: levelLabel,
-        memoNumber: '',
-        midan: item.midan || '',
-        maqta: item.maqta || '',
-        mawrid: item.mawrid || '',
-        ta3alom: item.session2,
-        activities: [],
-        formattedText: buildText(item.session2)
-      });
-    }
   });
-  return flat;
 };
 
-// ربط مباشر مع قاعدة بيانات التدرج الرسمي
+// ربط مباشر مع قاعدة بيانات التدرج الرسمي (Master Curriculum DB)
 const CURRICULUM_DATABASE: Record<'1م' | '2م' | '3م' | '4م', CurriculumResourceItem[]> = {
-  '1م': transformCurriculumToLogbook(CURRICULUM_1AM, '1م'),
-  '2م': transformCurriculumToLogbook(CURRICULUM_2AM, '2م'),
-  '3م': transformCurriculumToLogbook(CURRICULUM_3AM, '3م'),
-  '4م': transformCurriculumToLogbook(CURRICULUM_4AM, '4م'),
+  '1م': transformLessonMemoToLogbook(LESSONS_1AM, '1م'),
+  '2م': transformLessonMemoToLogbook(LESSONS_2AM, '2م'),
+  '3م': transformLessonMemoToLogbook(LESSONS_3AM, '3م'),
+  '4م': transformLessonMemoToLogbook(LESSONS_4AM, '4م'),
 };
 
 const LEVEL_NAMES_MAP: Record<string, string> = {

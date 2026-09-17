@@ -14,7 +14,7 @@ import {
   PageOrientation
 } from "docx";
 import { MemoConfig } from "../types";
-import { CurriculumSession } from "../data/officialCurriculum";
+import { GeneratedSession as CurriculumSession } from "./annualDistributionGenerator";
 
 const createParagraph = (text: string, bold = false, color = "000000", size = 20, alignment: any = AlignmentType.CENTER) => {
   return new Paragraph({
