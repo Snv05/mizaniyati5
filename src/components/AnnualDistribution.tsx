@@ -54,7 +54,8 @@ export const AnnualDistribution: React.FC<AnnualDistributionProps> = ({
       }
       
       // Migration from v1
-      const oldSaved = localStorage.getItem('algeria_sciences_annual_dist');
+      // Legacy storage is intentionally not merged automatically: the v4 key is the single source of truth.
+      const oldSaved = null;
       if (oldSaved) {
          const oldItems = JSON.parse(oldSaved);
          const customItems = oldItems.filter((it: any) => it.id.startsWith('custom-'));
@@ -130,8 +131,6 @@ export const AnnualDistribution: React.FC<AnnualDistributionProps> = ({
       });
       try {
         localStorage.setItem('algeria_sciences_annual_dist_v4', JSON.stringify(updated));
-        if ((window as any).syncToCloud) (window as any).syncToCloud('dist', updated);
-        if ((window as any).syncToCloud) (window as any).syncToCloud('dist', updated);
         if ((window as any).syncToCloud) (window as any).syncToCloud('dist', updated);
       } catch {
         // ignore
