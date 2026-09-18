@@ -16,6 +16,55 @@ import {
 import { LessonMemo, MemoConfig, Activity } from "../types";
 
 
+const imageDataUrlToUint8Array = async (dataUrl: string): Promise<{ data: Uint8Array; type: "png" | "jpg" | "gif" | "bmp" }> => {
+  if (!dataUrl.startsWith("data:image/")) throw new Error("Unsupported image data");
+  const mime = dataUrl.slice(5, dataUrl.indexOf(";"));
+  const type = mime === "image/jpeg" ? "jpg" : mime.split("/")[1] as "png" | "jpg" | "gif" | "bmp";
+  return { data: base64ToUint8Array(dataUrl.split(",")[1]), type };
+};
+
+const svgToPngData = async (svg: string, width = 420, height = 420): Promise<Uint8Array> => {
+  const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  try {
+    const image = new Image();
+    image.src = url;
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () => reject(new Error("تعذر تحويل المخطط SVG إلى صورة"));
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas غير متاح");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(image, 0, 0, width, height);
+    const png = canvas.toDataURL("image/png");
+    return base64ToUint8Array(png.split(",")[1]);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+};
+
+const buildTeacherStampSvg = (config: MemoConfig, size = 420) => {
+  const name = (config.teacherName || "").replace(/[<>&"]/g, "");
+  const school = (config.schoolName || "").slice(0, 30).replace(/[<>&"]/g, "");
+  const grade = (config.teacherGrade || "أستاذ المادة").replace("للتعليم المتوسط", "").trim().replace(/[<>&"]/g, "");
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <rect width="100%" height="100%" fill="white"/>
+    <circle cx="210" cy="210" r="170" fill="#eff6ff" fill-opacity=".55" stroke="#1d4ed8" stroke-width="7" stroke-dasharray="12 6"/>
+    <circle cx="210" cy="210" r="132" fill="none" stroke="#1d4ed8" stroke-width="3"/>
+    <text x="210" y="105" text-anchor="middle" font-family="Arial" font-size="25" font-weight="bold" fill="#1e40af">الجمهورية الجزائرية الديمقراطية الشعبية</text>
+    <text x="210" y="150" text-anchor="middle" font-family="Arial" font-size="23" font-weight="bold" fill="#1e40af">وزارة التربية الوطنية</text>
+    <text x="210" y="200" text-anchor="middle" font-family="Arial" font-size="22" font-weight="bold" fill="#1e40af">علوم الطبيعة والحياة</text>
+    <text x="210" y="245" text-anchor="middle" font-family="Arial" font-size="30" font-weight="900" fill="#1e40af">${name}</text>
+    <text x="210" y="285" text-anchor="middle" font-family="Arial" font-size="20" font-weight="bold" fill="#1e40af">${grade}</text>
+    <text x="210" y="320" text-anchor="middle" font-family="Arial" font-size="17" fill="#1e40af">${school}</text>
+  </svg>`;
+};
+
 const base64ToUint8Array = (base64: string) => {
   const binaryString = window.atob(base64);
   const len = binaryString.length;
@@ -330,6 +379,19 @@ export const generateDocx = async (lesson: LessonMemo, config: MemoConfig, activ
             })
           ]
         }),
+        ...(lesson.diagramSvg ? [
+          createParagraph(lesson.diagramTitle || "المخطط", true, theme.hex, 22, AlignmentType.CENTER),
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [new ImageRun({
+              type: "png",
+              data: await svgToPngData(lesson.diagramSvg),
+              transformation: { width: 430, height: 260 }
+            })]
+          }),
+          ...(lesson.diagramDescription ? [createParagraph(lesson.diagramDescription, false, "333333", 20)] : []),
+          new Paragraph({ text: "", spacing: { after: 300 } })
+        ] : []),
         new Paragraph({ text: "", spacing: { after: 400 } }),
 
         // 5. سير الحصة (جدول الأنشطة)
@@ -485,21 +547,15 @@ export const generateDocx = async (lesson: LessonMemo, config: MemoConfig, activ
                     createParagraph(`الأستاذ(ة): ${config.teacherName || ''}`, true, "333333", 20),
                     createParagraph(config.schoolName || '', false, "666666", 20),
                     new Paragraph({ text: "", spacing: { after: 600 } }),
-                    (config.teacherStamp && config.teacherStamp.startsWith('data:image/')) 
+(config.teacherStamp && config.teacherStamp.startsWith('data:image/'))
                       ? new Paragraph({
                           alignment: AlignmentType.CENTER,
-                          children: [
-                            new ImageRun({
-                              type: config.teacherStamp.substring(config.teacherStamp.indexOf('/') + 1, config.teacherStamp.indexOf(';')).replace('jpeg', 'jpg') as "png" | "jpg" | "gif" | "bmp",
-                              data: base64ToUint8Array(config.teacherStamp.split(",")[1]),
-                              transformation: {
-                                width: 110,
-                                height: 110
-                              }
-                            })
-                          ]
+                          children: [new ImageRun({ ...(await imageDataUrlToUint8Array(config.teacherStamp)), transformation: { width: 110, height: 110 } })]
                         })
-                      : createParagraph("مساحة الختم", false, "999999", 20, AlignmentType.CENTER)
+                      : new Paragraph({
+                          alignment: AlignmentType.CENTER,
+                          children: [new ImageRun({ type: "png", data: await svgToPngData(buildTeacherStampSvg(config)), transformation: { width: 110, height: 110 } })]
+                        })
                   ]
                 }),
               ]
