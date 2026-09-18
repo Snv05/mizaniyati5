@@ -396,7 +396,7 @@ export const generateDocx = async (lesson: LessonMemo, config: MemoConfig, activ
                           ...renderTables(activity.tables)
                         ]
                       }),
-                      new TableCell({ children: [createParagraph(activity.zaman || '25 د', true, "333333", 22, AlignmentType.CENTER)] }),
+                      new TableCell({ children: [createParagraph(activity.zaman || '', true, "333333", 22, AlignmentType.CENTER)] }),
                       new TableCell({ children: [createParagraph(activity.mola7adha || 'أفواج', false, "666666", 20, AlignmentType.CENTER)] }),
                     ]
                   : [
@@ -411,7 +411,7 @@ export const generateDocx = async (lesson: LessonMemo, config: MemoConfig, activ
                           ...renderTables(activity.tables)
                         ]
                       }),
-                      new TableCell({ children: [createParagraph(activity.zaman || '25 د', true, "333333", 22, AlignmentType.CENTER)] }),
+                      new TableCell({ children: [createParagraph(activity.zaman || '', true, "333333", 22, AlignmentType.CENTER)] }),
                       new TableCell({ children: [createParagraph(activity.mola7adha || 'أفواج', false, "666666", 20, AlignmentType.CENTER)] }),
                     ]
               });
