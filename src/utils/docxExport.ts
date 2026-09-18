@@ -416,7 +416,7 @@ export const generateDocx = async (lesson: LessonMemo, config: MemoConfig, activ
                 ...(diagram.description ? [createParagraph(diagram.description, false, "333333", 20)] : []),
                 new Paragraph({ text: "", spacing: { after: 300 } })
               ])
-            )).then((items) => items.flat())
+            ))).flat()
           : lesson.diagramSvg
             ? [
                 createParagraph(lesson.diagramTitle || "المخطط", true, theme.hex, 22, AlignmentType.CENTER),
