@@ -34,10 +34,13 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
     const dynamicCurriculum = generateAnnualDistribution(baseLessons, startDate, []);
 
     if (level === '4am') {
+      const maqta1 = 'المقطع الأول: التغذية عند الإنسان';
+      const maqta2 = 'المقطع الثاني: التنسيق الوظيفي في العضوية';
+      const maqta3 = 'المقطع الثالث: انتقال الصفات الوراثية';
       return [
-        dynamicCurriculum.filter(item => item.midan === 'الإنسان والصحة'),
-        dynamicCurriculum.filter(item => item.midan === 'التنسيق الوظيفي في العضوية'),
-        dynamicCurriculum.filter(item => item.midan === 'انتقال الصفات الوراثية')
+        dynamicCurriculum.filter(item => item.maqta === maqta1),
+        dynamicCurriculum.filter(item => item.maqta === maqta2),
+        dynamicCurriculum.filter(item => item.maqta === maqta3)
       ];
     } else if (level === '1am') {
        return [
