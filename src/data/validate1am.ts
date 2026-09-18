@@ -1,45 +1,19 @@
 import type { LessonMemo } from '../types';
 
 const EXPECTED_1AM_UNITS = [
-  'مصدر الأغذية',
-  'تركيب الأغذية',
-  'دور الأغذية في الجسم',
-  'الرواتب الغذائية',
-  'التوازن الغذائي',
-  'التغذية المعدنية عند النبات الأخضر',
-  'مقر الامتصاص عند النبات الأخضر',
-  'التركيب الضوئي',
-  'أهمية التحكم في شروط التركيب الضوئي',
-  'انتقال النسغ',
-  'ظاهرة النتح',
-  'المبادلات الغازية التنفسية عند الإنسان',
-  'تعريف التنفس',
-  'القواعد الصحية للتنفس',
-  'المبادلات الغازية التنفسية عند النبات الأخضر',
-  'تعريف التنفس عند النبات الأخضر',
-  'التخمر',
-  'تعريف الإطراح',
-  'أجهزة الإطراح',
-  'القواعد الصحية للإطراح',
-  'مراحل الإنتاش',
-  'الجهاز التكاثري عند الإنسان',
-  'الإلقاح',
-  'القواعد الصحية الجنسية عند الإنسان',
-  'مكونات الجهاز التكاثري عند النباتات الزهرية',
-  'مميزات التكاثر الجنسي عند النباتات ذات الأزهار',
-  'بنية الخلية'
+  'مصدر الأغذية','تركيب الأغذية','دور الأغذية في الجسم','الرواتب الغذائية','التوازن الغذائي',
+  'التغذية المعدنية عند النبات الأخضر','مقر الامتصاص عند النبات الأخضر','التركيب الضوئي',
+  'أهمية التحكم في شروط التركيب الضوئي','انتقال النسغ','ظاهرة النتح','المبادلات الغازية التنفسية عند الإنسان',
+  'تعريف التنفس','القواعد الصحية للتنفس','المبادلات الغازية التنفسية عند النبات الأخضر',
+  'تعريف التنفس عند النبات الأخضر','التخمر','تعريف الإطراح','أجهزة الإطراح','القواعد الصحية للإطراح',
+  'مراحل الإنتاش','الجهاز التكاثري عند الإنسان','الإلقاح','القواعد الصحية الجنسية عند الإنسان',
+  'مكونات الجهاز التكاثري عند النباتات الزهرية','مميزات التكاثر الجنسي عند النباتات ذات الأزهار','بنية الخلية'
 ] as const;
 
 const EXPECTED_1AM_SEQUENCES = [
-  'التغذية عند الإنسان',
-  'التغذية عند النبات الأخضر',
-  'التحصل على الطاقة عند الإنسان',
-  'التحصل على الطاقة عند النبات الأخضر',
-  'الإطراح عند الإنسان',
-  'مظاهر النمو والتطور عند النبات',
-  'التكاثر عند الإنسان',
-  'التكاثر عند النباتات ذات الأزهار',
-  'وحدة بناء الكائنات الحية'
+  'التغذية عند الإنسان','التغذية عند النبات الأخضر','التحصل على الطاقة عند الإنسان',
+  'التحصل على الطاقة عند النبات الأخضر','الإطراح عند الإنسان','مظاهر النمو والتطور عند النبات',
+  'التكاثر عند الإنسان','التكاثر عند النباتات ذات الأزهار','وحدة بناء الكائنات الحية'
 ] as const;
 
 export function validate1AMDatabase(lessons: LessonMemo[]): string[] {
@@ -49,9 +23,7 @@ export function validate1AMDatabase(lessons: LessonMemo[]): string[] {
   const sourceUnitIds = lessons.map(l => l.sourceLearningUnitId || '');
   const sourceActivityIds = lessons.flatMap(l => l.anshita.map(a => a.sourceActivityId || ''));
 
-  if (lessons.length !== EXPECTED_1AM_UNITS.length) {
-    errors.push(`Expected 27 1AM learning units, found ${lessons.length}.`);
-  }
+  if (lessons.length !== EXPECTED_1AM_UNITS.length) errors.push(`Expected 27 1AM learning units, found ${lessons.length}.`);
 
   const missingUnits = EXPECTED_1AM_UNITS.filter(name => !units.includes(name));
   const unexpectedUnits = units.filter(name => !EXPECTED_1AM_UNITS.includes(name as typeof EXPECTED_1AM_UNITS[number]));
@@ -65,6 +37,20 @@ export function validate1AMDatabase(lessons: LessonMemo[]): string[] {
     errors.push('1AM source activity IDs are missing or duplicated.');
   }
 
+  const totalActivities = lessons.reduce((sum, lesson) => sum + lesson.anshita.length, 0);
+  const totalDiagrams = lessons.reduce((sum, lesson) =>
+    sum + lesson.anshita.reduce((n, activity) => n + (activity.diagrams?.length || 0), 0), 0);
+  const totalTables = lessons.reduce((sum, lesson) =>
+    sum + lesson.anshita.reduce((n, activity) => n + (activity.tables?.length || 0), 0)
+      + (lesson.wadiyaTables?.length || 0)
+      + (lesson.irsaeTables?.length || 0)
+      + (lesson.taqwimTables?.length || 0), 0);
+
+  // Structural counts verified against the current 1AM official source modules.
+  if (totalActivities !== 53) errors.push(`Expected 53 1AM activities, found ${totalActivities}.`);
+  if (totalDiagrams !== 11) errors.push(`Expected 11 1AM activity diagrams, found ${totalDiagrams}.`);
+  if (totalTables !== 33) errors.push(`Expected 33 1AM tables, found ${totalTables}.`);
+
   const missingSequences = EXPECTED_1AM_SEQUENCES.filter(name => !sequenceNames.includes(name));
   if (missingSequences.length) errors.push(`Missing 1AM sequences: ${missingSequences.join(' | ')}`);
 
@@ -76,9 +62,7 @@ export function validate1AMDatabase(lessons: LessonMemo[]): string[] {
     if (!lesson.sourceSequenceId || !lesson.sourceResourceId || !lesson.sourceLearningUnitId) {
       errors.push(`Missing source traceability for 1AM unit "${lesson.ta3alom}".`);
     }
-    if (!lesson.sourceOfficial) {
-      errors.push(`1AM unit "${lesson.ta3alom}" is not marked as official source data.`);
-    }
+    if (!lesson.sourceOfficial) errors.push(`1AM unit "${lesson.ta3alom}" is not marked as official source data.`);
   });
 
   return errors;
