@@ -18,6 +18,50 @@ import {
 import { MemoConfig } from "../types";
 import { GeneratedSession as CurriculumSession } from "./annualDistributionGenerator";
 
+const base64ToUint8Array = (base64: string) => {
+  const binaryString = window.atob(base64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+  return bytes;
+};
+
+const svgToPngData = async (svg: string, width = 420, height = 420): Promise<Uint8Array> => {
+  const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  try {
+    const image = new Image();
+    image.src = url;
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () => reject(new Error("تعذر تحويل الختم إلى صورة"));
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = width; canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas غير متاح");
+    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(image, 0, 0, width, height);
+    return base64ToUint8Array(canvas.toDataURL("image/png").split(",")[1]);
+  } finally { URL.revokeObjectURL(url); }
+};
+
+const buildTeacherStampSvg = (config: MemoConfig, size = 420) => {
+  const esc = (v: string) => v.replace(/[<>&"]/g, "");
+  const name = esc(config.teacherName || "");
+  const school = esc((config.schoolName || "").slice(0, 30));
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
+    <rect width="100%" height="100%" fill="white"/>
+    <circle cx="210" cy="210" r="170" fill="#eff6ff" fill-opacity=".55" stroke="#1d4ed8" stroke-width="7" stroke-dasharray="12 6"/>
+    <circle cx="210" cy="210" r="132" fill="none" stroke="#1d4ed8" stroke-width="3"/>
+    <text x="210" y="105" text-anchor="middle" font-family="Arial" font-size="25" font-weight="bold" fill="#1e40af">الجمهورية الجزائرية الديمقراطية الشعبية</text>
+    <text x="210" y="150" text-anchor="middle" font-family="Arial" font-size="23" font-weight="bold" fill="#1e40af">وزارة التربية الوطنية</text>
+    <text x="210" y="205" text-anchor="middle" font-family="Arial" font-size="22" font-weight="bold" fill="#1e40af">علوم الطبيعة والحياة</text>
+    <text x="210" y="250" text-anchor="middle" font-family="Arial" font-size="30" font-weight="900" fill="#1e40af">${name}</text>
+    <text x="210" y="292" text-anchor="middle" font-family="Arial" font-size="18" font-weight="bold" fill="#1e40af">${school}</text>
+  </svg>`;
+};
+
+
 const createParagraph = (text: string, bold = false, color = "000000", size = 20, alignment: any = AlignmentType.CENTER) => {
   return new Paragraph({
     
@@ -209,7 +253,10 @@ export const generateDistributionDocx = async (
             rows: [
               new TableRow({
                 children: [
-                  createCell("إمضاء الأستاذ(ة):", true, undefined, 1, 1, 22, AlignmentType.RIGHT),
+                  new TableCell({ children: [
+                    createParagraph("إمضاء الأستاذ(ة):", true, "000000", 22, AlignmentType.RIGHT),
+                    new Paragraph({ alignment: AlignmentType.CENTER, children: [new ImageRun({ type: "png", data: config.teacherStamp?.startsWith("data:image/") ? base64ToUint8Array(config.teacherStamp.split(",")[1]) : await svgToPngData(buildTeacherStampSvg(config)), transformation: { width: 90, height: 90 } })] })
+                  ] }),
                   createCell("السيد(ة) المدير(ة):", true, undefined, 1, 1, 22, AlignmentType.CENTER),
                   createCell("السيد(ة) المفتش(ة):", true, undefined, 1, 1, 22, AlignmentType.LEFT),
                 ]
