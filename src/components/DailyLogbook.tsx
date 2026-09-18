@@ -1208,7 +1208,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                   المادة: العلوم الطبيعية
                 </span>
                 <span className="inline-flex items-center gap-1 bg-zinc-900 text-white px-2 py-1 rounded font-bold">
-                  السنة: {config.schoolYear || '2025 - 2026'}
+                  السنة: {config.schoolYear || ''}
                 </span>
               </div>
             </div>
@@ -1967,7 +1967,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                                 المادة: <b>العلوم الطبيعية</b>
                               </span>
                               <span>
-                                السنة: <b>{config.schoolYear || '2025 - 2026'}</b>
+                                السنة: <b>{config.schoolYear || ''}</b>
                               </span>
                             </div>
                             <div className="mt-1 text-[10px] text-zinc-500 font-medium">
@@ -2304,7 +2304,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                                   المادة: <b>العلوم الطبيعية</b>
                                 </span>
                                 <span>
-                                  السنة: <b>{config.schoolYear || '2025 - 2026'}</b>
+                                  السنة: <b>{config.schoolYear || ''}</b>
                                 </span>
                               </div>
                               <div className="mt-1 text-[10px] text-zinc-500 font-medium">
