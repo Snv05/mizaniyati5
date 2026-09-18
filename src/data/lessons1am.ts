@@ -58,8 +58,7 @@ for (const seq of DB_1AM) {
         anshita: anshita,
         diagrams,
         diagramSvg: diagrams[0]?.svg,
-        diagramTitle: diagrams[0]?.title,
-        diagramDescription: diagrams[0]?.description
+        diagramTitle: diagrams[0]?.title
       });
 
       memoCounter++;
