@@ -30,7 +30,7 @@ export function buildLessons3AM(): any[] {
         allLessons.push({
           level: '3am',
           memoNumber: memoCounter.toString().padStart(2, '0'),
-          midan: 'الإنسان والمحيط',
+          midan: seq.field_name || '',
           maqta: seq.sequence_name,
           mawrid: res.resource_name,
           ta3alom: lu.learning_unit_name,
