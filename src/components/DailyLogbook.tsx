@@ -106,28 +106,6 @@ const JS_DAY_NAMES: Record<number, string> = {
   6: 'السبت',
 };
 
-const SECTIONS_DATALIST = [
-  '1م1',
-  '1م2',
-  '1م3',
-  '1م4',
-  '2م1',
-  '2م2',
-  '2م3',
-  '2م4',
-  '3م1',
-  '3م2',
-  '3م3',
-  '4م1',
-  '4م2',
-  '4م3',
-  '4م4',
-  '1م1 - فوج 1',
-  '1م1 - فوج 2',
-  '4م3 - فوج 1',
-  '4م3 - فوج 2',
-];
-
 const MORNING_PERIODS = ['08:00 - 09:00', '09:00 - 10:00', '10:00 - 11:00', '11:00 - 12:00'];
 const AFTERNOON_PERIODS = ['13:30 - 14:30', '14:30 - 15:30', '15:30 - 16:30', '16:30 - 17:30'];
 const ALL_PERIODS = [...MORNING_PERIODS, ...AFTERNOON_PERIODS];
@@ -1077,7 +1055,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
               <span className="flex items-center gap-1.5"><span className="text-zinc-500 font-medium">الأستاذ(ة):</span> <span className="font-bold text-zinc-900">{teacher || '—'}</span></span>
               <span className="flex items-center gap-1.5"><span className="text-zinc-500 font-medium">المادة:</span> <span className="font-bold text-zinc-900">{subject || '—'}</span></span>
               <span className="flex items-center gap-1.5"><span className="text-zinc-500 font-medium">المتوسطة:</span> <span className="font-bold text-zinc-900">{school || '—'}</span></span>
-              <span className="flex items-center gap-1.5"><span className="text-zinc-500 font-medium">السنة الدراسية:</span> <span className="font-bold text-zinc-900">{config.schoolYear || '2025 - 2026'}</span></span>
+              <span className="flex items-center gap-1.5"><span className="text-zinc-500 font-medium">السنة الدراسية:</span> <span className="font-bold text-zinc-900">{config.schoolYear || ''}</span></span>
               <span className="flex items-center gap-1.5"><span className="text-zinc-500 font-medium">المستويات المسندة:</span> <span className="font-bold text-zinc-900" dir="ltr">{assignedLevels.join(' ، ')}</span></span>
             </div>
 
@@ -1347,11 +1325,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
               </div>
 
               <div className="p-0 bg-[#fcfcf9]">
-                <datalist id="sections-list">
-                  {SECTIONS_DATALIST.map((sec) => (
-                    <option key={sec} value={sec} />
-                  ))}
-                </datalist>
+
 
                 {userAlert && (
                   <div className="m-2 bg-red-50 border border-red-200 text-red-800 text-[11px] font-bold rounded-lg px-3 py-2 flex items-center gap-2 animate-pulse">
@@ -2456,7 +2430,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
 
       {/* Page Footer */}
       <footer className="no-print text-center text-[10px] text-zinc-500 py-6 border-t border-zinc-200 bg-white">
-        الدفتر اليومي - استعمال زمن جدولي • A4 • 20 سطر • علوم الطبيعة والحياة للطور المتوسط • 2025/2026 • 🇩🇿 •{' '}
+        الدفتر اليومي - استعمال زمن جدولي • A4 • 20 سطر • علوم الطبيعة والحياة للطور المتوسط • 🇩🇿 •{' '}
         {totalFilledTimetableSlots} حصة أسبوعياً • {assignedLevels.length} مستويات مسندة
       </footer>
     </div>
