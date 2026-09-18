@@ -14,6 +14,7 @@ for (const seq of DB_1AM) {
   for (const res of seq.resources) {
     for (const unit of res.learning_units) {
       const anshita: Activity[] = unit.activities.map(act => ({
+        sourceActivityId: act.activity_id,
         title: act.activity_title,
         asila: act.ustadh_activity,
         ajwiba: act.mutaalim_activity,
@@ -30,6 +31,10 @@ for (const seq of DB_1AM) {
       }))).filter(d => !!d.svg);
 
       LESSONS_1AM.push({
+        sourceSequenceId: seq.sequence_id,
+        sourceResourceId: res.resource_id,
+        sourceLearningUnitId: unit.learning_unit_id,
+        sourceOfficial: unit.official_source === true,
         level: '1am',
         memoNumber: memoCounter.toString().padStart(2, '0'),
         midan: seq.field_name || '',
