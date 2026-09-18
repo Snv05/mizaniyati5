@@ -473,6 +473,9 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
     };
 
     const sectionCounters: Record<string, number> = {};
+    // عداد مستقل داخل كل أسبوع: الحصة الأولى ← session1، الثانية ← session2.
+    // لا نستخدم ترتيب عناصر اليوم، لأن ذلك كان يجعل session2 لا تُختار فعلياً.
+    const weeklySessionCounters: Record<string, number> = {};
     const generated: LogEntry[] = [];
     const baseDate = new Date(startDate);
     const currDate = new Date(baseDate);
@@ -501,9 +504,11 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
         const currentResIdx = sectionCounters[baseSection] % bank.length;
         sectionCounters[baseSection] += 1;
 
-        // Smart linkage: when an annual distribution exists, use its exact weekly activity title.
+        // Smart linkage: match the exact annual-distribution week, then consume
+        // session1 and session2 in occurrence order for this section in that week.
         const annual = getStoredAnnualSchedule(lvl);
         let res = bank[currentResIdx];
+        let matchedAnnual = false;
         if (annual) {
           const start = new Date(annual.startDate);
           while (start.getDay() !== 0) start.setDate(start.getDate() + 1);
@@ -511,10 +516,32 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           const diffDays = Math.floor((current.getTime() - start.getTime()) / 86400000);
           const weekIndex = Math.floor(diffDays / 7);
           const annualItem = weekIndex >= 0 ? annual.items[weekIndex] : null;
-          const sessionOrdinal = Math.min(sessions.indexOf(firstSess), 1);
-          const scheduledTitle = sessionOrdinal === 0 ? annualItem?.session1 : annualItem?.session2;
-          const scheduled = scheduledTitle ? findLessonForScheduledTitle(bank, scheduledTitle) : null;
-          if (scheduled) res = scheduled;
+
+          if (annualItem) {
+            const weekKey = baseSection + "::" + weekIndex;
+            const ordinal = weeklySessionCounters[weekKey] || 0;
+            weeklySessionCounters[weekKey] = ordinal + 1;
+            const scheduledTitle = ordinal === 0
+              ? annualItem.session1
+              : ordinal === 1
+                ? annualItem.session2
+                : annualItem.session2;
+
+            const scheduled = scheduledTitle
+              ? findLessonForScheduledTitle(bank, scheduledTitle)
+              : null;
+
+            if (scheduled) {
+              res = scheduled;
+              matchedAnnual = true;
+            }
+          }
+        }
+
+        // If the annual distribution does not contain an exact curriculum title,
+        // keep the master-bank fallback instead of inventing or silently altering content.
+        if (!matchedAnnual && annual) {
+          // Intentionally preserve the master curriculum fallback.
         }
 
         const uniqueSections = Array.from(new Set(sessions.map((s) => s.section || 'قسم غير محدد')));
