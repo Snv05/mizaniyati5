@@ -81,21 +81,21 @@ export const App: React.FC = () => {
     }
     return {
       level: '4am',
-      schoolName: 'متوسطة شيخاوي عمر - عين الذهب',
-      directorate: 'مديرية التربية لولاية تيارت',
-      inspectionDistrict: 'المقاطعة التفتيشية لمادة علوم الطبيعة والحياة - تيارت 02',
-      teacherName: 'بغداد الطيب',
-      teacherGrade: 'أستاذ رئيسي للتعليم المتوسط',
-      teacherPhone: '06 61 00 00 00',
-      teacherEmail: 'kamrobaghdad@gmail.com',
-      schoolYear: '2025 - 2026',
-      memoNumber: '01',
-      principalName: 'مدير المتوسطة',
-      inspectorName: 'مفتش مادة علوم الطبيعة والحياة',
+      schoolName: '',
+      directorate: '',
+      inspectionDistrict: '',
+      teacherName: '',
+      teacherGrade: '',
+      teacherPhone: '',
+      teacherEmail: '',
+      schoolYear: '',
+      memoNumber: '',
+      principalName: '',
+      inspectorName: '',
       signDate: new Date().toISOString().split('T')[0],
       teacherStamp: null,
-      assignedClasses: ['4 م 1', '3 م 1', '2 م 1', '2 م 2', '1 م 1'],
-      weeklyHours: 18,
+      assignedClasses: [],
+      weeklyHours: 0,
     };
   });
 
@@ -172,8 +172,7 @@ export const App: React.FC = () => {
   // Derived current active midan based on the active lesson or level
   const activeMidan = useMemo(() => {
     if (currentLesson?.midan) return currentLesson.midan;
-    if (selectedLevel === '4am') return 'الإنسان والصحة';
-    return 'الإنسان والمحيط';
+    return '';
   }, [currentLesson, selectedLevel]);
 
   // 6. Activities selection state
