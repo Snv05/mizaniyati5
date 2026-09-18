@@ -9,6 +9,7 @@ import {
   CalendarDays,
   BookOpenCheck,
   UserCog,
+  Database,
   GraduationCap,
   Sparkles,
   School,
@@ -472,6 +473,11 @@ export const App: React.FC = () => {
                   <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 text-emerald-900 font-black text-[13px]">
                     <BookOpenCheck className="w-4 h-4 text-emerald-700" />
                     <span>الدفتر اليومي ودفتر النصوص</span>
+                  </div>
+                ) : activeSection === 'database' ? (
+                  <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 text-emerald-900 font-black text-[13px]">
+                    <Database className="w-4 h-4 text-emerald-700" />
+                    <span>إدارة قاعدة البيانات</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 text-gray-900 font-black text-[13px]">
