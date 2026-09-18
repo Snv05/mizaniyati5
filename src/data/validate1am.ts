@@ -23,7 +23,37 @@ export const UNVERIFIED_CONFLICTS_1AM = [
   },
 ] as const;
 
-const EXPECTED_1AM_SEQUENCES = [
+
+const EXPECTED_1AM_ACTIVITY_COUNTS: Record<string, number> = {
+  'مصدر الأغذية': 2,
+  'تركيب الأغذية': 3,
+  'دور الأغذية في الجسم': 2,
+  'الرواتب الغذائية': 2,
+  'التوازن الغذائي': 1,
+  'التغذية المعدنية عند النبات الأخضر': 2,
+  'مقر الامتصاص عند النبات الأخضر': 2,
+  'التركيب الضوئي': 3,
+  'أهمية التحكم في شروط التركيب الضوئي': 2,
+  'انتقال النسغ': 2,
+  'ظاهرة النتح': 1,
+  'المبادلات الغازية التنفسية عند الإنسان': 2,
+  'تعريف التنفس': 2,
+  'القواعد الصحية للتنفس': 2,
+  'المبادلات الغازية التنفسية عند النبات الأخضر': 3,
+  'تعريف التنفس عند النبات الأخضر': 1,
+  'التخمر': 2,
+  'تعريف الإطراح': 1,
+  'أجهزة الإطراح': 3,
+  'القواعد الصحية للإطراح': 1,
+  'مراحل الإنتاش': 2,
+  'الجهاز التكاثري عند الإنسان': 2,
+  'الإلقاح': 2,
+  'القواعد الصحية الجنسية عند الإنسان': 1,
+  'مكونات الجهاز التكاثري عند النباتات الزهرية': 3,
+  'مميزات التكاثر الجنسي عند النباتات ذات الأزهار': 2,
+  'بنية الخلية': 2,
+};
+\nconst EXPECTED_1AM_SEQUENCES = [
   'التغذية عند الإنسان','التغذية عند النبات الأخضر','التحصل على الطاقة عند الإنسان',
   'التحصل على الطاقة عند النبات الأخضر','الإطراح عند الإنسان','مظاهر النمو والتطور عند النبات',
   'التكاثر عند الإنسان','التكاثر عند النباتات ذات الأزهار','وحدة بناء الكائنات الحية'
@@ -77,6 +107,15 @@ export function validate1AMDatabase(lessons: LessonMemo[]): string[] {
       }
     });
   });
+
+  for (const lesson of lessons) {
+    const expected = EXPECTED_1AM_ACTIVITY_COUNTS[lesson.ta3alom];
+    if (expected === undefined) {
+      errors.push(`Unexpected 1AM learning unit activity map entry: "${lesson.ta3alom}".`);
+    } else if (lesson.anshita.length !== expected) {
+      errors.push(`Activity count mismatch for "${lesson.ta3alom}": expected ${expected}, got ${lesson.anshita.length}.`);
+    }
+  }
 
   const missingSequences = EXPECTED_1AM_SEQUENCES.filter(name => !sequenceNames.includes(name));
   if (missingSequences.length) errors.push(`Missing 1AM sequences: ${missingSequences.join(' | ')}`);
