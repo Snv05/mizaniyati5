@@ -21,34 +21,7 @@ export function generateAnnualDistribution(
   // Flatten all activities
   const flatActivities: { midan: string; maqta: string; mawrid: string; title: string }[] = [];
   
-  // Start with introduction
-  flatActivities.push({
-    midan: lessons[0]?.midan || '',
-    maqta: lessons[0]?.maqta || '',
-    mawrid: '',
-    title: 'استقبال التلاميذ، تعارف / تقويم تشخيصي'
-  });
-
-  for (const lesson of lessons) {
-    // Add Wوضعيات if needed, but let's just use activities
-    for (const act of lesson.anshita) {
-      flatActivities.push({
-        midan: lesson.midan,
-        maqta: lesson.maqta,
-        mawrid: lesson.mawrid,
-        title: act.title
-      });
-    }
-    // Add Idmaj at the end of each sequence?
-    flatActivities.push({
-      midan: lesson.midan,
-      maqta: lesson.maqta,
-      mawrid: lesson.mawrid,
-      title: 'إدماج وتقويم'
-    });
-  }
-
-  const generated: GeneratedSession[] = [];
+  // Build sessions only from curriculum activities; never inject synthetic lessons.\n  for (const lesson of lessons) {\n    for (const act of lesson.anshita) {\n      flatActivities.push({\n        midan: lesson.midan,\n        maqta: lesson.maqta,\n        mawrid: lesson.mawrid,\n        title: act.title\n      });\n    }\n  }\n\n  const generated: GeneratedSession[] = [];
   if (!startDateStr) return [];
   const currentDate = new Date(startDateStr);
   if (Number.isNaN(currentDate.getTime())) return [];
