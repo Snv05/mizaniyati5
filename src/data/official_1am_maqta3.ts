@@ -4,6 +4,7 @@ import { DIAGRAMS_1AM } from './diagrams1am';
 export const seq_3: DB_Sequence = {
   sequence_id: 'seq_1am_3',
   sequence_name: 'التحصل على الطاقة عند الإنسان',
+  field_name: 'الإنسان والصحة',
   resources: [
     {
       resource_id: 'res_1am_3_1',
@@ -173,6 +174,7 @@ export const seq_3: DB_Sequence = {
 export const seq_4: DB_Sequence = {
   sequence_id: 'seq_1am_4',
   sequence_name: 'التحصل على الطاقة عند النبات الأخضر',
+  field_name: 'الإنسان والمحيط',
   resources: [
     {
       resource_id: 'res_1am_4_1',
