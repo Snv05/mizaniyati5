@@ -224,7 +224,7 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
                   <div className="flex items-center gap-4 pt-1 text-[12px] text-gray-600 font-bold">
                     <span className="flex items-center gap-1.5 bg-white/80 px-2.5 py-1 rounded-lg border border-gray-200">
                       <FileText className="w-3.5 h-3.5 text-gray-500" />
-                      <span>{count > 0 ? `${count} مذكرة جاهزة` : '10 مذكرات جاهزة'}</span>
+                      <span>`${count} مذكرة جاهزة`</span>
                     </span>
                     <span className="flex items-center gap-1.5 bg-white/80 px-2.5 py-1 rounded-lg border border-gray-200">
                       <CalendarDays className="w-3.5 h-3.5 text-gray-500" />
