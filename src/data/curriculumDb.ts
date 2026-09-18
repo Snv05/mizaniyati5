@@ -28,7 +28,14 @@ export const saveCurriculumDatabase = (lessons: LessonMemo[]): void => {
 
 export const resetCurriculumDatabase = (): LessonMemo[] => {
   const official = getOfficialCurriculumDatabase();
-  localStorage.removeItem(CURRICULUM_DB_STORAGE_KEY);
+  localStorage.setItem(CURRICULUM_DB_STORAGE_KEY, JSON.stringify(official));
+  try {
+    if ((window as any).syncToCloud) {
+      void (window as any).syncToCloud('curriculum', official);
+    }
+  } catch {
+    // The local official copy remains available even if cloud sync is unavailable.
+  }
   window.dispatchEvent(new CustomEvent('curriculum-db-updated'));
   return official;
 };
