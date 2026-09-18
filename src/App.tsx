@@ -299,7 +299,7 @@ export const App: React.FC = () => {
     switch (selectedLevel) {
       case '1am':
         return {
-          midanName: 'ميدان: الإنسان والصحة + الإنسان والمحيط',
+          midanName: '',
           levelLabel: 'السنة الأولى متوسط (1AM)',
           accentColor: '#0284c7',
           subbarBg: 'from-sky-50/90 via-white to-emerald-50/70 border-sky-200',
@@ -312,7 +312,7 @@ export const App: React.FC = () => {
         };
       case '2am':
         return {
-          midanName: 'ميدان: الإنسان والمحيط (الوسط الحي والتنوع البيولوجي)',
+          midanName: '',
           levelLabel: 'السنة الثانية متوسط (2AM)',
           accentColor: '#7c3aed',
           subbarBg: 'from-purple-50/90 via-white to-indigo-50/70 border-purple-200',
@@ -325,7 +325,7 @@ export const App: React.FC = () => {
         };
       case '3am':
         return {
-          midanName: 'ميدان: الإنسان والمحيط (الدينامية الداخلية للأرض والجيولوجيا)',
+          midanName: '',
           levelLabel: 'السنة الثالثة متوسط (3AM)',
           accentColor: '#ea580c',
           subbarBg: 'from-amber-50/90 via-white to-orange-50/70 border-amber-200',
@@ -339,7 +339,7 @@ export const App: React.FC = () => {
       case '4am':
       default:
         return {
-          midanName: 'ميدان: الإنسان والصحة (التغذية، التنسيق الوظيفي، والوراثة)',
+          midanName: '',
           levelLabel: 'السنة الرابعة متوسط (4AM - BEM)',
           accentColor: '#c2185b',
           subbarBg: 'from-pink-50/90 via-white to-rose-50/70 border-pink-200',
