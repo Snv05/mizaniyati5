@@ -1,0 +1,85 @@
+import type { LessonMemo } from '../types';
+
+const EXPECTED_1AM_UNITS = [
+  'مصدر الأغذية',
+  'تركيب الأغذية',
+  'دور الأغذية في الجسم',
+  'الرواتب الغذائية',
+  'التوازن الغذائي',
+  'التغذية المعدنية عند النبات الأخضر',
+  'مقر الامتصاص عند النبات الأخضر',
+  'التركيب الضوئي',
+  'أهمية التحكم في شروط التركيب الضوئي',
+  'انتقال النسغ',
+  'ظاهرة النتح',
+  'المبادلات الغازية التنفسية عند الإنسان',
+  'تعريف التنفس',
+  'القواعد الصحية للتنفس',
+  'المبادلات الغازية التنفسية عند النبات الأخضر',
+  'تعريف التنفس عند النبات الأخضر',
+  'التخمر',
+  'تعريف الإطراح',
+  'أجهزة الإطراح',
+  'القواعد الصحية للإطراح',
+  'مراحل الإنتاش',
+  'الجهاز التكاثري عند الإنسان',
+  'الإلقاح',
+  'القواعد الصحية الجنسية عند الإنسان',
+  'مكونات الجهاز التكاثري عند النباتات الزهرية',
+  'مميزات التكاثر الجنسي عند النباتات ذات الأزهار',
+  'بنية الخلية'
+] as const;
+
+const EXPECTED_1AM_SEQUENCES = [
+  'التغذية عند الإنسان',
+  'التغذية عند النبات الأخضر',
+  'التحصل على الطاقة عند الإنسان',
+  'التحصل على الطاقة عند النبات الأخضر',
+  'الإطراح عند الإنسان',
+  'مظاهر النمو والتطور عند النبات',
+  'التكاثر عند الإنسان',
+  'التكاثر عند النباتات ذات الأزهار',
+  'وحدة بناء الكائنات الحية'
+] as const;
+
+export function validate1AMDatabase(lessons: LessonMemo[]): string[] {
+  const errors: string[] = [];
+  const units = lessons.map(l => l.ta3alom);
+  const sequenceNames = lessons.map(l => l.maqta);
+  const sourceUnitIds = lessons.map(l => l.sourceLearningUnitId || '');
+  const sourceActivityIds = lessons.flatMap(l => l.anshita.map(a => a.sourceActivityId || ''));
+
+  if (lessons.length !== EXPECTED_1AM_UNITS.length) {
+    errors.push(`Expected 27 1AM learning units, found ${lessons.length}.`);
+  }
+
+  const missingUnits = EXPECTED_1AM_UNITS.filter(name => !units.includes(name));
+  const unexpectedUnits = units.filter(name => !EXPECTED_1AM_UNITS.includes(name as typeof EXPECTED_1AM_UNITS[number]));
+  if (missingUnits.length) errors.push(`Missing 1AM units: ${missingUnits.join(' | ')}`);
+  if (unexpectedUnits.length) errors.push(`Unexpected 1AM units: ${unexpectedUnits.join(' | ')}`);
+
+  if (new Set(sourceUnitIds).size !== sourceUnitIds.length || sourceUnitIds.some(id => !id)) {
+    errors.push('1AM source learning-unit IDs are missing or duplicated.');
+  }
+  if (new Set(sourceActivityIds).size !== sourceActivityIds.length || sourceActivityIds.some(id => !id)) {
+    errors.push('1AM source activity IDs are missing or duplicated.');
+  }
+
+  const missingSequences = EXPECTED_1AM_SEQUENCES.filter(name => !sequenceNames.includes(name));
+  if (missingSequences.length) errors.push(`Missing 1AM sequences: ${missingSequences.join(' | ')}`);
+
+  lessons.forEach((lesson, index) => {
+    const expectedMemo = String(index + 1).padStart(2, '0');
+    if (lesson.memoNumber !== expectedMemo) {
+      errors.push(`Memo numbering mismatch at index ${index}: expected ${expectedMemo}, found ${lesson.memoNumber || '(empty)'}.`);
+    }
+    if (!lesson.sourceSequenceId || !lesson.sourceResourceId || !lesson.sourceLearningUnitId) {
+      errors.push(`Missing source traceability for 1AM unit "${lesson.ta3alom}".`);
+    }
+    if (!lesson.sourceOfficial) {
+      errors.push(`1AM unit "${lesson.ta3alom}" is not marked as official source data.`);
+    }
+  });
+
+  return errors;
+}
