@@ -315,7 +315,7 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
                 />
               </div>
               <div className="text-[11.5px] font-bold text-gray-700">
-                معاينة الختم المولد آلياً باسم: <span className="text-teal-800">{formData.teacherName || 'أستاذ المادة'}</span>
+                معاينة الختم المولد آلياً باسم: <span className="text-teal-800">{formData.teacherName || ''}</span>
               </div>
               <span className="text-[10.5px] text-gray-400 mt-0.5">
                 يتغير نص الختم فورياً عند تعديل اسم الأستاذ أو المؤسسة
