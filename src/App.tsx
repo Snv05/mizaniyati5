@@ -217,9 +217,22 @@ export const App: React.FC = () => {
     }, 3000);
   };
 
-  // 8. Print Handler
-  const handlePrint = () => {
-    window.print();
+  // 8. Export as real PDF file (not browser print)
+  const handlePrint = async () => {
+    if (!currentLesson) {
+      showToast('الرجاء اختيار مورد تعلمي للتصدير');
+      return;
+    }
+
+    try {
+      showToast('جاري إنشاء ملف PDF...');
+      const { generateMemoPdf } = await import('./utils/pdfExport');
+      await generateMemoPdf(config, currentLesson.ta3alom || 'مذكرة_بيداغوجية');
+      showToast('✅ تم تنزيل ملف PDF بنجاح');
+    } catch (error) {
+      console.error('PDF export error:', error);
+      showToast('❌ تعذر إنشاء PDF. تحقق من اتصال الإنترنت ثم حاول مرة أخرى');
+    }
   };
 
   // 9. Export as Word document (.docx) - محسّن
@@ -524,7 +537,7 @@ export const App: React.FC = () => {
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-white text-[12px] font-extrabold hover:opacity-90 shadow-xs transition cursor-pointer"
                 >
                   <Printer className="w-4 h-4" />
-                  طباعة / PDF
+                  PDF
                 </button>
                 <button
                   id="btn-reset-defaults"
