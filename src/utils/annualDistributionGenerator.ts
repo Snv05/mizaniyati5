@@ -49,7 +49,9 @@ export function generateAnnualDistribution(
   }
 
   const generated: GeneratedSession[] = [];
-  let currentDate = new Date(startDateStr || '2023-09-17');
+  if (!startDateStr) return [];
+  const currentDate = new Date(startDateStr);
+  if (Number.isNaN(currentDate.getTime())) return [];
   
   // Align to Sunday
   while (currentDate.getDay() !== 0) {
