@@ -10,6 +10,19 @@ const EXPECTED_1AM_UNITS = [
   'مكونات الجهاز التكاثري عند النباتات الزهرية','مميزات التكاثر الجنسي عند النباتات ذات الأزهار','بنية الخلية'
 ] as const;
 
+/**
+ * Source-review items that are intentionally not auto-merged into the master DB.
+ * They require classification against the official curriculum/memo source before
+ * they can be promoted to database activities.
+ */
+export const UNVERIFIED_CONFLICTS_1AM = [
+  {
+    code: 'UNVERIFIED_CONFLICT',
+    sourcePages: '54-56',
+    description: 'Supplementary fermentation worksheets contain activities 01-03; activity 03 (comparison between respiration and fermentation) is not present in the current official source activity set.',
+  },
+] as const;
+
 const EXPECTED_1AM_SEQUENCES = [
   'التغذية عند الإنسان','التغذية عند النبات الأخضر','التحصل على الطاقة عند الإنسان',
   'التحصل على الطاقة عند النبات الأخضر','الإطراح عند الإنسان','مظاهر النمو والتطور عند النبات',
@@ -50,6 +63,20 @@ export function validate1AMDatabase(lessons: LessonMemo[]): string[] {
   if (totalActivities !== 53) errors.push(`Expected 53 1AM activities, found ${totalActivities}.`);
   if (totalDiagrams !== 11) errors.push(`Expected 11 1AM activity diagrams, found ${totalDiagrams}.`);
   if (totalTables !== 33) errors.push(`Expected 33 1AM tables, found ${totalTables}.`);
+
+  lessons.forEach((lesson) => {
+    lesson.anshita.forEach((activity) => {
+      if (!activity.title.trim()) {
+        errors.push(`Empty 1AM activity title in unit "${lesson.ta3alom}".`);
+      }
+      if (!activity.sourceActivityId) {
+        errors.push(`Missing source activity ID in unit "${lesson.ta3alom}".`);
+      }
+      if (activity.sourceActivityId && !activity.sourceActivityId.startsWith('act_1am_')) {
+        errors.push(`Invalid 1AM source activity ID "${activity.sourceActivityId}" in unit "${lesson.ta3alom}".`);
+      }
+    });
+  });
 
   const missingSequences = EXPECTED_1AM_SEQUENCES.filter(name => !sequenceNames.includes(name));
   if (missingSequences.length) errors.push(`Missing 1AM sequences: ${missingSequences.join(' | ')}`);
