@@ -26,6 +26,23 @@ const base64ToUint8Array = (base64: string) => {
   return bytes;
 };
 
+const imageDataUrlToPng = async (dataUrl: string): Promise<Uint8Array> => {
+  if (!dataUrl.startsWith("data:image/")) throw new Error("Unsupported image data");
+  const image = new Image();
+  image.src = dataUrl;
+  await new Promise<void>((resolve, reject) => {
+    image.onload = () => resolve();
+    image.onerror = () => reject(new Error("تعذر تحميل صورة الختم"));
+  });
+  const canvas = document.createElement("canvas");
+  canvas.width = image.naturalWidth || 512;
+  canvas.height = image.naturalHeight || 512;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas غير متاح");
+  ctx.drawImage(image, 0, 0);
+  return base64ToUint8Array(canvas.toDataURL("image/png").split(",")[1]);
+};
+
 const svgToPngData = async (svg: string, width = 420, height = 420): Promise<Uint8Array> => {
   const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
   const url = URL.createObjectURL(blob);
@@ -256,7 +273,7 @@ export const generateDistributionDocx = async (
                 children: [
                   new TableCell({ children: [
                     createParagraph("إمضاء الأستاذ(ة):", true, "000000", 22, AlignmentType.RIGHT),
-                    new Paragraph({ alignment: AlignmentType.CENTER, children: [new ImageRun({ type: "png", data: config.teacherStamp?.startsWith("data:image/") ? base64ToUint8Array(config.teacherStamp.split(",")[1]) : await svgToPngData(buildTeacherStampSvg(config)), transformation: { width: 90, height: 90 } })] })
+                    new Paragraph({ alignment: AlignmentType.CENTER, children: [new ImageRun({ type: "png", data: config.teacherStamp?.startsWith("data:image/") ? await imageDataUrlToPng(config.teacherStamp) : await svgToPngData(buildTeacherStampSvg(config)), transformation: { width: 90, height: 90 } })] })
                   ] }),
                   createCell("السيد(ة) المدير(ة):", true, undefined, 1, 1, 22, AlignmentType.CENTER),
                   createCell("السيد(ة) المفتش(ة):", true, undefined, 1, 1, 22, AlignmentType.LEFT),
