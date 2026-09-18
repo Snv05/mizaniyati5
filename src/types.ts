@@ -33,6 +33,7 @@ export interface LessonMemo {
   taqwimTables?: { headers: string[], rows: string[][] }[];
   taqwim: string;
   memoNumber?: string;
+  diagrams?: { title?: string; svg?: string; description?: string }[];
   diagramTitle?: string;
   diagramSvg?: string;
   diagramDescription?: string;
