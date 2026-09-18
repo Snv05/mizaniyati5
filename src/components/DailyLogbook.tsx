@@ -694,7 +694,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
 
   const handleResetDefaultGrid = () => {
     setGridRows(
-      DEFAULT_TIMETABLE_ROWS.map((r) => ({
+      EMPTY_TIMETABLE_ROWS.map((r) => ({
         ...r,
         id: Math.random().toString(36).slice(2, 6) + r.id,
       })).sort((a, b) => getTimeRank(a.time) - getTimeRank(b.time))
