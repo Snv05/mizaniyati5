@@ -70,14 +70,14 @@ export const generateDistributionDocx = async (
       }
     },
     sections: pages.map((page, index) => {
-      let pageTitle = "";
-      if (level === '4am') {
-        pageTitle = index === 0 ? 'الإنســـــــان والصحــــــــــــــة' : index === 1 ? 'التنســـــــيق الوظيفـــي في العضويـــة' : 'انتقــــــال الصفــــــات الوراثيــــــة';
-      } else if (level === '2am') {
-        pageTitle = 'الإنســـــــان والمحيــــــــــــط';
-      } else if (level === '1am') {
-        pageTitle = 'الإنســـــــان والصحــــــــــــــة / الإنســـــــان والمحيــــــــــــط';
-      }
+      const pageItems = page;
+      const uniqueFields = [...new Set(pageItems.map((item) => item.midan).filter(Boolean))];
+      const uniqueSequences = [...new Set(pageItems.map((item) => item.maqta).filter(Boolean))];
+      const pageTitle = uniqueFields.length === 1
+        ? uniqueFields[0]
+        : uniqueSequences.length === 1
+          ? uniqueSequences[0]
+          : '';
 
       const rows: TableRow[] = [];
 
