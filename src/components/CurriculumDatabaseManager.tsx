@@ -183,7 +183,7 @@ export const CurriculumDatabaseManager: React.FC<Props> = ({ lessons, setLessons
                 <div className="space-y-4">
                   {editing.anshita.map((a, i) => <div key={i} className="rounded-xl border p-4 bg-gray-50">
                     <div className="flex justify-between mb-3"><span className="text-xs font-black">النشاط {i + 1}</span>
-                      <button disabled={editing.anshita.length <= 1} onClick={() => setEditing({ ...editing, anshita: editing.anshita.filter((_, j) => j !== i) })} className="text-red-600 text-[10px] disabled:opacity-40"><Trash2 className="w-3 h-3 inline" /> حذف النشاط</button>
+                      <button onClick={() => setEditing({ ...editing, anshita: editing.anshita.filter((_, j) => j !== i) })} className="text-red-600 text-[10px]"><Trash2 className="w-3 h-3 inline" /> حذف النشاط</button>
                     </div>
                     <label className="block mb-3"><span className="text-[11px] font-bold">عنوان النشاط</span><input value={a.title} onChange={e => { const x=[...editing.anshita]; x[i]={...a,title:e.target.value}; setEditing({...editing,anshita:x}); }} className="w-full border rounded-lg p-2 text-xs mt-1" /></label>
                     <div className="grid md:grid-cols-2 gap-3">
