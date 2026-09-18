@@ -23,16 +23,11 @@ for (const seq of DB_2AM) {
         tables: act.tables
       }));
 
-      // Find if any activity has diagrams, pass the first one up for UI compatibility if needed
-      let diagramSvg = undefined;
-      let diagramTitle = undefined;
-      for (const act of unit.activities) {
-        if (act.diagrams && act.diagrams.length > 0) {
-          diagramSvg = act.diagrams[0].diagram_svg;
-          diagramTitle = act.diagrams[0].diagram_title;
-          break;
-        }
-      }
+      const diagrams = unit.activities.flatMap(act => (act.diagrams || []).map(d => ({
+        title: d.diagram_title,
+        svg: d.diagram_svg,
+        description: d.diagram_description
+      }))).filter(d => !!d.svg);
 
       LESSONS_2AM.push({
         level: '2am',
