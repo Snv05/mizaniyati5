@@ -197,6 +197,13 @@ const EMPTY_TIMETABLE_ROWS: TimetableGridRow[] = Array.from({ length: 8 }, (_, i
   cells: createEmptyDayCells(),
 }));
 
+// Default rows used by the automatic timetable-fill action.
+// Keep the grid structurally complete without inventing class assignments.
+const AUTO_FILLED_TIMETABLE_ROWS: TimetableGridRow[] = EMPTY_TIMETABLE_ROWS.map((row) => ({
+  ...row,
+  cells: createEmptyDayCells(),
+}));
+
 const ROWS_PER_PAGE = 20;
 const PAGE_DIMENSIONS_MM = { w: 210, h: 297 };
 const PRINT_MARGIN = '14mm';
