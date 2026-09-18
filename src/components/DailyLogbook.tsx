@@ -251,7 +251,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
 
   // Load saved state from localStorage
   const loadFromStorage = () => {
-    const keys = ['daftar_table_v2027', 'daftar_simple_final'];
+    const keys = ['daftar_table_v2027'];
     for (const key of keys) {
       const item = localStorage.getItem(key);
       if (!item) continue;
