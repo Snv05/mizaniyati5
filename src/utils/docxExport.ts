@@ -401,19 +401,33 @@ export const generateDocx = async (lesson: LessonMemo, config: MemoConfig, activ
             })
           ]
         }),
-        ...(lesson.diagramSvg ? [
-          createParagraph(lesson.diagramTitle || "المخطط", true, theme.hex, 22, AlignmentType.CENTER),
-          new Paragraph({
-            alignment: AlignmentType.CENTER,
-            children: [new ImageRun({
-              type: "png",
-              data: await svgToPngData(lesson.diagramSvg),
-              transformation: { width: 430, height: 260 }
-            })]
-          }),
-          ...(lesson.diagramDescription ? [createParagraph(lesson.diagramDescription, false, "333333", 20)] : []),
-          new Paragraph({ text: "", spacing: { after: 300 } })
-        ] : []),
+        ...((lesson.diagrams && lesson.diagrams.length > 0)
+          ? (await Promise.all(lesson.diagrams.map(async (diagram) => [
+              ...(diagram.title ? [createParagraph(diagram.title, true, theme.hex, 22, AlignmentType.CENTER)] : []),
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [new ImageRun({
+                  type: "png",
+                  data: await svgToPngData(diagram.svg || ""),
+                  transformation: { width: 430, height: 260 }
+                })]
+              }),
+              ...(diagram.description ? [createParagraph(diagram.description, false, "333333", 20)] : []),
+              new Paragraph({ text: "", spacing: { after: 300 } })
+            ]) )).then(items => items.flat()))
+          : (lesson.diagramSvg ? [
+              createParagraph(lesson.diagramTitle || "المخطط", true, theme.hex, 22, AlignmentType.CENTER),
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [new ImageRun({
+                  type: "png",
+                  data: await svgToPngData(lesson.diagramSvg),
+                  transformation: { width: 430, height: 260 }
+                })]
+              }),
+              ...(lesson.diagramDescription ? [createParagraph(lesson.diagramDescription, false, "333333", 20)] : []),
+              new Paragraph({ text: "", spacing: { after: 300 } })
+            ] : [])),
         new Paragraph({ text: "", spacing: { after: 400 } }),
 
         // 5. سير الحصة (جدول الأنشطة)
