@@ -13,7 +13,10 @@ import {
   ShadingType,
   PageOrientation,
   Header,
-  PageBreak
+  Footer,
+  PageBreak,
+  ImageRun,
+  PageNumber
 } from "docx";
 import { MemoConfig } from "../types";
 import { LogEntry } from "../components/DailyLogbook";
@@ -61,7 +64,72 @@ const createCell = (text: string, bold = false, bgColor?: string, columnSpan?: n
   });
 };
 
-const WEEK_DAYS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', ' الخميس'];
+const WEEK_DAYS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
+
+const base64ToUint8Array = (base64: string): Uint8Array => {
+  const binary = window.atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+};
+
+const imageDataUrlToPng = async (dataUrl: string): Promise<Uint8Array> => {
+  if (!dataUrl.startsWith("data:image/")) throw new Error("Unsupported image data");
+  const image = new Image();
+  image.src = dataUrl;
+  await new Promise<void>((resolve, reject) => {
+    image.onload = () => resolve();
+    image.onerror = () => reject(new Error("تعذر تحميل صورة الختم"));
+  });
+  const canvas = document.createElement("canvas");
+  canvas.width = image.naturalWidth || 512;
+  canvas.height = image.naturalHeight || 512;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas غير متاح");
+  ctx.drawImage(image, 0, 0);
+  return base64ToUint8Array(canvas.toDataURL("image/png").split(",")[1]);
+};
+
+const buildTeacherStampSvg = (config: MemoConfig, size = 420): string => {
+  const name = (config.teacherName || "").replace(/[<>&"]/g, "");
+  const school = (config.schoolName || "").slice(0, 30).replace(/[<>&"]/g, "");
+  const grade = (config.teacherGrade || "أستاذ المادة").replace("للتعليم المتوسط", "").trim().replace(/[<>&"]/g, "");
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <rect width="100%" height="100%" fill="white"/>
+    <circle cx="210" cy="210" r="170" fill="#eff6ff" fill-opacity=".55" stroke="#1d4ed8" stroke-width="7" stroke-dasharray="12 6"/>
+    <circle cx="210" cy="210" r="132" fill="none" stroke="#1d4ed8" stroke-width="3"/>
+    <text x="210" y="105" text-anchor="middle" font-family="Arial" font-size="25" font-weight="bold" fill="#1e40af">الجمهورية الجزائرية الديمقراطية الشعبية</text>
+    <text x="210" y="150" text-anchor="middle" font-family="Arial" font-size="23" font-weight="bold" fill="#1e40af">وزارة التربية الوطنية</text>
+    <text x="210" y="200" text-anchor="middle" font-family="Arial" font-size="22" font-weight="bold" fill="#1e40af">علوم الطبيعة والحياة</text>
+    <text x="210" y="245" text-anchor="middle" font-family="Arial" font-size="30" font-weight="900" fill="#1e40af">${name}</text>
+    <text x="210" y="285" text-anchor="middle" font-family="Arial" font-size="20" font-weight="bold" fill="#1e40af">${grade}</text>
+    <text x="210" y="320" text-anchor="middle" font-family="Arial" font-size="17" fill="#1e40af">${school}</text>
+  </svg>`;
+};
+
+const svgToPngData = async (svg: string, width = 420, height = 420): Promise<Uint8Array> => {
+  const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  try {
+    const image = new Image();
+    image.src = url;
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () => reject(new Error("تعذر تحويل الختم إلى صورة"));
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas غير متاح");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(image, 0, 0, width, height);
+    return base64ToUint8Array(canvas.toDataURL("image/png").split(",")[1]);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+};
 
 export const generateLogbookDocx = async (
   logs: LogEntry[], 
@@ -147,7 +215,7 @@ export const generateLogbookDocx = async (
         new TableRow({ children: [ createCell("الأستاذ(ة):", true, undefined, 1, 1, 20, AlignmentType.RIGHT), createCell(config.teacherName || '—', true, undefined, 1, 1, 20, AlignmentType.RIGHT) ] }),
         new TableRow({ children: [ createCell("المادة:", true, undefined, 1, 1, 20, AlignmentType.RIGHT), createCell("علوم الطبيعة والحياة", true, undefined, 1, 1, 20, AlignmentType.RIGHT) ] }),
         new TableRow({ children: [ createCell("المتوسطة:", true, undefined, 1, 1, 20, AlignmentType.RIGHT), createCell(config.schoolName || '—', true, undefined, 1, 1, 20, AlignmentType.RIGHT) ] }),
-        new TableRow({ children: [ createCell("السنة الدراسية:", true, undefined, 1, 1, 20, AlignmentType.RIGHT), createCell(config.schoolYear || '2025 - 2026', true, undefined, 1, 1, 20, AlignmentType.RIGHT) ] }),
+        new TableRow({ children: [ createCell("السنة الدراسية:", true, undefined, 1, 1, 20, AlignmentType.RIGHT), createCell(config.schoolYear || '', true, undefined, 1, 1, 20, AlignmentType.RIGHT) ] }),
         new TableRow({ children: [ createCell("المستويات المسندة:", true, undefined, 1, 1, 20, AlignmentType.RIGHT), createCell(assignedLevels.join(' ، '), true, undefined, 1, 1, 20, AlignmentType.RIGHT) ] }),
       ]
     }),
@@ -239,6 +307,16 @@ export const generateLogbookDocx = async (
 
 
 
+  const teacherStampData = config.teacherStamp?.startsWith("data:image/")
+    ? await imageDataUrlToPng(config.teacherStamp)
+    : await svgToPngData(buildTeacherStampSvg(config), 420, 420);
+
+  const teacherStampRun = () => new ImageRun({
+    type: "png",
+    data: teacherStampData,
+    transformation: { width: 58, height: 58 }
+  });
+
   const doc = new Document({
     styles: {
       default: {
@@ -257,6 +335,20 @@ export const generateLogbookDocx = async (
             margin: { top: 720, bottom: 720, right: 720, left: 720 }
           }
         },
+        footers: {
+          default: new Footer({
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [
+                  teacherStampRun(),
+                  new TextRun({ text: "   الصفحة ", font: "Arial", rightToLeft: true }),
+                  new TextRun({ children: [PageNumber.CURRENT], font: "Arial" })
+                ]
+              })
+            ]
+          })
+        },
         children: [
           ...frontPageChildren,
           new Paragraph({
@@ -271,6 +363,20 @@ export const generateLogbookDocx = async (
             size: { orientation: PageOrientation.LANDSCAPE },
             margin: { top: 720, bottom: 720, right: 720, left: 720 }
           }
+        },
+        footers: {
+          default: new Footer({
+            children: [
+              new Paragraph({
+                alignment: AlignmentType.CENTER,
+                children: [
+                  teacherStampRun(),
+                  new TextRun({ text: "   الصفحة ", font: "Arial", rightToLeft: true }),
+                  new TextRun({ children: [PageNumber.CURRENT], font: "Arial" })
+                ]
+              })
+            ]
+          })
         },
         headers: {
           default: new Header({
