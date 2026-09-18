@@ -11,7 +11,9 @@ import {
   BorderStyle, 
   VerticalAlign,
   ShadingType,
-  PageOrientation
+  PageOrientation,
+  Footer,
+  PageNumber
 } from "docx";
 import { MemoConfig } from "../types";
 import { GeneratedSession as CurriculumSession } from "./annualDistributionGenerator";
@@ -140,6 +142,17 @@ export const generateDistributionDocx = async (
             },
             margin: { top: 720, bottom: 720, right: 720, left: 720 }
           }
+        },
+        footers: {
+          default: new Footer({
+            children: [new Paragraph({
+              alignment: AlignmentType.CENTER,
+              children: [
+                new TextRun({ text: 'الصفحة ', font: 'Arial', rightToLeft: true }),
+                new TextRun({ children: [PageNumber.CURRENT], font: 'Arial' })
+              ]
+            })]
+          })
         },
         children: [
           // Header info
