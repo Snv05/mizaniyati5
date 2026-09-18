@@ -23,8 +23,7 @@ export function buildLessons3AM(): any[] {
         const firstAct = lu.activities[0];
         const diagrams = lu.activities.flatMap(a => (a.diagrams || []).map(d => ({
           title: d.diagram_title,
-          svg: d.diagram_svg,
-          description: d.diagram_description
+          svg: d.diagram_svg
         }))).filter(d => !!d.svg);
         const firstDiagram = diagrams[0];
         diagramSvg = firstDiagram?.svg;
