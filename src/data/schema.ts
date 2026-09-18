@@ -13,6 +13,8 @@ export interface DB_Field {
 export interface DB_Sequence {
   sequence_id: string;
   sequence_name: string;
+  /** Official curriculum field/midan; populated only from source sequence metadata. */
+  field_name?: string;
   resources: DB_Resource[];
 }
 
