@@ -19,7 +19,7 @@ interface Props {
 export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, showToast }) => {
   const [showPreview, setShowPreview] = useState(false);
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
-  const [startDate, setStartDate] = useState('2023-09-17');
+  const [startDate, setStartDate] = useState('');
 
   // Group by pages based on the midan (Page 1: الإنسان والصحة, Page 2: التنسيق الوظيفي, Page 3: انتقال الصفات)
   
@@ -31,11 +31,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
     if (level === '1am') baseLessons = LESSONS_1AM;
 
     // Use empty holidays array for now, or you could pass config.holidays if added to MemoConfig
-    const dynamicCurriculum = generateAnnualDistribution(baseLessons, startDate, [
-      { startDate: '2023-10-31', endDate: '2023-11-05', label: 'عطلة الخريف' },
-      { startDate: '2023-12-21', endDate: '2024-01-06', label: 'عطلة الشتاء' },
-      { startDate: '2024-03-21', endDate: '2024-04-06', label: 'عطلة الربيع' }
-    ]);
+    const dynamicCurriculum = generateAnnualDistribution(baseLessons, startDate, []);
 
     if (level === '4am') {
       return [
