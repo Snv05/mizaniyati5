@@ -24,6 +24,7 @@ interface SidebarControlsProps {
   mawridList: string[];
   ta3alomList: string[];
   showToast: (msg: string) => void;
+  maqatiList?: string[];
 }
 
 export const SidebarControls: React.FC<SidebarControlsProps> = ({
@@ -46,6 +47,7 @@ export const SidebarControls: React.FC<SidebarControlsProps> = ({
   mawridList,
   ta3alomList,
   showToast,
+  maqatiList: providedMaqatiList,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [copiedIrsae, setCopiedIrsae] = useState(false);
@@ -69,7 +71,7 @@ export const SidebarControls: React.FC<SidebarControlsProps> = ({
     reader.readAsDataURL(file);
   };
 
-  const maqatiList = MAQATI_BY_LEVEL[selectedLevel] || [];
+  const maqatiList = providedMaqatiList || MAQATI_BY_LEVEL[selectedLevel] || [];
 
   return (
     <aside id="sidebar-controls" className="w-full lg:w-[360px] bg-white border-l border-gray-200 lg:h-screen lg:sticky lg:top-0 overflow-y-auto shrink-0 z-10">
