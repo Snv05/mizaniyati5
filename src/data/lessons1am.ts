@@ -28,7 +28,6 @@ for (const seq of DB_1AM) {
       const diagrams = unit.activities.flatMap(act => (act.diagrams || []).map(d => ({
         title: d.diagram_title,
         svg: d.diagram_svg,
-        description: d.diagram_description
       }))).filter(d => !!d.svg);
 
       LESSONS_1AM.push({
