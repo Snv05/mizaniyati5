@@ -1,4 +1,4 @@
-import { DB_Sequence, DB_Resource, DB_LearningUnit, DB_Activity } from './schema';
+import { DB_Sequence } from './schema';
 import { seq_3am_1 } from './official_3am_maqta1';
 import { seq_3am_2 } from './official_3am_maqta2';
 import { seq_3am_3 } from './official_3am_maqta3';
