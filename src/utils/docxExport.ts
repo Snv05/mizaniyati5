@@ -34,7 +34,7 @@ const imageDataUrlToPng = async (dataUrl: string): Promise<Uint8Array> => {
   return base64ToUint8Array(canvas.toDataURL("image/png").split(",")[1]);
 };
 
-const svgToPngData = async (svg: string, width = 420, height = 420): Promise<Uint8Array> => {
+const svgToPngData = async (svg: string, width = 860, height = 590): Promise<Uint8Array> => {
   const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   try {
@@ -180,8 +180,8 @@ export const generateDocx = async (lesson: LessonMemo, config: MemoConfig, activ
             alignment: AlignmentType.CENTER,
             children: [new ImageRun({
               type: "png",
-              data: await svgToPngData(diagram.svg || ""),
-              transformation: { width: 430, height: 260 }
+              data: await svgToPngData(diagram.svg || "", 860, 590),
+              transformation: { width: 430, height: 295 }
             })]
           }),
           ...(diagram.description ? [createParagraph(diagram.description, false, "333333", 20)] : []),
@@ -195,8 +195,8 @@ export const generateDocx = async (lesson: LessonMemo, config: MemoConfig, activ
             alignment: AlignmentType.CENTER,
             children: [new ImageRun({
               type: "png",
-              data: await svgToPngData(lesson.diagramSvg),
-              transformation: { width: 430, height: 260 }
+              data: await svgToPngData(lesson.diagramSvg, 860, 590),
+              transformation: { width: 430, height: 295 }
             })]
           }),
           ...(lesson.diagramDescription ? [createParagraph(lesson.diagramDescription, false, "333333", 20)] : []),
