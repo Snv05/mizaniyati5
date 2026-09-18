@@ -608,36 +608,50 @@ export const MemoSheet: React.FC<MemoSheetProps> = ({
         )}
       </div>
 
-      {/* 5.5. الرسم التخطيطي والسند العلمي المرفق بالمذكرة (إن وجد) */}
-      {(lesson.diagramSvg || lesson.diagram) && (
+      {/* 5.5. الرسومات والسندات العلمية المرفقة بالمذكرة */}
+      {((lesson.diagrams && lesson.diagrams.length > 0) || lesson.diagramSvg || lesson.diagram) && (
         <div className="mt-6 p-4 rounded-xl border border-gray-300 bg-gray-50/70 print:border-gray-400 print:bg-white page-break-inside-avoid">
-          <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-gray-200">
+          <div className="flex items-center justify-between gap-2 mb-3 pb-2 border-b border-gray-200">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: theme.hex }}></span>
               <span className="font-extrabold text-[13px] text-gray-900">
-                السند العلمي والرسم التخطيطي للمورد: {lesson.diagramTitle || (typeof lesson.diagram === 'object' ? lesson.diagram?.title : undefined) || 'رسم تخطيطي تفسيري'}
+                السندات العلمية والرسومات التخطيطية للمورد
               </span>
             </div>
             <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white border border-gray-200 text-gray-600 print:hidden">
-              وثيقة إيضاحية بيداغوجية
+              وثائق المذكرة
             </span>
           </div>
 
-          <div
-            className="w-full flex items-center justify-center p-2 bg-white rounded-lg border border-gray-200 overflow-x-auto shadow-2xs"
-            dangerouslySetInnerHTML={{
-              __html: typeof lesson.diagram === 'string'
-                ? lesson.diagram
-                : (lesson.diagramSvg || lesson.diagram?.svg || '')
-            }}
-          />
-
-          {(lesson.diagramDescription || (typeof lesson.diagram === 'object' ? lesson.diagram?.description : undefined)) && (
-            <p className="mt-2 text-[12px] text-gray-600 leading-relaxed font-medium text-center">
-              <span className="font-bold text-gray-800">توضيح بيداغوجي: </span>
-              {lesson.diagramDescription || (typeof lesson.diagram === 'object' ? lesson.diagram?.description : undefined)}
-            </p>
-          )}
+          <div className="space-y-4">
+            {(lesson.diagrams && lesson.diagrams.length > 0
+              ? lesson.diagrams
+              : [{
+                  title: lesson.diagramTitle,
+                  svg: typeof lesson.diagram === 'string'
+                    ? lesson.diagram
+                    : (lesson.diagramSvg || lesson.diagram?.svg || ''),
+                  description: lesson.diagramDescription || (typeof lesson.diagram === 'object' ? lesson.diagram?.description : undefined)
+                }]
+            ).map((diagram, index) => (
+              <div key={index} className="page-break-inside-avoid">
+                {diagram.title && (
+                  <div className="font-extrabold text-[12.5px] text-center mb-2" style={{ color: theme.hex }}>
+                    {diagram.title}
+                  </div>
+                )}
+                <div
+                  className="w-full flex items-center justify-center p-2 bg-white rounded-lg border border-gray-200 overflow-x-auto shadow-2xs"
+                  dangerouslySetInnerHTML={{ __html: diagram.svg || '' }}
+                />
+                {diagram.description && (
+                  <p className="mt-2 text-[12px] text-gray-600 leading-relaxed font-medium text-center">
+                    {diagram.description}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
