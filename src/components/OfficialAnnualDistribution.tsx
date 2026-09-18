@@ -31,7 +31,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
     if (level === '1am') baseLessons = LESSONS_1AM;
 
     // Use empty holidays array for now, or you could pass config.holidays if added to MemoConfig
-    const dynamicCurriculum = generateAnnualDistribution(baseLessons, startDate, holidays);
+    const dynamicCurriculum = generateAnnualDistribution(baseLessons, startDate, []);
 
     if (level === '4am') {
       const maqta1 = 'المقطع الأول: التغذية عند الإنسان';
