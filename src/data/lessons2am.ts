@@ -37,7 +37,7 @@ for (const seq of DB_2AM) {
       LESSONS_2AM.push({
         level: '2am',
         memoNumber: memoCounter.toString().padStart(2, '0'),
-        midan: 'الإنسان والمحيط', // Hardcoded for 2AM as per DB
+        midan: seq.field_name || '',
         maqta: seq.sequence_name,
         mawrid: res.resource_name,
         ta3alom: unit.learning_unit_name,
