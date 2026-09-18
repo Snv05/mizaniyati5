@@ -16,11 +16,22 @@ import {
 import { LessonMemo, MemoConfig, Activity } from "../types";
 
 
-const imageDataUrlToUint8Array = async (dataUrl: string): Promise<{ data: Uint8Array; type: "png" | "jpg" | "gif" | "bmp" }> => {
+const imageDataUrlToPng = async (dataUrl: string): Promise<Uint8Array> => {
   if (!dataUrl.startsWith("data:image/")) throw new Error("Unsupported image data");
-  const mime = dataUrl.slice(5, dataUrl.indexOf(";"));
-  const type = mime === "image/jpeg" ? "jpg" : mime.split("/")[1] as "png" | "jpg" | "gif" | "bmp";
-  return { data: base64ToUint8Array(dataUrl.split(",")[1]), type };
+  const image = new Image();
+  image.src = dataUrl;
+  await new Promise<void>((resolve, reject) => {
+    image.onload = () => resolve();
+    image.onerror = () => reject(new Error("تعذر تحميل صورة الختم"));
+  });
+  const canvas = document.createElement("canvas");
+  canvas.width = image.naturalWidth || 512;
+  canvas.height = image.naturalHeight || 512;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas غير متاح");
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(image, 0, 0);
+  return base64ToUint8Array(canvas.toDataURL("image/png").split(",")[1]);
 };
 
 const svgToPngData = async (svg: string, width = 420, height = 420): Promise<Uint8Array> => {
@@ -151,6 +162,16 @@ export const generateDocx = async (lesson: LessonMemo, config: MemoConfig, activ
       ? 'السنة الثانية متوسط'
       : 'السنة الأولى متوسط';
 
+  const teacherStampData = config.teacherStamp?.startsWith("data:image/")
+    ? await imageDataUrlToPng(config.teacherStamp)
+    : await svgToPngData(buildTeacherStampSvg(config), 420, 420);
+
+  const teacherStampRun = new ImageRun({
+    type: "png",
+    data: teacherStampData,
+    transformation: { width: 72, height: 72 }
+  });
+
   const doc = new Document({
     styles: {
       default: {
@@ -167,7 +188,8 @@ export const generateDocx = async (lesson: LessonMemo, config: MemoConfig, activ
             new Paragraph({
               alignment: AlignmentType.CENTER,
               children: [
-                new TextRun({ text: "الصفحة ", font: "Arial" }),
+                teacherStampRun,
+                new TextRun({ text: "   الصفحة ", font: "Arial" }),
                 new TextRun({ children: [PageNumber.CURRENT], font: "Arial" }),
                 new TextRun({ text: " من ", font: "Arial" }),
                 new TextRun({ children: [PageNumber.TOTAL_PAGES], font: "Arial" })
@@ -550,7 +572,7 @@ export const generateDocx = async (lesson: LessonMemo, config: MemoConfig, activ
 (config.teacherStamp && config.teacherStamp.startsWith('data:image/'))
                       ? new Paragraph({
                           alignment: AlignmentType.CENTER,
-                          children: [new ImageRun({ ...(await imageDataUrlToUint8Array(config.teacherStamp)), transformation: { width: 110, height: 110 } })]
+                          children: [new ImageRun({ type: "png", data: await imageDataUrlToPng(config.teacherStamp), transformation: { width: 110, height: 110 } })]
                         })
                       : new Paragraph({
                           alignment: AlignmentType.CENTER,
