@@ -42,7 +42,7 @@ for (const seq of DB_2AM) {
         mawrid: res.resource_name,
         ta3alom: unit.learning_unit_name,
         markaba: unit.markaba,
-        kafaaKhitamiya: 'يقترح حلولاً وقائية وتدخليّة ناجعة للتدخلات السلبية للإنسان تجاه المحيط استناداً إلى المعارف المتعلقة بالأنظمة البيئية وتوزع الكائنات الحية فيها.',
+        kafaaKhitamiya: unit.kafaaKhitamiya || '',
         ma3ayirTaqwim: unit.qayimi,
         marifa: unit.marifa,
         manhaji: unit.manhaji,
