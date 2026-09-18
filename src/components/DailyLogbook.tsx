@@ -199,7 +199,9 @@ const EMPTY_TIMETABLE_ROWS: TimetableGridRow[] = Array.from({ length: 8 }, (_, i
   id: `r${i + 1}`,
   time: ALL_PERIODS[i],
   cells: createEmptyDayCells(),
-}));\n\nconst ROWS_PER_PAGE = 20;
+}));
+
+const ROWS_PER_PAGE = 20;
 const PAGE_DIMENSIONS_MM = { w: 210, h: 297 };
 const PRINT_MARGIN = '14mm';
 const PAGE_INNER_PADDING = '14px';
