@@ -18,7 +18,9 @@ export function buildLessons3AM(): any[] {
   for (const seq of MAQATI_3AM) {
     for (const res of seq.resources) {
       for (const lu of res.learning_units) {
-        let diagramSvg = undefined;
+        let diagramSvg: string | undefined = undefined;
+        let diagramTitle: string | undefined = undefined;
+        const firstAct = lu.activities[0];
         const diagrams = lu.activities.flatMap(a => (a.diagrams || []).map(d => ({
           title: d.diagram_title,
           svg: d.diagram_svg,
