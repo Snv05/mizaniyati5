@@ -122,6 +122,10 @@ export const generateDistributionDocx = async (
       : level === '2am' ? 'السنة الثانية متوسط'
       : 'السنة الأولى متوسط';
 
+  const teacherStampData = config.teacherStamp?.startsWith("data:image/")
+    ? await imageDataUrlToPng(config.teacherStamp)
+    : await svgToPngData(buildTeacherStampSvg(config));
+
   const doc = new Document({
     styles: {
       default: {
@@ -273,7 +277,7 @@ export const generateDistributionDocx = async (
                 children: [
                   new TableCell({ children: [
                     createParagraph("إمضاء الأستاذ(ة):", true, "000000", 22, AlignmentType.RIGHT),
-                    new Paragraph({ alignment: AlignmentType.CENTER, children: [new ImageRun({ type: "png", data: config.teacherStamp?.startsWith("data:image/") ? await imageDataUrlToPng(config.teacherStamp) : await svgToPngData(buildTeacherStampSvg(config)), transformation: { width: 90, height: 90 } })] })
+                    new Paragraph({ alignment: AlignmentType.CENTER, children: [new ImageRun({ type: "png", data: teacherStampData, transformation: { width: 90, height: 90 } })] })
                   ] }),
                   createCell("السيد(ة) المدير(ة):", true, undefined, 1, 1, 22, AlignmentType.CENTER),
                   createCell("السيد(ة) المفتش(ة):", true, undefined, 1, 1, 22, AlignmentType.LEFT),
