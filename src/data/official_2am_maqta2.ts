@@ -3,6 +3,7 @@ import { DB_Sequence } from './schema';
 export const seq_2: DB_Sequence = {
   sequence_id: 'seq_02',
   sequence_name: 'المقطع التعلمي 02: توزع الكائنات الحية في أوساطها',
+  field_name: 'الإنسان والمحيط',
   resources: [
     {
       resource_id: 'res_2_1',
