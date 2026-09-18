@@ -114,7 +114,7 @@ export const PlatformNavigationDrawer: React.FC<PlatformNavigationDrawerProps> =
 
           <div className="mt-3.5 pt-3 border-t border-white/10 flex items-center justify-between text-[11.5px] text-gray-300">
             <span>الموسم: <strong>{config.schoolYear}</strong></span>
-            <span className="truncate max-w-[150px]">{config.teacherName || 'أستاذ المادة'}</span>
+            <span className="truncate max-w-[150px]">{config.teacherName || ''}</span>
           </div>
         </div>
 
