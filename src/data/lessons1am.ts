@@ -4,6 +4,7 @@ import { seq_2 } from './official_1am_maqta2';
 import { seq_3, seq_4 } from './official_1am_maqta3';
 import { seq_5, seq_6 } from './official_1am_maqta4';
 import { seq_7, seq_8, seq_9 } from './official_1am_maqta5';
+import { validate1AMDatabase } from './validate1am';
 
 const DB_1AM = [seq_1, seq_2, seq_3, seq_4, seq_5, seq_6, seq_7, seq_8, seq_9];
 
@@ -65,4 +66,9 @@ for (const seq of DB_1AM) {
       memoCounter++;
     }
   }
+}
+
+const validationErrors1AM = validate1AMDatabase(LESSONS_1AM);
+if (validationErrors1AM.length > 0) {
+  console.error('[1AM DB integrity]', validationErrors1AM);
 }
