@@ -15,5 +15,35 @@ jobs:
         with:
           node-version: 20
       - run: npm install
-      - run: npm run lint
-      - run: npm run build
+
+      - name: TypeScript check
+        id: lint
+        continue-on-error: true
+        run: |
+          npm run lint > lint.log 2>&1
+          status=$?
+          cat lint.log
+          exit $status
+
+      - name: Build
+        id: build
+        continue-on-error: true
+        run: |
+          npm run build > build.log 2>&1
+          status=$?
+          cat build.log
+          exit $status
+
+      - name: Upload verification logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification-logs
+          path: |
+            lint.log
+            build.log
+          if-no-files-found: warn
+
+      - name: Fail if verification failed
+        if: steps.lint.outcome == 'failure' || steps.build.outcome == 'failure'
+        run: exit 1
