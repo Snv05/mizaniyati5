@@ -21,7 +21,7 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import { LessonMemo, MemoConfig } from './types';
-import { LESSONS_DATA, MAQATI_BY_LEVEL, LEVELS } from './data/lessonsData';
+import { LEVELS } from './data/lessonsData';
 import { SidebarControls } from './components/SidebarControls';
 import { MemoSheet } from './components/MemoSheet';
 import { PreviewModal } from './components/PreviewModal';
