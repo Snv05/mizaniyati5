@@ -37,12 +37,11 @@ for (const seq of DB_1AM) {
       LESSONS_1AM.push({
         level: '1am',
         memoNumber: memoCounter.toString().padStart(2, '0'),
-        midan: midan,
+        midan: seq.field_name || '',
         maqta: seq.sequence_name,
         mawrid: res.resource_name,
         ta3alom: unit.learning_unit_name,
         markaba: unit.markaba,
-        kafaaKhitamiya: kafaa,
         ma3ayirTaqwim: unit.qayimi,
         marifa: unit.marifa,
         manhaji: unit.manhaji,
