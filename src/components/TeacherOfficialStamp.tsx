@@ -66,9 +66,9 @@ export const TeacherOfficialStamp: React.FC<TeacherOfficialStampProps> = ({
     },
   }[color];
 
-  const teacherName = config.teacherName || 'أستاذ المادة';
-  const schoolName = config.schoolName ? config.schoolName.slice(0, 32) : 'المتوسطة';
-  const directorate = config.directorate ? config.directorate.replace('مديرية التربية لولاية', 'م.ت.و.').slice(0, 24) : 'علوم الطبيعة والحياة';
+  const teacherName = config.teacherName || '';
+  const schoolName = config.schoolName ? config.schoolName.slice(0, 32) : '';
+  const directorate = config.directorate ? config.directorate.replace('مديرية التربية لولاية', 'م.ت.و.').slice(0, 24) : '';
 
   const center = dimensions.width / 2;
 
