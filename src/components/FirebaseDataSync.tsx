@@ -34,6 +34,16 @@ export const FirebaseDataSync: React.FC = () => {
           }
         }
 
+        // Sync Curriculum DB
+        const curriculumDoc = await getDoc(doc(db, 'users', user.uid, 'data', 'curriculum'));
+        if (curriculumDoc.exists()) {
+          const data = curriculumDoc.data();
+          if (Array.isArray(data.lessons)) {
+            localStorage.setItem('mizaniyati_curriculum_db_v1', JSON.stringify(data.lessons));
+            window.dispatchEvent(new CustomEvent('curriculum-db-updated'));
+          }
+        }
+
         // Sync Logbook
         const logbookDoc = await getDoc(doc(db, 'users', user.uid, 'data', 'logbook'));
         if (logbookDoc.exists()) {
@@ -60,7 +70,7 @@ export const FirebaseDataSync: React.FC = () => {
   useEffect(() => {
     if (!user) return;
 
-    (window as any).syncToCloud = async (type: 'config' | 'dist' | 'logbook', data: any) => {
+    (window as any).syncToCloud = async (type: 'config' | 'dist' | 'logbook' | 'curriculum', data: any) => {
       try {
         if (type === 'config') {
           await setDoc(doc(db, 'users', user.uid, 'data', 'config'), {
@@ -72,6 +82,12 @@ export const FirebaseDataSync: React.FC = () => {
           await setDoc(doc(db, 'users', user.uid, 'data', 'annualDist'), {
             userId: user.uid,
             items: data,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        } else if (type === 'curriculum') {
+          await setDoc(doc(db, 'users', user.uid, 'data', 'curriculum'), {
+            userId: user.uid,
+            lessons: data,
             updatedAt: serverTimestamp()
           }, { merge: true });
         } else if (type === 'logbook') {
