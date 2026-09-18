@@ -41,6 +41,7 @@ interface DailyLogbookProps {
   setSelectedLevel?: (lvl: '1am' | '2am' | '3am' | '4am') => void;
   config: MemoConfig;
   showToast: (msg: string) => void;
+  curriculumLessons?: LessonMemo[];
 }
 
 export interface CurriculumResourceItem {
@@ -80,12 +81,12 @@ const transformLessonMemoToLogbook = (lessons: LessonMemo[], levelLabel: '1م' |
 };
 
 // ربط مباشر مع قاعدة بيانات التدرج الرسمي (Master Curriculum DB)
-const CURRICULUM_DATABASE: Record<'1م' | '2م' | '3م' | '4م', CurriculumResourceItem[]> = {
-  '1م': transformLessonMemoToLogbook(LESSONS_1AM, '1م'),
-  '2م': transformLessonMemoToLogbook(LESSONS_2AM, '2م'),
-  '3م': transformLessonMemoToLogbook(LESSONS_3AM, '3م'),
-  '4م': transformLessonMemoToLogbook(LESSONS_4AM, '4م'),
-};
+const buildCurriculumDatabase = (lessons?: LessonMemo[]): Record<'1م' | '2م' | '3م' | '4م', CurriculumResourceItem[]> => ({
+  '1م': transformLessonMemoToLogbook((lessons || LESSONS_1AM).filter(l => l.level === '1am'), '1م'),
+  '2م': transformLessonMemoToLogbook((lessons || LESSONS_2AM).filter(l => l.level === '2am'), '2م'),
+  '3م': transformLessonMemoToLogbook((lessons || LESSONS_3AM).filter(l => l.level === '3am'), '3م'),
+  '4م': transformLessonMemoToLogbook((lessons || LESSONS_4AM).filter(l => l.level === '4am'), '4م'),
+});
 
 type AnnualStoredItem = { midan?: string; maqta?: string; mawrid?: string; session1?: string; session2?: string; isHoliday?: boolean; isExam?: boolean; month?: string; dates?: string };
 
@@ -228,8 +229,11 @@ function formatDateToIsoString(d: Date): string {
 export const DailyLogbook: React.FC<DailyLogbookProps> = ({
   config,
   showToast,
+  curriculumLessons,
 }) => {
   // State for Header Info (synced with config initially)
+  const CURRICULUM_DATABASE = useMemo(() => buildCurriculumDatabase(curriculumLessons), [curriculumLessons]);
+
   const [wilaya, setWilaya] = useState<string>(config.directorate || '');
   const [school, setSchool] = useState<string>(config.schoolName || '');
   const [teacher, setTeacher] = useState<string>(config.teacherName || '');
