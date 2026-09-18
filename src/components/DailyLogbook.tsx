@@ -195,39 +195,11 @@ export interface LogEntry {
   wasail?: string;
 }
 
-const DEFAULT_TIMETABLE_ROWS: TimetableGridRow[] = [
-  { id: 'r1', time: '08:00 - 09:00', cells: { الأحد: '4م1 - المخبر', الإثنين: '', الثلاثاء: '1م1 - قاعة 13/9', الأربعاء: '', الخميس: '2م2 - المخبر' } },
-  { id: 'r2', time: '09:00 - 10:00', cells: { الأحد: '4م1 - المخبر', الإثنين: '', الثلاثاء: '1م1 - قاعة 13/9', الأربعاء: '', الخميس: '2م2 - المخبر' } },
-  { id: 'r3', time: '10:00 - 11:00', cells: { الأحد: '2م1 - المخبر', الإثنين: '', الثلاثاء: '', الأربعاء: '', الخميس: '3م1 - قاعة 11' } },
-  { id: 'r4', time: '11:00 - 12:00', cells: { الأحد: '2م1 - المخبر', الإثنين: '', الثلاثاء: '', الأربعاء: '', الخميس: '' } },
-  { id: 'r5', time: '13:30 - 14:30', cells: { الأحد: '3م1 - المخبر', الإثنين: '2م2 - قاعة 4', الثلاثاء: '', الأربعاء: '', الخميس: '1م1 - قاعة 9' } },
-  { id: 'r6', time: '14:30 - 15:30', cells: { الأحد: '3م1 - المخبر', الإثنين: '2م1 - قاعة 10', الثلاثاء: '', الأربعاء: '', الخميس: '4م1 - قاعة 12' } },
-  { id: 'r7', time: '15:30 - 16:30', cells: { الأحد: '', الإثنين: '', الثلاثاء: '', الأربعاء: '', الخميس: '' } },
-  { id: 'r8', time: '16:30 - 17:30', cells: { الأحد: '', الإثنين: '', الثلاثاء: '', الأربعاء: '', الخميس: '' } },
-];
-
-const AUTO_FILLED_TIMETABLE_ROWS: TimetableGridRow[] = [
-  { id: 'r1', time: '08:00 - 09:00', cells: { الأحد: '4م1 - المخبر', الإثنين: '', الثلاثاء: '1م1 - قاعة 13/9', الأربعاء: '', الخميس: '2م2 - المخبر' } },
-  { id: 'r2', time: '09:00 - 10:00', cells: { الأحد: '4م1 - المخبر', الإثنين: '', الثلاثاء: '1م1 - قاعة 13/9', الأربعاء: '', الخميس: '2م2 - المخبر' } },
-  { id: 'r3', time: '10:00 - 11:00', cells: { الأحد: '2م1 - المخبر', الإثنين: '', الثلاثاء: '', الأربعاء: '', الخميس: '3م1 - قاعة 11' } },
-  { id: 'r4', time: '11:00 - 12:00', cells: { الأحد: '2م1 - المخبر', الإثنين: '', الثلاثاء: '', الأربعاء: '', الخميس: '' } },
-  { id: 'r5', time: '13:30 - 14:30', cells: { الأحد: '3م1 - المخبر', الإثنين: '2م2 - قاعة 4', الثلاثاء: '', الأربعاء: '', الخميس: '1م1 - قاعة 9' } },
-  { id: 'r6', time: '14:30 - 15:30', cells: { الأحد: '3م1 - المخبر', الإثنين: '2م1 - قاعة 10', الثلاثاء: '', الأربعاء: '', الخميس: '4م1 - قاعة 12' } },
-  { id: 'r7', time: '15:30 - 16:30', cells: { الأحد: '', الإثنين: '', الثلاثاء: '', الأربعاء: '', الخميس: '' } },
-  { id: 'r8', time: '16:30 - 17:30', cells: { الأحد: '', الإثنين: '', الثلاثاء: '', الأربعاء: '', الخميس: '' } },
-];
-
-const DEFAULT_HOLIDAYS: HolidayEntry[] = [
-  { id: 'h1', startDate: '2025-11-01', endDate: '2025-11-01', label: 'ذكرى ثورة نوفمبر' },
-  { id: 'h2', startDate: '2025-12-18', endDate: '2026-01-04', label: 'عطلة الشتاء' },
-  { id: 'h3', startDate: '2026-01-12', endDate: '2026-01-12', label: 'رأس السنة الأمازيغية' },
-  { id: 'h4', startDate: '2026-03-19', endDate: '2026-04-05', label: 'عطلة الربيع وعيد الفطر' },
-  { id: 'h5', startDate: '2026-05-01', endDate: '2026-05-01', label: 'عيد العمال' },
-  { id: 'h6', startDate: '2026-05-26', endDate: '2026-05-29', label: 'عيد الأضحى المبارك' },
-  { id: 'h7', startDate: '2026-07-05', endDate: '2026-07-05', label: 'عيد الاستقلال' },
-];
-
-const ROWS_PER_PAGE = 20;
+const EMPTY_TIMETABLE_ROWS: TimetableGridRow[] = Array.from({ length: 8 }, (_, i) => ({
+  id: `r${i + 1}`,
+  time: ALL_PERIODS[i],
+  cells: createEmptyDayCells(),
+}));\n\nconst ROWS_PER_PAGE = 20;
 const PAGE_DIMENSIONS_MM = { w: 210, h: 297 };
 const PRINT_MARGIN = '14mm';
 const PAGE_INNER_PADDING = '14px';
@@ -253,18 +225,18 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
   showToast,
 }) => {
   // State for Header Info (synced with config initially)
-  const [wilaya, setWilaya] = useState<string>(config.directorate || 'مديرية التربية لولاية الجزائر');
-  const [school, setSchool] = useState<string>(config.schoolName || 'متوسطة الشهيد...');
-  const [teacher, setTeacher] = useState<string>(config.teacherName || 'الأستاذ(ة): ...');
+  const [wilaya, setWilaya] = useState<string>(config.directorate || '');
+  const [school, setSchool] = useState<string>(config.schoolName || '');
+  const [teacher, setTeacher] = useState<string>(config.teacherName || '');
   const [subject, setSubject] = useState<string>('علوم الطبيعة والحياة');
     const [showSubjectInHeader, setShowSubjectInHeader] = useState<boolean>(true);
   const [showYearInHeader, setShowYearInHeader] = useState<boolean>(false); // احذف السنة الدراسية والمادة اتركها اختيارية
 
   // Timetable grid rows
-  const [gridRows, setGridRows] = useState<TimetableGridRow[]>(DEFAULT_TIMETABLE_ROWS);
+  const [gridRows, setGridRows] = useState<TimetableGridRow[]>(EMPTY_TIMETABLE_ROWS);
 
   // Holidays with date ranges (من تاريخ إلى تاريخ)
-  const [holidays, setHolidays] = useState<HolidayEntry[]>(DEFAULT_HOLIDAYS);
+  const [holidays, setHolidays] = useState<HolidayEntry[]>([]);
   const [newHolidayStartDate, setNewHolidayStartDate] = useState<string>('');
   const [newHolidayEndDate, setNewHolidayEndDate] = useState<string>('');
   const [newHolidayLabel, setNewHolidayLabel] = useState<string>('');
