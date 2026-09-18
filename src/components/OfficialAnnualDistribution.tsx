@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { generateDistributionDocx } from "../utils/docxExportDistribution";
 import { MemoConfig } from '../types';
 import { TeacherOfficialStamp } from './TeacherOfficialStamp';
@@ -68,6 +68,25 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
     return [dynamicCurriculum];
   }, [startDate, level]);
 
+  // Persist the exact generated distribution so the Daily Logbook can use it as its schedule source.
+  useEffect(() => {
+    if (!startDate || pages.length === 0) return;
+    try {
+      const key = 'algeria_sciences_annual_dist_v4';
+      const existing = JSON.parse(localStorage.getItem(key) || '{}');
+      existing[level] = {
+        startDate,
+        orientation,
+        items: pages.flat()
+      };
+      localStorage.setItem(key, JSON.stringify(existing));
+      if ((window as any).syncToCloud) {
+        (window as any).syncToCloud('annualDist', existing);
+      }
+    } catch (error) {
+      console.error('تعذر حفظ التدرج السنوي للربط الذكي:', error);
+    }
+  }, [pages, startDate, level, orientation]);
 
 
   const handlePrint = () => {
