@@ -91,7 +91,7 @@ const renderTables = (tables?: { headers: string[], rows: string[][] }[]) => {
 };
 
 export const generateDocx = async (lesson: LessonMemo, config: MemoConfig, activeActivities: boolean[], isMergedFormat: boolean): Promise<Blob> => {
-  const theme = THEMES[config.level] || THEMES['2am'];
+  const theme = THEMES[config.level];
   
   const levelLabel =
     config.level === '4am'
@@ -161,7 +161,7 @@ export const generateDocx = async (lesson: LessonMemo, config: MemoConfig, activ
             }),
             new TableRow({
               children: [
-                createCell(`رقم المذكرة: ${config.memoNumber || '01'}`, true, theme.hex, theme.bgSoft, 1, 1, 24, AlignmentType.RIGHT),
+                createCell(`رقم المذكرة: ${config.memoNumber || ''}`, true, theme.hex, theme.bgSoft, 1, 1, 24, AlignmentType.RIGHT),
                 createCell(`المستوى: ${levelLabel}`, true, theme.hex, theme.bgSoft, 1, 1, 26, AlignmentType.CENTER),
                 createCell(`الأستاذ: ${config.teacherName}`, true, "000000", theme.bgSoft, 1, 1, 24, AlignmentType.LEFT),
               ]
@@ -272,7 +272,7 @@ export const generateDocx = async (lesson: LessonMemo, config: MemoConfig, activ
                   margins: { top: 150, bottom: 150, left: 150, right: 150 },
                   children: [
                     createParagraph("معايير التقويم", true, theme.hex),
-                    createParagraph(lesson.ma3ayirTaqwim || '• يحدد المفاهيم الأساسية\n• يحلل الظواهر العلمية بدقة\n• يقترح حلولا علمية مؤسسة', false, "333333")
+                    createParagraph(lesson.ma3ayirTaqwim || '', false, "333333")
                   ]
                 }),
                 new TableCell({
@@ -316,14 +316,14 @@ export const generateDocx = async (lesson: LessonMemo, config: MemoConfig, activ
                   shading: { fill: "F9FAFB", type: ShadingType.CLEAR, color: "auto" },
                   margins: { top: 150, bottom: 150, left: 150, right: 150 },
                   children: [
-                    createParagraph(`المراجع: ${lesson.marajie || 'المنهاج، الوثيقة المرافقة، دليل الأستاذ'}`, true, "333333")
+                    createParagraph(`المراجع: ${lesson.marajie || ''}`, true, "333333")
                   ]
                 }),
                 new TableCell({
                   shading: { fill: "F9FAFB", type: ShadingType.CLEAR, color: "auto" },
                   margins: { top: 150, bottom: 150, left: 150, right: 150 },
                   children: [
-                    createParagraph(`الزمن الكلي: ${lesson.zamanKoli || '6 ساعات'}`, true, "000000", 22, AlignmentType.LEFT)
+                    createParagraph(`الزمن الكلي: ${lesson.zamanKoli || ''}`, true, "000000", 22, AlignmentType.LEFT)
                   ]
                 }),
               ]
