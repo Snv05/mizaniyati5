@@ -26,7 +26,6 @@ for (const seq of DB_2AM) {
       const diagrams = unit.activities.flatMap(act => (act.diagrams || []).map(d => ({
         title: d.diagram_title,
         svg: d.diagram_svg,
-        description: d.diagram_description
       }))).filter(d => !!d.svg);
 
       LESSONS_2AM.push({
@@ -51,8 +50,7 @@ for (const seq of DB_2AM) {
         irsaeTables: unit.irsae_tables,
         taqwimTables: unit.taqwim_tables,
         anshita: anshita,
-        diagramSvg,
-        diagramTitle
+        diagrams
       });
       memoCounter++;
     }
