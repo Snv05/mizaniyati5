@@ -223,8 +223,8 @@ export const AnnualDistribution: React.FC<AnnualDistributionProps> = ({
       </html>
     `;
 
-    const blob = new Blob(['\ufeff', htmlContent], {
-      type: 'application/msword;charset=utf-8',
+    const blob = new Blob([htmlContent], {
+      type: 'text/html;charset=utf-8',
     });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
