@@ -20,6 +20,7 @@ export const FirebaseDataSync: React.FC = () => {
           if (data.config) {
             sessionStorage.setItem('algeria_sciences_session_config', JSON.stringify(data.config));
             localStorage.setItem('algeria_sciences_config', JSON.stringify(data.config));
+            window.dispatchEvent(new CustomEvent('firebase-sync-complete', { detail: { type: 'config' } }));
           }
         }
 
@@ -29,6 +30,7 @@ export const FirebaseDataSync: React.FC = () => {
           const data = distDoc.data();
           if (data.items) {
             localStorage.setItem('algeria_sciences_annual_dist_v4', JSON.stringify(data.items));
+            window.dispatchEvent(new CustomEvent('firebase-sync-complete', { detail: { type: 'dist' } }));
           }
         }
 
@@ -38,6 +40,7 @@ export const FirebaseDataSync: React.FC = () => {
           const data = logbookDoc.data();
           if (data.data) {
             localStorage.setItem('daftar_table_v2027', JSON.stringify(data.data));
+            window.dispatchEvent(new CustomEvent('firebase-sync-complete', { detail: { type: 'logbook' } }));
           }
         }
 
