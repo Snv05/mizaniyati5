@@ -21,6 +21,11 @@ export const UNVERIFIED_CONFLICTS_1AM = [
     sourcePages: '54-56',
     description: 'Supplementary fermentation worksheets contain activities 01-03; activity 03 (comparison between respiration and fermentation) is not present in the current official source activity set.',
   },
+  {
+    code: 'UNVERIFIED_CONFLICT',
+    sourcePages: '24-26',
+    description: 'The memo PDF labels the second activity under "مقر الامتصاص عند النبات الأخضر" as "مقر امتصاص غاز CO2 عند النبات الأخضر" and separately presents تحديد مقر المبادلات الغازية اليخضورية; the current official DB source module uses a broader activity title. Do not silently reconcile until the authoritative curriculum source is identified.',
+  },
 ] as const;
 
 
