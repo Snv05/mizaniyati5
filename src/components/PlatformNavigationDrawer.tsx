@@ -192,7 +192,7 @@ export const PlatformNavigationDrawer: React.FC<PlatformNavigationDrawerProps> =
             </button>
           </div>
 
-          {/* Educational Levels */>
+          {/* Educational Levels */}
           <div className="space-y-1 pt-2 border-t border-gray-100">
             <div className="text-[11px] font-black text-gray-400 uppercase tracking-wider px-2 mb-1.5 flex items-center justify-between">
               <span>المذكرات وتدرج التعلمات</span>
