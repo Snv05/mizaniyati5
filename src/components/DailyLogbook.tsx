@@ -87,6 +87,24 @@ const CURRICULUM_DATABASE: Record<'1م' | '2م' | '3م' | '4م', CurriculumResou
   '4م': transformLessonMemoToLogbook(LESSONS_4AM, '4م'),
 };
 
+type AnnualStoredItem = { midan?: string; maqta?: string; mawrid?: string; session1?: string; session2?: string; isHoliday?: boolean; isExam?: boolean; month?: string; dates?: string };
+
+const getStoredAnnualSchedule = (level: '1م' | '2م' | '3م' | '4م'): { startDate: string; items: AnnualStoredItem[] } | null => {
+  try {
+    const raw = JSON.parse(localStorage.getItem('algeria_sciences_annual_dist_v4') || '{}');
+    const key = level.replace('م', 'am') as '1am' | '2am' | '3am' | '4am';
+    const value = raw?.[key];
+    return value?.startDate && Array.isArray(value.items) ? value : null;
+  } catch {
+    return null;
+  }
+};
+
+const findLessonForScheduledTitle = (bank: CurriculumResourceItem[], title: string): CurriculumResourceItem | null => {
+  if (!title) return null;
+  return bank.find(resource => resource.activities.includes(title)) || null;
+};
+
 const LEVEL_NAMES_MAP: Record<string, string> = {
   '1م': 'السنة الأولى متوسط (1AM)',
   '2م': 'السنة الثانية متوسط (2AM)',
@@ -481,8 +499,23 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
 
         if (sectionCounters[baseSection] === undefined) sectionCounters[baseSection] = 0;
         const currentResIdx = sectionCounters[baseSection] % bank.length;
-        const res = bank[currentResIdx];
         sectionCounters[baseSection] += 1;
+
+        // Smart linkage: when an annual distribution exists, use its exact weekly activity title.
+        const annual = getStoredAnnualSchedule(lvl);
+        let res = bank[currentResIdx];
+        if (annual) {
+          const start = new Date(annual.startDate);
+          while (start.getDay() !== 0) start.setDate(start.getDate() + 1);
+          const current = new Date(dateStr);
+          const diffDays = Math.floor((current.getTime() - start.getTime()) / 86400000);
+          const weekIndex = Math.floor(diffDays / 7);
+          const annualItem = weekIndex >= 0 ? annual.items[weekIndex] : null;
+          const sessionOrdinal = Math.min(sessions.indexOf(firstSess), 1);
+          const scheduledTitle = sessionOrdinal === 0 ? annualItem?.session1 : annualItem?.session2;
+          const scheduled = scheduledTitle ? findLessonForScheduledTitle(bank, scheduledTitle) : null;
+          if (scheduled) res = scheduled;
+        }
 
         const uniqueSections = Array.from(new Set(sessions.map((s) => s.section || 'قسم غير محدد')));
         const combinedSections = uniqueSections.join(' و ');
