@@ -1,4 +1,4 @@
-import { LessonMemo, MemoConfig, Activity } from '../types';
+import { LessonMemo } from '../types';
 
 export interface GeneratedSession {
   midan: string;
