@@ -194,6 +194,7 @@ export const seq_4: DB_Sequence = {
 export const seq_5: DB_Sequence = {
   sequence_id: 'seq_05',
   sequence_name: 'المقطع التعلمي 05: المستحاثات',
+  field_name: 'الإنسان والمحيط',
   resources: [
     {
       resource_id: 'res_5_1',
