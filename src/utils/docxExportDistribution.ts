@@ -13,7 +13,8 @@ import {
   ShadingType,
   PageOrientation,
   Footer,
-  PageNumber
+  PageNumber,
+  ImageRun
 } from "docx";
 import { MemoConfig } from "../types";
 import { GeneratedSession as CurriculumSession } from "./annualDistributionGenerator";
