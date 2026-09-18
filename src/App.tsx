@@ -35,8 +35,10 @@ import { PlatformInfoModal } from './components/PlatformInfoModal';
 import { InteractiveMaqta1 } from './components/InteractiveMaqta1';
 import { UserProfile } from './components/UserProfile';
 import { FirebaseDataSync } from './components/FirebaseDataSync';
+import { CurriculumDatabaseManager } from './components/CurriculumDatabaseManager';
+import { loadCurriculumDatabase } from './data/curriculumDb';
 
-export type MainSectionType = 'home' | '1am' | '2am' | '3am' | '4am' | 'logbook' | 'settings';
+export type MainSectionType = 'home' | '1am' | '2am' | '3am' | '4am' | 'logbook' | 'settings' | 'database';
 
 export const App: React.FC = () => {
   // 0. Primary Navigation State: 'home' (Home page of levels) | '1am' | '2am' | '3am' | '4am' | 'logbook' | 'settings'
@@ -52,17 +54,24 @@ export const App: React.FC = () => {
 
   // Is current section a school year?
   const isYearSection = activeSection === '1am' || activeSection === '2am' || activeSection === '3am' || activeSection === '4am';
+
+  const [curriculumLessons, setCurriculumLessons] = useState<LessonMemo[]>(() => loadCurriculumDatabase());
+
+  useEffect(() => {
+    const refresh = () => setCurriculumLessons(loadCurriculumDatabase());
+    window.addEventListener('curriculum-db-updated', refresh);
+    return () => window.removeEventListener('curriculum-db-updated', refresh);
+  }, []);
   
   // Selected Level mapped to active year (default to '4am' if on home/logbook/settings)
   const selectedLevel: '1am' | '2am' | '3am' | '4am' = isYearSection ? activeSection : '4am';
 
   // Filter lessons by level
   const lessonsForLevel = useMemo(() => {
-    return LESSONS_DATA.filter((l) => l.level === selectedLevel);
-  }, [selectedLevel]);
+    return curriculumLessons.filter((l) => l.level === selectedLevel);
+  }, [curriculumLessons, selectedLevel]);
 
-  // Available Maqati for current level
-  const maqatiForLevel = MAQATI_BY_LEVEL[selectedLevel] || [];
+  const maqatiForLevel = useMemo(() => Array.from(new Set(lessonsForLevel.map(l => l.maqta).filter(Boolean))), [lessonsForLevel]);
 
   // 2. Selection states for Memos
   const [selectedMaqta, setSelectedMaqta] = useState<string>('');
@@ -590,6 +599,7 @@ export const App: React.FC = () => {
             setConfig={setConfig}
             mawridList={mawridList}
             ta3alomList={ta3alomList}
+            maqatiList={maqatiForLevel}
             showToast={showToast}
           />
 
@@ -648,6 +658,7 @@ export const App: React.FC = () => {
 
       {activeSection === 'logbook' && (
         <DailyLogbook
+          curriculumLessons={curriculumLessons}
           selectedLevel={selectedLevel}
           setSelectedLevel={(lvl) => {
             if (lvl) {
@@ -655,6 +666,14 @@ export const App: React.FC = () => {
             }
           }}
           config={config}
+          showToast={showToast}
+        />
+      )}
+
+      {activeSection === 'database' && (
+        <CurriculumDatabaseManager
+          lessons={curriculumLessons}
+          setLessons={setCurriculumLessons}
           showToast={showToast}
         />
       )}
