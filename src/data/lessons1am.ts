@@ -34,15 +34,6 @@ for (const seq of DB_1AM) {
         }
       }
 
-      // Midan logic
-      let midan = 'الإنسان والصحة';
-      let kafaa = 'يحل مشكلات متعلقة بالصحة استناداً إلى المعارف المتعلقة بالتغذية والوظائف الحيوية.';
-      
-      if (seq.sequence_id === 'seq_1am_2' || seq.sequence_id === 'seq_1am_4' || seq.sequence_id === 'seq_1am_6' || seq.sequence_id === 'seq_1am_8' || seq.sequence_id === 'seq_1am_9') {
-        midan = 'الإنسان والمحيط';
-        kafaa = 'يقترح حلولاً وقائية للتدخلات السلبية للإنسان تجاه المحيط استناداً إلى المعارف المتعلقة بالأنظمة البيئية.';
-      }
-
       LESSONS_1AM.push({
         level: '1am',
         memoNumber: memoCounter.toString().padStart(2, '0'),
