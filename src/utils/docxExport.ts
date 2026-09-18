@@ -482,8 +482,8 @@ export const generateDocx = async (lesson: LessonMemo, config: MemoConfig, activ
                   width: { size: 50, type: WidthType.PERCENTAGE },
                   children: [
                     createParagraph("ختم وتأشيرة الأستاذ:", true, "000000", 22),
-                    createParagraph(`الأستاذ(ة): ${config.teacherName || 'أستاذ المادة'}`, true, "333333", 20),
-                    createParagraph(config.schoolName || 'المتوسطة', false, "666666", 20),
+                    createParagraph(`الأستاذ(ة): ${config.teacherName || ''}`, true, "333333", 20),
+                    createParagraph(config.schoolName || '', false, "666666", 20),
                     new Paragraph({ text: "", spacing: { after: 600 } }),
                     (config.teacherStamp && config.teacherStamp.startsWith('data:image/')) 
                       ? new Paragraph({
