@@ -11,20 +11,12 @@ export const LEVELS = [
   { id: '4am', label: 'السنة الرابعة متوسط (4 م)' },
 ] as const;
 
-export const MIDAN_BY_LEVEL: Record<'1am' | '2am' | '3am' | '4am', { id: string; label: string }[]> = {
-  '1am': [
-    { id: 'الإنسان والصحة', label: 'ميدان الإنسان والصحة' },
-    { id: 'الإنسان والمحيط', label: 'ميدان الإنسان والمحيط' },
-  ],
-  '2am': [
-    { id: 'الإنسان والمحيط', label: 'ميدان الإنسان والمحيط' },
-  ],
-  '3am': [
-    { id: 'الإنسان والمحيط', label: 'ميدان الإنسان والمحيط' },
-  ],
-  '4am': [
-    { id: 'الإنسان والصحة', label: 'ميدان الإنسان والصحة' },
-  ],
+const getUniqueMidan = (lessons: LessonMemo[]): { id: string; label: string }[] => {
+  const unique: string[] = [];
+  for (const lesson of lessons) {
+    if (lesson.midan && !unique.includes(lesson.midan)) unique.push(lesson.midan);
+  }
+  return unique.map((id) => ({ id, label: `ميدان ${id}` }));
 };
 
 const getUniqueMaqati = (lessons: LessonMemo[]): string[] => {
@@ -41,11 +33,14 @@ export const MAQATI_BY_LEVEL: Record<'1am' | '2am' | '3am' | '4am', string[]> = 
   '1am': getUniqueMaqati(LESSONS_1AM),
   '2am': getUniqueMaqati(LESSONS_2AM),
   '3am': getUniqueMaqati(LESSONS_3AM),
-  '4am': [
-    'المقطع الأول: التغذية عند الإنسان',
-    'المقطع الثاني: التنسيق الوظيفي في العضوية',
-    'المقطع الثالث: انتقال الصفات الوراثية',
-  ],
+  '4am': getUniqueMaqati(LESSONS_4AM),
+};
+
+export const MIDAN_BY_LEVEL: Record<'1am' | '2am' | '3am' | '4am', { id: string; label: string }[]> = {
+  '1am': getUniqueMidan(LESSONS_1AM),
+  '2am': getUniqueMidan(LESSONS_2AM),
+  '3am': getUniqueMidan(LESSONS_3AM),
+  '4am': getUniqueMidan(LESSONS_4AM),
 };
 
 export const LESSONS_DATA: LessonMemo[] = [
