@@ -42,7 +42,6 @@ for (const seq of DB_2AM) {
         mawrid: res.resource_name,
         ta3alom: unit.learning_unit_name,
         markaba: unit.markaba,
-        kafaaKhitamiya: unit.kafaaKhitamiya || '',
         ma3ayirTaqwim: unit.qayimi,
         marifa: unit.marifa,
         manhaji: unit.manhaji,
