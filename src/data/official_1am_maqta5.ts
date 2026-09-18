@@ -214,6 +214,7 @@ export const seq_8: DB_Sequence = {
 export const seq_9: DB_Sequence = {
   sequence_id: 'seq_1am_9',
   sequence_name: 'وحدة بناء الكائنات الحية',
+  field_name: 'الإنسان والمحيط',
   resources: [
     {
       resource_id: 'res_1am_9_1',
