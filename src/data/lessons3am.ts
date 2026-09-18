@@ -46,7 +46,6 @@ export function buildLessons3AM(): any[] {
           diagrams,
           diagramTitle,
           diagramSvg,
-          diagramDescription: firstDiagram?.description,
           wadiya: lu.wadiya,
           moshkila: lu.moshkila,
           faradiyat: lu.faradiyat,
