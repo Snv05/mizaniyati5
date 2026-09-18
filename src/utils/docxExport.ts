@@ -172,6 +172,38 @@ export const generateDocx = async (lesson: LessonMemo, config: MemoConfig, activ
     transformation: { width: 72, height: 72 }
   });
 
+  const diagramParagraphs = lesson.diagrams && lesson.diagrams.length > 0
+    ? (await Promise.all(
+        lesson.diagrams.map(async (diagram) => [
+          ...(diagram.title ? [createParagraph(diagram.title, true, theme.hex, 22, AlignmentType.CENTER)] : []),
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [new ImageRun({
+              type: "png",
+              data: await svgToPngData(diagram.svg || ""),
+              transformation: { width: 430, height: 260 }
+            })]
+          }),
+          ...(diagram.description ? [createParagraph(diagram.description, false, "333333", 20)] : []),
+          new Paragraph({ text: "", spacing: { after: 300 } })
+        ])
+      )).flat()
+    : lesson.diagramSvg
+      ? [
+          createParagraph(lesson.diagramTitle || "المخطط", true, theme.hex, 22, AlignmentType.CENTER),
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [new ImageRun({
+              type: "png",
+              data: await svgToPngData(lesson.diagramSvg),
+              transformation: { width: 430, height: 260 }
+            })]
+          }),
+          ...(lesson.diagramDescription ? [createParagraph(lesson.diagramDescription, false, "333333", 20)] : []),
+          new Paragraph({ text: "", spacing: { after: 300 } })
+        ]
+      : [];
+
   const doc = new Document({
     styles: {
       default: {
@@ -401,37 +433,7 @@ export const generateDocx = async (lesson: LessonMemo, config: MemoConfig, activ
             })
           ]
         }),
-        ...(lesson.diagrams && lesson.diagrams.length > 0
-          ? (await Promise.all(
-              lesson.diagrams.map(async (diagram) => [
-                ...(diagram.title ? [createParagraph(diagram.title, true, theme.hex, 22, AlignmentType.CENTER)] : []),
-                new Paragraph({
-                  alignment: AlignmentType.CENTER,
-                  children: [new ImageRun({
-                    type: "png",
-                    data: await svgToPngData(diagram.svg || ""),
-                    transformation: { width: 430, height: 260 }
-                  })]
-                }),
-                ...(diagram.description ? [createParagraph(diagram.description, false, "333333", 20)] : []),
-                new Paragraph({ text: "", spacing: { after: 300 } })
-              ])
-            ))).flat()
-          : lesson.diagramSvg
-            ? [
-                createParagraph(lesson.diagramTitle || "المخطط", true, theme.hex, 22, AlignmentType.CENTER),
-                new Paragraph({
-                  alignment: AlignmentType.CENTER,
-                  children: [new ImageRun({
-                    type: "png",
-                    data: await svgToPngData(lesson.diagramSvg),
-                    transformation: { width: 430, height: 260 }
-                  })]
-                }),
-                ...(lesson.diagramDescription ? [createParagraph(lesson.diagramDescription, false, "333333", 20)] : []),
-                new Paragraph({ text: "", spacing: { after: 300 } })
-              ]
-            : []),
+        ...diagramParagraphs,
         new Paragraph({ text: "", spacing: { after: 400 } }),
 
         // 5. سير الحصة (جدول الأنشطة)
