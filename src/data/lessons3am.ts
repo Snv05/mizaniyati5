@@ -19,13 +19,14 @@ export function buildLessons3AM(): any[] {
     for (const res of seq.resources) {
       for (const lu of res.learning_units) {
         let diagramSvg = undefined;
-        let diagramTitle = undefined;
-        
-        const firstAct = lu.activities[0];
-        if (firstAct && firstAct.diagrams && firstAct.diagrams.length > 0) {
-          diagramSvg = firstAct.diagrams[0].diagram_svg;
-          diagramTitle = firstAct.diagrams[0].diagram_title;
-        }
+        const diagrams = lu.activities.flatMap(a => (a.diagrams || []).map(d => ({
+          title: d.diagram_title,
+          svg: d.diagram_svg,
+          description: d.diagram_description
+        }))).filter(d => !!d.svg);
+        const firstDiagram = diagrams[0];
+        diagramSvg = firstDiagram?.svg;
+        diagramTitle = firstDiagram?.title;
 
         allLessons.push({
           level: '3am',
@@ -41,8 +42,10 @@ export function buildLessons3AM(): any[] {
           mostalahat: lu.mostalahat,
           wasail: lu.wasail,
           zamanKoli: firstAct?.zaman || '',
+          diagrams,
           diagramTitle,
           diagramSvg,
+          diagramDescription: firstDiagram?.description,
           wadiya: lu.wadiya,
           moshkila: lu.moshkila,
           faradiyat: lu.faradiyat,
