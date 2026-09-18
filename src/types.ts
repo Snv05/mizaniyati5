@@ -1,4 +1,6 @@
 export interface Activity {
+  /** Stable source identifier from the curriculum database. */
+  sourceActivityId?: string;
   title: string;
   asila: string;
   ajwiba: string;
@@ -9,6 +11,11 @@ export interface Activity {
 }
 
 export interface LessonMemo {
+  /** Stable source identifiers used for exact curriculum traceability. */
+  sourceSequenceId?: string;
+  sourceResourceId?: string;
+  sourceLearningUnitId?: string;
+  sourceOfficial?: boolean;
   level: '1am' | '2am' | '3am' | '4am';
   midan: string;
   maqta: string;
