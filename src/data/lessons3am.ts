@@ -40,7 +40,7 @@ export function buildLessons3AM(): any[] {
           ma3ayirTaqwim: lu.qayimi,
           mostalahat: lu.mostalahat,
           wasail: lu.wasail,
-          zamanKoli: firstAct ? firstAct.zaman : '1 ساعة',
+          zamanKoli: firstAct?.zaman || '',
           diagramTitle,
           diagramSvg,
           wadiya: lu.wadiya,
