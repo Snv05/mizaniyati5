@@ -711,6 +711,8 @@ export const App: React.FC = () => {
         isOpen={isAssistantOpen}
         onClose={() => setIsAssistantOpen(false)}
         selectedLevel={selectedLevel}
+        currentLesson={currentLesson}
+        curriculumLessons={curriculumLessons}
       />
 
       {/* Platform Info and Contact Modal */}
