@@ -1,6 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { Plus, Save, Trash2, RotateCcw, Download, Upload, Search, Edit3, X, Database, AlertTriangle } from 'lucide-react';
 import { LessonMemo, Activity } from '../types';
+
+const normalizeKey = (v: string) => v.trim().replace(/\s+/g, ' ').toLowerCase();
+const lessonKey = (l: LessonMemo) => l.sourceLearningUnitId || [l.level, l.maqta, l.mawrid, l.ta3alom].map(normalizeKey).join('|');
 import { saveCurriculumDatabase, resetCurriculumDatabase, exportCurriculumDatabase, importCurriculumDatabase } from '../data/curriculumDb';
 
 interface Props {
@@ -33,6 +36,16 @@ export const CurriculumDatabaseManager: React.FC<Props> = ({ lessons, setLessons
   const [selectedKey, setSelectedKey] = useState('');
   const [editing, setEditing] = useState<LessonMemo | null>(null);
 
+  const diagnostics = useMemo(() => {
+    const counts = new Map<string, number>();
+    lessons.forEach(l => counts.set(lessonKey(l), (counts.get(lessonKey(l)) || 0) + 1));
+    return {
+      duplicates: Array.from(counts.values()).filter(n => n > 1).length,
+      emptyActivities: lessons.filter(l => l.anshita.length === 0).length,
+      custom: lessons.filter(l => !l.sourceOfficial).length,
+    };
+  }, [lessons]);
+
   const list = useMemo(() => {
     const q = query.trim().toLowerCase();
     return lessons.filter(l => l.level === level && (!q ||
@@ -55,8 +68,8 @@ export const CurriculumDatabaseManager: React.FC<Props> = ({ lessons, setLessons
       showToast('أدخل عنوان تعلم المورد قبل الحفظ');
       return;
     }
-    const key = editing.sourceLearningUnitId || editing.memoNumber + editing.ta3alom;
-    const index = lessons.findIndex(l => (l.sourceLearningUnitId || l.memoNumber + l.ta3alom) === key);
+    const key = lessonKey(editing);
+    const index = lessons.findIndex(l => lessonKey(l) === key);
     const next = [...lessons];
     if (index >= 0) next[index] = editing; else next.push(editing);
     persist(next);
@@ -127,6 +140,12 @@ export const CurriculumDatabaseManager: React.FC<Props> = ({ lessons, setLessons
               <button onClick={importDb} className="px-3 py-2 rounded-xl border text-xs font-bold"><Upload className="w-4 h-4 inline" /> استيراد</button>
               <button onClick={reset} className="px-3 py-2 rounded-xl bg-gray-900 text-white text-xs font-bold"><RotateCcw className="w-4 h-4 inline" /> المصدر الرسمي</button>
             </div>
+          </div>
+          <div className="mt-3 grid sm:grid-cols-4 gap-2 text-[10px] font-bold">
+            <div className="rounded-xl bg-slate-50 border p-2">السجلات: <b>{lessons.length}</b></div>
+            <div className="rounded-xl bg-emerald-50 border border-emerald-100 p-2">مضاف/معدل: <b>{diagnostics.custom}</b></div>
+            <div className="rounded-xl bg-amber-50 border border-amber-100 p-2">تكرارات محتملة: <b>{diagnostics.duplicates}</b></div>
+            <div className="rounded-xl bg-rose-50 border border-rose-100 p-2">بدون نشاط: <b>{diagnostics.emptyActivities}</b></div>
           </div>
           <div className="mt-3 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] flex gap-2">
             <AlertTriangle className="w-4 h-4 shrink-0" />
