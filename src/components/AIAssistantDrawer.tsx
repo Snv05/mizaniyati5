@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { LessonMemo } from '../types';
 import {
   Sparkles,
   Send,
@@ -32,7 +33,9 @@ export const AIAssistantDrawer: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   selectedLevel?: string;
-}> = ({ isOpen, onClose, selectedLevel }) => {
+  currentLesson?: LessonMemo | null;
+  curriculumLessons?: LessonMemo[];
+}> = ({ isOpen, onClose, selectedLevel, currentLesson, curriculumLessons = [] }) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
@@ -44,10 +47,21 @@ export const AIAssistantDrawer: React.FC<{
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
 
+  const smartContext = useMemo(() => currentLesson ? [
+    'المستوى: ' + (selectedLevel || currentLesson.level),
+    'الميدان: ' + currentLesson.midan,
+    'المقطع: ' + currentLesson.maqta,
+    'المورد: ' + currentLesson.mawrid,
+    'تعلم المورد: ' + currentLesson.ta3alom,
+    'عدد الأنشطة: ' + currentLesson.anshita.length,
+    'حالة المصدر: ' + (currentLesson.sourceOfficial ? 'رسمي' : 'عمل')
+  ].join(' • ') : 'لا يوجد مورد تعلم محدد حالياً.', [currentLesson, selectedLevel]);
+
   if (!isOpen) return null;
 
   const handleSend = (textToSend?: string) => {
     const query = textToSend || inputText.trim();
+    const activeContext = smartContext;
     if (!query) return;
 
     const userMsg: Message = {
@@ -63,6 +77,11 @@ export const AIAssistantDrawer: React.FC<{
 
     setTimeout(() => {
       let reply = '';
+      if ((q.includes('المورد الحالي') || q.includes('السياق الحالي')) && currentLesson) {
+        reply = 'السياق الذكي للمورد الحالي:\n' + activeContext + '\n\nالمركبة: ' + (currentLesson.markaba || 'غير محددة') + '\nالمعرفة: ' + (currentLesson.marifa || 'غير محددة') + '\nالمنهجية: ' + (currentLesson.manhaji || 'غير محددة') + '\nالوضعية: ' + (currentLesson.wadiya || 'غير محددة') + '\nالمشكلة: ' + (currentLesson.moshkila || 'غير محددة') + '\nالفرضيات: ' + (currentLesson.faradiyat || 'غير محددة');
+      } else if (q.includes('كم نشاط') && currentLesson) {
+        reply = 'وفق قاعدة البيانات الحالية، هذا المورد يحتوي على ' + currentLesson.anshita.length + ' نشاط/أنشطة.';
+      }
       const q = query.toLowerCase();
 
       if (q.includes('وضعية') || q.includes('مشكلة') || q.includes('انطلاق')) {
@@ -115,6 +134,9 @@ export const AIAssistantDrawer: React.FC<{
               <p className="text-[11.5px] text-gray-500 font-medium">
                 استشارات المنهاج، صياغة المشكلات العلمية والتجارب المخبرية
               </p>
+              <div className="mt-1 text-[10px] text-emerald-700 font-bold truncate max-w-[340px]">
+                السياق الذكي: {currentLesson?.ta3alom || 'لا يوجد مورد محدد'}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-1">
