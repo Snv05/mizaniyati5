@@ -11,6 +11,8 @@ export interface GeneratedSession {
   holidayLabel?: string;
   month: string;
   dates: string;
+  sourceLearningUnitId?: string;
+  learningUnit?: string;
 }
 
 export function generateAnnualDistribution(
@@ -18,17 +20,20 @@ export function generateAnnualDistribution(
   startDateStr: string,
   holidays: { startDate: string; endDate: string; label: string }[] = []
 ): GeneratedSession[] {
-  // Flatten all activities
-  const flatActivities: { midan: string; maqta: string; mawrid: string; title: string }[] = [];
+  // For 1AM, keep every learning unit intact: activities from one learning unit
+  // must never be paired with activities from another resource.
+  const flatActivities: { midan: string; maqta: string; mawrid: string; title: string; sourceLearningUnitId?: string; learningUnit?: string }[] = [];
   
-  // Build sessions only from curriculum activities; never inject synthetic lessons.
+  // Build sessions only from curriculum activities; never invent curriculum content.
   for (const lesson of lessons) {
     for (const act of lesson.anshita) {
       flatActivities.push({
         midan: lesson.midan,
         maqta: lesson.maqta,
         mawrid: lesson.mawrid,
-        title: act.title
+        title: act.title,
+        sourceLearningUnitId: lesson.sourceLearningUnitId,
+        learningUnit: lesson.ta3alom
       });
     }
   }
@@ -68,6 +73,7 @@ export function generateAnnualDistribution(
   let lastMidan = '';
   let lastMaqta = '';
   let lastMawrid = '';
+  const is1AM = lessons.some(lesson => lesson.level === '1am');
 
   while (actIdx < flatActivities.length) {
     const month = ARABIC_MONTHS[currentDate.getMonth()];
@@ -98,8 +104,9 @@ export function generateAnnualDistribution(
       continue;
     }
 
-    // Check standard exams
-    if (weekNum === 9 || weekNum === 21 || weekNum === 32) {
+    // Standard exam placeholders are kept for the generic 2AM/3AM/4AM model.
+    // 1AM must remain source-driven and must not receive invented exam rows.
+    if (!is1AM && (weekNum === 9 || weekNum === 21 || weekNum === 32)) {
       generated.push({
         midan: lastMidan,
         maqta: lastMaqta,
@@ -114,7 +121,7 @@ export function generateAnnualDistribution(
       currentDate.setDate(currentDate.getDate() + 7);
       continue;
     }
-    if (weekNum === 13 || weekNum === 25 || weekNum === 35) {
+    if (!is1AM && (weekNum === 13 || weekNum === 25 || weekNum === 35)) {
       generated.push({
         midan: lastMidan,
         maqta: lastMaqta,
@@ -130,9 +137,14 @@ export function generateAnnualDistribution(
       continue;
     }
 
-    // Normal week
+    // Normal week. For 1AM, consume at most two activities from the same learning unit.
     const act1 = flatActivities[actIdx++];
-    const act2 = actIdx < flatActivities.length ? flatActivities[actIdx++] : null;
+    let act2 = flatActivities[actIdx] || null;
+    if (is1AM && act2 && act2.sourceLearningUnitId !== act1.sourceLearningUnitId) {
+      act2 = null;
+    } else if (act2) {
+      actIdx++;
+    }
 
     generated.push({
       midan: act1.midan,
@@ -141,9 +153,10 @@ export function generateAnnualDistribution(
       session1: act1.title,
       session2: act2 ? act2.title : '',
       month,
-      dates
+      dates,
+      sourceLearningUnitId: act1.sourceLearningUnitId,
+      learningUnit: act1.learningUnit
     });
-
     weekNum++;
     currentDate.setDate(currentDate.getDate() + 7);
   }
