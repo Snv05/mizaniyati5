@@ -59,7 +59,7 @@ export const CurriculumDatabaseManager: React.FC<Props> = ({ lessons, setLessons
   };
 
   const open = (lesson: LessonMemo) => {
-    setSelectedKey(lesson.sourceLearningUnitId || lesson.memoNumber + lesson.ta3alom);
+    setSelectedKey(lessonKey(lesson));
     setEditing(clone(lesson));
   };
 
@@ -168,7 +168,7 @@ export const CurriculumDatabaseManager: React.FC<Props> = ({ lessons, setLessons
             </div>
             <div className="max-h-[650px] overflow-y-auto p-2">
               {list.map(l => {
-                const key = l.sourceLearningUnitId || l.memoNumber + l.ta3alom;
+                const key = lessonKey(l);
                 return <div key={key} className={'p-3 rounded-xl mb-1 border ' + (selectedKey === key ? 'border-emerald-500 bg-emerald-50' : 'border-transparent hover:bg-gray-50')}>
                   <button className="w-full text-right" onClick={() => open(l)}>
                     <div className="text-[10px] text-gray-400">مذكرة {l.memoNumber || '—'} • {l.maqta || 'بدون مقطع'}</div>
