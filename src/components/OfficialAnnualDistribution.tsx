@@ -169,19 +169,19 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
           {/* Table */}
           <table className="w-full border-collapse border border-black text-center text-[10px] leading-tight">
             <thead>
-              {level !== '3am' && level !== '1am' && (
               <tr className="bg-[#f0f0f0]">
                 <th colSpan={6} className="border border-black p-2 text-sm font-black">
                   الميــــــدان: {
                     level === '4am' ? (
-                      pageIndex === 0 ? 'الإنســـــــان والصحــــــــــــــة' : 
-                      pageIndex === 1 ? 'التنســـــــيق الوظيفـــي في العضويـــة' : 
+                      pageIndex === 0 ? 'الإنســـــــان والصحــــــــــــــة' :
+                      pageIndex === 1 ? 'التنســـــــيق الوظيفـــي في العضويـــة' :
                       'انتقــــــال الصفــــــات الوراثيــــــة'
-                    ) : level === '2am' ? 'الإنســـــــان والمحيــــــــــــــط' : ''
+                    ) : level === '2am' ? 'الإنســـــــان والمحيــــــــــــــط' :
+                    level === '1am' ? Array.from(new Set(page.map(row => row.midan).filter(Boolean))).join(' — ') :
+                    Array.from(new Set(page.map(row => row.midan).filter(Boolean))).join(' — ')
                   }
                 </th>
               </tr>
-            )}
               <tr className="bg-[#f8f8f8]">
                 <th className="border border-black p-1 w-[8%]">الأشهر</th>
                 <th className="border border-black p-1 w-[12%]">الأسابيع</th>
