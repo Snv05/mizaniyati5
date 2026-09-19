@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { LessonMemo } from '../types';
+import { askSmartAi } from '../services/smartAi';
 import {
   Sparkles,
   Send,
@@ -76,8 +77,22 @@ export const AIAssistantDrawer: React.FC<{
     if (!textToSend) setInputText('');
     setIsTyping(true);
 
-    setTimeout(() => {
+    setTimeout(async () => {
       let reply = '';
+      try {
+        const liveReply = await askSmartAi({ question: query, lesson: currentLesson, curriculum: curriculumLessons });
+        if (liveReply) {
+          reply = liveReply;
+        }
+      } catch (error) {
+        console.error('[smart-ai]', error);
+      }
+      if (reply) {
+        const aiMsg: Message = { id: (Date.now() + 1).toString(), sender: 'ai', text: reply, timestamp: new Date().toLocaleTimeString('ar-DZ', { hour: '2-digit', minute: '2-digit' }) };
+        setMessages((prev) => [...prev, aiMsg]);
+        setIsTyping(false);
+        return;
+      }
       if ((q.includes('المورد الحالي') || q.includes('السياق الحالي')) && currentLesson) {
         reply = 'السياق الذكي للمورد الحالي:\n' + activeContext + '\n\nالمركبة: ' + (currentLesson.markaba || 'غير محددة') + '\nالمعرفة: ' + (currentLesson.marifa || 'غير محددة') + '\nالمنهجية: ' + (currentLesson.manhaji || 'غير محددة') + '\nالوضعية: ' + (currentLesson.wadiya || 'غير محددة') + '\nالمشكلة: ' + (currentLesson.moshkila || 'غير محددة') + '\nالفرضيات: ' + (currentLesson.faradiyat || 'غير محددة');
       } else if (q.includes('كم نشاط') && currentLesson) {
