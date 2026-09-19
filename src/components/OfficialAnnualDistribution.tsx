@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { generateDistributionDocx } from "../utils/docxExportDistribution";
-import { MemoConfig } from '../types';
+import { LessonMemo, MemoConfig } from '../types';
 import { TeacherOfficialStamp } from './TeacherOfficialStamp';
 import { LESSONS_1AM } from '../data/lessons1am';
 import { LESSONS_2AM } from '../data/lessons2am';
@@ -14,9 +14,10 @@ interface Props {
   level: "1am" | "2am" | "3am" | "4am";
   config: MemoConfig;
   showToast: (msg: string) => void;
+  curriculumLessons?: LessonMemo[];
 }
 
-export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, showToast }) => {
+export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, showToast, curriculumLessons }) => {
   const [showPreview, setShowPreview] = useState(false);
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
   const [startDate, setStartDate] = useState('');
@@ -25,10 +26,13 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
   
   
   const pages = useMemo(() => {
-    let baseLessons = LESSONS_4AM;
-    if (level === '2am') baseLessons = LESSONS_2AM;
-    if (level === '3am') baseLessons = LESSONS_3AM;
-    if (level === '1am') baseLessons = LESSONS_1AM;
+    let baseLessons: LessonMemo[] = curriculumLessons?.filter(l => l.level === level) || [];
+    if (baseLessons.length === 0) {
+      baseLessons = LESSONS_4AM;
+      if (level === '2am') baseLessons = LESSONS_2AM;
+      if (level === '3am') baseLessons = LESSONS_3AM;
+      if (level === '1am') baseLessons = LESSONS_1AM;
+    }
 
     // Use empty holidays array for now, or you could pass config.holidays if added to MemoConfig
     const dynamicCurriculum = generateAnnualDistribution(baseLessons, startDate, []);
@@ -66,18 +70,20 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
     }
     
     return [dynamicCurriculum];
-  }, [startDate, level]);
+  }, [startDate, level, curriculumLessons]);
 
   // Persist the exact generated distribution so the Daily Logbook can use it as its schedule source.
   useEffect(() => {
-    if (!startDate || pages.length === 0) return;
+    if (pages.length === 0) return;
     try {
       const key = 'algeria_sciences_annual_dist_v4';
       const existing = JSON.parse(localStorage.getItem(key) || '{}');
       existing[level] = {
-        startDate,
+        startDate: startDate || existing[level]?.startDate || '',
         orientation,
-        items: pages.flat()
+        items: pages.flat(),
+        generatedFromCurriculum: true,
+        updatedAt: new Date().toISOString()
       };
       localStorage.setItem(key, JSON.stringify(existing));
       if ((window as any).syncToCloud) {
@@ -242,7 +248,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
         
         <div>
           <h2 className="text-xl font-bold text-[#c2185b]">التدرج السنوي - {level === "4am" ? "4" : level === "3am" ? "3" : level === "2am" ? "2" : "1"} متوسط (الوثيقة الرسمية)</h2>
-          <p className="text-sm text-gray-500 font-medium mt-1">يمكنك تعديل أي نص في الجدول بالنقر عليه، ويتم حساب التواريخ تلقائياً</p>
+          <p className="text-sm text-gray-500 font-medium mt-1">التدرج مرتبط مباشرة بقاعدة المنهاج الحالية؛ ويُعاد بناؤه تلقائياً عند تعديل الموارد أو الأنشطة.</p>
         </div>
         
         <div className="flex flex-wrap items-center gap-2 border-r pr-4">
@@ -283,6 +289,11 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
       </div>
 
       {/* Main Container */}
+      {pages.flat().some(row => !row.session1 && !row.session2 && !row.isHoliday) && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-bold text-amber-800">
+          تنبيه: توجد حصة بلا محتوى. لم يتم اختراع محتوى؛ راجع المورد/النشاط في قاعدة البيانات.
+        </div>
+      )}
       <div className="overflow-x-auto rounded-xl shadow-sm border border-gray-200 print:border-none print:shadow-none print:overflow-visible">
         <DocumentPages />
       </div>
