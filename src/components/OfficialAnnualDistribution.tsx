@@ -21,7 +21,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
   const [showPreview, setShowPreview] = useState(false);
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
   const deriveStartDate = (schoolYear: string): string => {
-    const match = schoolYear?.match(/(20\\d{2})/);
+    const match = schoolYear?.match(/(20\d{2})/);
     return match ? `${match[1]}-09-01` : '';
   };
   const [startDate, setStartDate] = useState(() => {
