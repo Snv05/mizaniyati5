@@ -28,8 +28,8 @@ export const FirebaseDataSync: React.FC = () => {
         const distDoc = await getDoc(doc(db, 'users', user.uid, 'data', 'annualDist'));
         if (distDoc.exists()) {
           const data = distDoc.data();
-          if (data.items) {
-            localStorage.setItem('algeria_sciences_annual_dist_v4', JSON.stringify(data.items));
+          if (data.distribution) {
+            localStorage.setItem('algeria_sciences_annual_dist_v4', JSON.stringify(data.distribution));
             window.dispatchEvent(new CustomEvent('firebase-sync-complete', { detail: { type: 'dist' } }));
           }
         }
