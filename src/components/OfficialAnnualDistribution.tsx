@@ -58,11 +58,13 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
         dynamicCurriculum.filter(item => item.maqta === maqta3)
       ];
     } else if (level === '1am') {
-       return [
-         dynamicCurriculum.slice(0, 13),
-         dynamicCurriculum.slice(13, 25),
-         dynamicCurriculum.slice(25)
-       ];
+       // 1AM has two official fields. Preserve source order and use one
+       // document page per field, matching the field-based model of the
+       // other levels. No synthetic activities or content are introduced.
+       const fields = Array.from(new Set(dynamicCurriculum.map(item => item.midan).filter(Boolean)));
+       return fields.length > 0
+         ? fields.map(field => dynamicCurriculum.filter(item => item.midan === field))
+         : [dynamicCurriculum];
     } else if (level === '2am') {
        // Page 1: September -> November
        // Page 2: December -> March
