@@ -658,6 +658,7 @@ export const App: React.FC = () => {
             setSelectedLevel={(lvl) => setActiveSection(lvl)}
             config={config}
             showToast={showToast}
+            curriculumLessons={curriculumLessons}
           />
         </div>
       )}
