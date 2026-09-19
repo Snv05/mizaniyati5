@@ -23,6 +23,7 @@ interface AnnualDistributionProps {
   setSelectedLevel: (lvl: '1am' | '2am' | '3am' | '4am') => void;
   config: MemoConfig;
   showToast: (msg: string) => void;
+  curriculumLessons?: import('../types').LessonMemo[];
 }
 
 
@@ -32,9 +33,10 @@ export const AnnualDistribution: React.FC<AnnualDistributionProps> = ({
   setSelectedLevel,
   config,
   showToast,
+  curriculumLessons,
 }) => {
   if (selectedLevel === '4am' || selectedLevel === '3am' || selectedLevel === '2am' || selectedLevel === '1am') {
-    return <OfficialAnnualDistribution level={selectedLevel} config={config} showToast={showToast} />;
+    return <OfficialAnnualDistribution level={selectedLevel} config={config} showToast={showToast} curriculumLessons={curriculumLessons} />;
   }
 
   const [items, setItems] = useState<AnnualDistributionItem[]>(() => {
