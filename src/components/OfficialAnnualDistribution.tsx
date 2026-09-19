@@ -20,7 +20,18 @@ interface Props {
 export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, showToast, curriculumLessons }) => {
   const [showPreview, setShowPreview] = useState(false);
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
-  const [startDate, setStartDate] = useState('');
+  const deriveStartDate = (schoolYear: string): string => {
+    const match = schoolYear?.match(/(20\\d{2})/);
+    return match ? `${match[1]}-09-01` : '';
+  };
+  const [startDate, setStartDate] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('algeria_sciences_annual_dist_v4') || '{}');
+      return saved[level]?.startDate || deriveStartDate(config.schoolYear);
+    } catch {
+      return deriveStartDate(config.schoolYear);
+    }
+  });
 
   // Group by pages based on the midan (Page 1: الإنسان والصحة, Page 2: التنسيق الوظيفي, Page 3: انتقال الصفات)
   
@@ -34,8 +45,8 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
       if (level === '1am') baseLessons = LESSONS_1AM;
     }
 
-    // Use empty holidays array for now, or you could pass config.holidays if added to MemoConfig
-    const dynamicCurriculum = generateAnnualDistribution(baseLessons, startDate, []);
+    const effectiveStartDate = startDate || deriveStartDate(config.schoolYear);
+    const dynamicCurriculum = generateAnnualDistribution(baseLessons, effectiveStartDate, []);
 
     if (level === '4am') {
       const maqta1 = 'المقطع الأول: التغذية عند الإنسان';
@@ -70,7 +81,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
     }
     
     return [dynamicCurriculum];
-  }, [startDate, level, curriculumLessons]);
+  }, [startDate, level, curriculumLessons, config.schoolYear]);
 
   // Persist the exact generated distribution so the Daily Logbook can use it as its schedule source.
   useEffect(() => {
@@ -79,7 +90,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
       const key = 'algeria_sciences_annual_dist_v4';
       const existing = JSON.parse(localStorage.getItem(key) || '{}');
       existing[level] = {
-        startDate: startDate || existing[level]?.startDate || '',
+        startDate: startDate || existing[level]?.startDate || deriveStartDate(config.schoolYear),
         orientation,
         items: pages.flat(),
         generatedFromCurriculum: true,
@@ -92,7 +103,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
     } catch (error) {
       console.error('تعذر حفظ التدرج السنوي للربط الذكي:', error);
     }
-  }, [pages, startDate, level, orientation]);
+  }, [pages, startDate, level, orientation, config.schoolYear]);
 
 
   const handlePrint = () => {
