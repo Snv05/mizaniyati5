@@ -70,7 +70,7 @@ export const FirebaseDataSync: React.FC = () => {
   useEffect(() => {
     if (!user) return;
 
-    (window as any).syncToCloud = async (type: 'config' | 'dist' | 'logbook' | 'curriculum', data: any) => {
+    (window as any).syncToCloud = async (type: 'config' | 'dist' | 'logbook' | 'curriculum' | 'annualDist', data: any) => {
       try {
         if (type === 'config') {
           await setDoc(doc(db, 'users', user.uid, 'data', 'config'), {
@@ -84,10 +84,10 @@ export const FirebaseDataSync: React.FC = () => {
             items: data,
             updatedAt: serverTimestamp()
           }, { merge: true });
-        } else if (type === 'curriculum') {
+        } else if (type === 'annualDist') {
           await setDoc(doc(db, 'users', user.uid, 'data', 'curriculum'), {
             userId: user.uid,
-            lessons: data,
+            distribution: data,
             updatedAt: serverTimestamp()
           }, { merge: true });
         } else if (type === 'logbook') {
