@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { generateLogbookDocx, generatePreviewMatchDocx } from "../utils/docxExportLogbook";
+import { generatePreviewMatchDocx } from "../utils/docxExportLogbook";
 import {
   BookOpen,
   Calendar,
@@ -803,6 +803,17 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
     }
     if (document.fonts?.ready) await document.fonts.ready;
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const styleId = 'daily-logbook-print-orientation';
+    document.getElementById(styleId)?.remove();
+    const printStyle = document.createElement('style');
+    printStyle.id = styleId;
+    printStyle.textContent = `@media print { @page { size: A4 ${orientation}; margin: 0 !important; } }`;
+    document.head.appendChild(printStyle);
+    const cleanup = () => {
+      document.getElementById(styleId)?.remove();
+      window.removeEventListener('afterprint', cleanup);
+    };
+    window.addEventListener('afterprint', cleanup);
     window.print();
   };
 
