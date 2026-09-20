@@ -26,7 +26,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
   };
   const [startDate, setStartDate] = useState(() => {
     try {
-      const saved = JSON.parse(localStorage.getItem('algeria_sciences_annual_dist_v4') || '{}');
+      const saved = JSON.parse(localStorage.getItem('algeria_sciences_annual_dist_v5') || '{}');
       return saved[level]?.startDate || deriveStartDate(config.schoolYear);
     } catch {
       return deriveStartDate(config.schoolYear);
