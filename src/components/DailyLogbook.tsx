@@ -1195,7 +1195,9 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           width: `${pageDimensions.w}mm`,
           minHeight: `${pageDimensions.h}mm`,
           maxWidth: isPreview ? undefined : '100%',
-          backgroundImage: 'radial-gradient(circle at 15% 15%, rgba(16,185,129,.12), transparent 30%), radial-gradient(circle at 85% 80%, rgba(59,130,246,.10), transparent 30%), linear-gradient(135deg, rgba(255,255,255,.97), rgba(240,253,250,.97))',
+          backgroundColor: '#ffffff',
+          backgroundImage: 'linear-gradient(rgba(148,163,184,.22) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,.22) 1px, transparent 1px)',
+          backgroundSize: '10px 10px',
         }}
       >
         <div style={{ padding: PAGE_INNER_PADDING }} className="h-full flex flex-col">
@@ -1340,23 +1342,22 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .grid-paper-bg {
             background-color: #ffffff !important;
-            background-image: linear-gradient(rgba(148,163,184,.28) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,.28) 1px, transparent 1px) !important;
-            background-size: 12px 12px !important;
+            background-image: linear-gradient(rgba(148,163,184,.22) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,.22) 1px, transparent 1px) !important;
+            background-size: 10px 10px !important;
           }
           .print-page { break-inside: avoid; page-break-inside: avoid; }
         }
-        .print-page { direction: rtl; box-sizing: border-box; }
+        .print-page { direction: rtl; box-sizing: border-box; background-color: #ffffff; background-image: linear-gradient(rgba(148,163,184,.22) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,.22) 1px, transparent 1px); background-size: 10px 10px; }
         .logbook-table { border-collapse: collapse !important; }
         .logbook-table th, .logbook-table td { border: 1.5px solid #64748b !important; }
-        .print-page.bg-white { background-color: transparent !important; }
         .preview-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
         .preview-scroll::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
         .preview-scroll::-webkit-scrollbar-track { background: #111827; }
         .grid-paper-bg {
           background-color: #ffffff;
-          background-image: linear-gradient(rgba(148,163,184,.28) 1px, transparent 1px),
-                            linear-gradient(90deg, rgba(148,163,184,.28) 1px, transparent 1px);
-          background-size: 12px 12px;
+          background-image: linear-gradient(rgba(148,163,184,.22) 1px, transparent 1px),
+                            linear-gradient(90deg, rgba(148,163,184,.22) 1px, transparent 1px);
+          background-size: 10px 10px;
         }
       `}</style>
 
