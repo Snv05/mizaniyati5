@@ -1180,6 +1180,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           width: `${pageDimensions.w}mm`,
           minHeight: `${pageDimensions.h}mm`,
           maxWidth: isPreview ? undefined : '100%',
+          backgroundImage: 'radial-gradient(circle at 15% 15%, rgba(16,185,129,.12), transparent 30%), radial-gradient(circle at 85% 80%, rgba(59,130,246,.10), transparent 30%), linear-gradient(135deg, rgba(255,255,255,.97), rgba(240,253,250,.97))',
         }}
       >
         <div style={{ padding: PAGE_INNER_PADDING }} className="h-full flex flex-col">
@@ -1886,6 +1887,17 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                       className="w-full border border-zinc-200 rounded-lg px-2 py-2 text-[12px] bg-white outline-none font-medium"
                     />
                   </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-zinc-600 mb-1">وضعية الصفحة</label>
+                    <select
+                      value={orientation}
+                      onChange={(e) => setOrientation(e.target.value as 'portrait' | 'landscape')}
+                      className="w-full border border-zinc-200 rounded-lg px-2 py-2 text-[12px] bg-white outline-none font-bold"
+                    >
+                      <option value="portrait">عمودي</option>
+                      <option value="landscape">أفقي</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -1939,7 +1951,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                 {rows.length > 0 && (
                   <div className="text-[11px] text-center bg-white border border-emerald-200 rounded-lg py-2 font-bold text-[#064e3b] space-y-1">
                     <div>
-                      {rows.length} حصة • {paginatedPages.length} صفحة • A4 / 20 سطر
+                      {rows.length} حصة • {paginatedPages.length} صفحة • A4 / 18 صفاً • {orientation === 'landscape' ? 'أفقي' : 'عمودي'}
                     </div>
                     <div className="text-[10px] text-zinc-600 font-medium">
                       المستويات المسندة في الدفتر: {levelDistributionSummary}
@@ -1958,7 +1970,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
             <div className="flex items-center gap-2">
               <FileStack className="w-4 h-4 text-[#064e3b]" />
               <span>
-                معاينة الدفتر اليومي ({paginatedPages.length} صفحة) — A4 • 20 سطر •{' '}
+                معاينة الدفتر اليومي ({paginatedPages.length} صفحة) — A4 • 18 صفاً • {orientation === 'landscape' ? 'أفقي' : 'عمودي'} •{' '}
                 {paginatedPages.length > 0 ? formatPageNumberLabel(0, paginatedPages.length) : 'جاهز للتوليد'}
               </span>
             </div>
@@ -1989,7 +2001,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
 
               <div className="mt-3 flex flex-wrap gap-2 justify-center">
                 <span className="bg-zinc-900 text-white px-3 py-1 rounded-full text-[11px] font-bold">
-                  A4 • 20 سطر لكل صفحة
+                  A4 • 18 صفاً لكل صفحة
                 </span>
                 <span className="bg-white border border-zinc-300 px-3 py-1 rounded-full text-[11px] font-bold text-zinc-700">
                   ربط بقاعدة بيانات المناهج الوزارية
@@ -2047,13 +2059,21 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                   !isNewDate && prevWasMorning && isAfternoon;
                 
                 if (isNewWeek) {
-                  tableBodyRows.push(
-                    <tr key={`week-space-${r.id}`} className="bg-[#fffef5]">
-                      <td colSpan={8} className="border border-amber-200 text-amber-800 text-center font-bold text-[10px] h-[28px]">
-                        مساحة إضافية للأسبوع — ملاحظات / إضافة / تعديل
-                      </td>
-                    </tr>
-                  );
+                  for (let weekSpaceIdx = 0; weekSpaceIdx < 2; weekSpaceIdx++) {
+                    tableBodyRows.push(
+                      <tr key={`week-space-${r.id}-${weekSpaceIdx}`} className="bg-white">
+                        {Array.from({ length: 8 }).map((_, cellIdx) => (
+                          <td
+                            key={cellIdx}
+                            contentEditable
+                            suppressContentEditableWarning
+                            className="border border-slate-400 h-[34px] bg-white/80 outline-none"
+                            title="خانة كتابة إضافية بين الأسابيع"
+                          />
+                        ))}
+                      </tr>
+                    );
+                  }
                 } else if (isNewDate && rowIdx > 0) {
                   tableBodyRows.push(
                     <tr key={`divider-${r.id}-day`} className="bg-[#f0f9ff]">
@@ -2544,11 +2564,21 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                                 return (
                                   <React.Fragment key={r.id}>
                                     {isNewWeek && (
-                                      <tr className="bg-[#fffef5]">
-                                        <td colSpan={8} className="border border-amber-200 text-amber-800 text-center font-bold text-[10px] h-[28px]">
-                                          مساحة إضافية للأسبوع — ملاحظات / إضافة / تعديل
-                                        </td>
-                                      </tr>
+                                      <>
+                                        {[0, 1].map((weekSpaceIdx) => (
+                                          <tr key={`preview-week-space-${r.id}-${weekSpaceIdx}`} className="bg-white">
+                                            {Array.from({ length: 8 }).map((_, cellIdx) => (
+                                              <td
+                                                key={cellIdx}
+                                                contentEditable
+                                                suppressContentEditableWarning
+                                                className="border border-slate-400 h-[34px] bg-white/80 outline-none"
+                                                title="خانة كتابة إضافية بين الأسابيع"
+                                              />
+                                            ))}
+                                          </tr>
+                                        ))}
+                                      </>
                                     )}
                                     <tr key={r.id} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-[#f9faf6]'}>
                                   <td className="border border-zinc-200 px-2 py-2 font-bold text-center whitespace-nowrap text-zinc-900">
