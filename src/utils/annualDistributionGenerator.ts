@@ -20,6 +20,7 @@ export interface GeneratedSession {
   sourceActivityId?: string;
   sourceActivityId2?: string;
   learningUnit?: string;
+  taqwim?: string;
 }
 
 export function generateAnnualDistribution(
@@ -29,7 +30,7 @@ export function generateAnnualDistribution(
 ): GeneratedSession[] {
   // For 1AM, keep every learning unit intact: activities from one learning unit
   // must never be paired with activities from another resource.
-  const flatActivities: { midan: string; maqta: string; mawrid: string; title: string; sourceSequenceId?: string; sourceResourceId?: string; sourceLearningUnitId?: string; sourceActivityId?: string; learningUnit?: string }[] = [];
+  const flatActivities: { midan: string; maqta: string; mawrid: string; title: string; sourceSequenceId?: string; sourceResourceId?: string; sourceLearningUnitId?: string; sourceActivityId?: string; learningUnit?: string; taqwim?: string }[] = [];
   
   // Build sessions only from curriculum activities; never invent curriculum content.
   for (const lesson of lessons) {
@@ -43,7 +44,8 @@ export function generateAnnualDistribution(
         sourceResourceId: lesson.sourceResourceId,
         sourceLearningUnitId: lesson.sourceLearningUnitId,
         sourceActivityId: act.sourceActivityId,
-        learningUnit: lesson.ta3alom
+        learningUnit: lesson.ta3alom,
+        taqwim: lesson.taqwim || ''
       });
     }
   }
@@ -153,7 +155,8 @@ export function generateAnnualDistribution(
           sourceResourceId: act1?.sourceResourceId,
           sourceLearningUnitId: act1?.sourceLearningUnitId,
           sourceActivityId2: act1?.sourceActivityId,
-          learningUnit: act1?.learningUnit
+          learningUnit: act1?.learningUnit,
+          taqwim: lessons[0]?.taqwim || ''
         });
       }
       weekNum++;
@@ -229,7 +232,7 @@ export function generateAnnualDistribution(
       maqta: act1.maqta,
       mawrid: act1.mawrid,
       session1: act1.title,
-      session2: act2 ? act2.title : '',
+      session2: act2 ? act2.title : (act1.taqwim ? `تقويم: ${act1.taqwim}` : 'تقويم'),
       month,
       dates,
       sourceSequenceId: act1.sourceSequenceId,
@@ -237,7 +240,8 @@ export function generateAnnualDistribution(
       sourceLearningUnitId: act1.sourceLearningUnitId,
       sourceActivityId: act1.sourceActivityId,
       sourceActivityId2: act2?.sourceActivityId,
-      learningUnit: act1.learningUnit
+      learningUnit: act1.learningUnit,
+      taqwim: act1.taqwim || ''
     });
     weekNum++;
     currentDate.setDate(currentDate.getDate() + 7);
