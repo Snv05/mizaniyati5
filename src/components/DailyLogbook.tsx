@@ -58,6 +58,7 @@ export interface CurriculumResourceItem {
   sourceResourceId?: string;
   sourceLearningUnitId?: string;
   sourceActivityIds?: string[];
+  taqwim?: string;
 }
 
 const transformLessonMemoToLogbook = (lessons: LessonMemo[], levelLabel: '1م' | '2م' | '3م' | '4م'): CurriculumResourceItem[] => {
@@ -84,7 +85,8 @@ const transformLessonMemoToLogbook = (lessons: LessonMemo[], levelLabel: '1م' |
       sourceSequenceId: lesson.sourceSequenceId,
       sourceResourceId: lesson.sourceResourceId,
       sourceLearningUnitId: lesson.sourceLearningUnitId,
-      sourceActivityIds: lesson.anshita.map(a => a.sourceActivityId).filter(Boolean) as string[]
+      sourceActivityIds: lesson.anshita.map(a => a.sourceActivityId).filter(Boolean) as string[],
+      taqwim: lesson.taqwim || ''
     };
   });
 };
@@ -97,14 +99,24 @@ const buildCurriculumDatabase = (lessons?: LessonMemo[]): Record<'1م' | '2م' |
   '4م': transformLessonMemoToLogbook((lessons || LESSONS_4AM).filter(l => l.level === '4am'), '4م'),
 });
 
-type AnnualStoredItem = { id?: string; level?: string; lessonType?: string; midan?: string; maqta?: string; mawrid?: string; session1?: string; session2?: string; sourceSequenceId?: string; sourceResourceId?: string; sourceLearningUnitId?: string; sourceActivityId?: string; sourceActivityId2?: string; isHoliday?: boolean; isExam?: boolean; month?: string; dates?: string };
+type AnnualStoredItem = { id?: string; level?: string; lessonType?: string; midan?: string; maqta?: string; mawrid?: string; session1?: string; session2?: string; sourceSequenceId?: string; sourceResourceId?: string; sourceLearningUnitId?: string; sourceActivityId?: string; sourceActivityId2?: string; isHoliday?: boolean; isExam?: boolean; month?: string; dates?: string; taqwim?: string };
 
 const getStoredAnnualSchedule = (level: '1م' | '2م' | '3م' | '4م'): { startDate: string; items: AnnualStoredItem[] } | null => {
   try {
     const raw = JSON.parse(localStorage.getItem('algeria_sciences_annual_dist_v4') || '{}');
     const key = level.replace('م', 'am') as '1am' | '2am' | '3am' | '4am';
     const value = raw?.[key];
-    return value?.startDate && Array.isArray(value.items) ? value : null;
+    if (!value?.startDate || !Array.isArray(value.items)) return null;
+    const ARABIC_MONTHS = ['جانفي','فيفري','مارس','أفريل','ماي','جوان','جويلية','أوت','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+    const normalizedItems = value.items.map((item: AnnualStoredItem, index: number) => {
+      if (item.month && item.dates) return item;
+      const d = new Date(value.startDate);
+      while (d.getDay() !== 0) d.setDate(d.getDate() + 1);
+      d.setDate(d.getDate() + index * 7);
+      const thu = new Date(d); thu.setDate(thu.getDate() + 4);
+      return { ...item, month: item.month || ARABIC_MONTHS[d.getMonth()], dates: item.dates || `${String(d.getDate()).padStart(2,'0')}-${String(thu.getDate()).padStart(2,'0')}` };
+    });
+    return { ...value, items: normalizedItems };
   } catch {
     return null;
   }
@@ -207,6 +219,7 @@ export interface LogEntry {
   attendance?: string;
   wasail?: string;
   lessonType?: 'curriculum' | 'introductory' | 'opening' | 'health' | 'remediation' | 'assessment' | 'holiday';
+  taqwim?: string;
 }
 
 const EMPTY_TIMETABLE_ROWS: TimetableGridRow[] = Array.from({ length: 8 }, (_, i) => ({
@@ -630,7 +643,8 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                 mawrid: '',
                 ta3alom: '',
                 formattedText: specialTitle,
-                activities: []
+                activities: [],
+                taqwim: annualItem.taqwim || ''
               };
             } else {
               const scheduled = findLessonForScheduledSource(bank, annualItem, ordinal);
@@ -666,7 +680,8 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           maqta: res.maqta,
           mawrid: res.mawrid,
           ta3alom: res.ta3alom,
-          activitiesList: res.activities,
+          activitiesList: res.activities.slice(0, 2),
+          taqwim: res.taqwim || '',
           lessonType: currentLessonType,
           note: '',
           resourceIndex: currentResIdx,
@@ -728,6 +743,15 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
       console.error(error);
       showToast("حدث خطأ أثناء التصدير");
     }
+  };
+
+  const handleExportPdf = () => {
+    if (rows.length === 0) {
+      showToast('ولّد الدفتر أولاً قبل تصدير PDF');
+      return;
+    }
+    setIsPreviewModalOpen(false);
+    setTimeout(() => window.print(), 120);
   };
 
   const paginatedPages = useMemo(() => {
@@ -1348,7 +1372,9 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           .print-page { break-inside: avoid; page-break-inside: avoid; }
         }
         .print-page { direction: rtl; box-sizing: border-box; }
-        .writing-grid-cell { background-color: rgba(255,255,255,.86); background-image: linear-gradient(rgba(148,163,184,.20) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,.20) 1px, transparent 1px); background-size: 8px 8px; }
+        .writing-grid-cell { background-color: rgba(255,255,255,.90); background-image: linear-gradient(rgba(100,116,139,.18) 1px, transparent 1px), linear-gradient(90deg, rgba(100,116,139,.18) 1px, transparent 1px); background-size: 8px 8px; }
+        .logbook-grid-cell { background-color: rgba(255,255,255,.90); background-image: linear-gradient(rgba(100,116,139,.16) 1px, transparent 1px), linear-gradient(90deg, rgba(100,116,139,.16) 1px, transparent 1px); background-size: 8px 8px; }
+        @media print { .no-print { display:none !important; } .preview-scroll { overflow: visible !important; } .print-page { box-shadow:none !important; margin:0 !important; border:0 !important; } }
         .cover-page { background-color: #fffdf7; background-image: radial-gradient(circle at 15% 10%, rgba(6,78,59,.08), transparent 28%), radial-gradient(circle at 85% 20%, rgba(210,16,52,.06), transparent 25%), linear-gradient(rgba(120,113,108,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(120,113,108,.035) 1px, transparent 1px); background-size: auto, auto, 18px 18px, 18px 18px; }
         .logbook-table { border-collapse: collapse !important; }
         .logbook-table th, .logbook-table td { border: 1.5px solid #64748b !important; }
@@ -2160,13 +2186,13 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                 tableBodyRows.push(
                   <tr key={`empty-p-${emptyIdx}`} className="bg-white">
                     <td className="border border-zinc-200 h-[36px]" />
-                    <td className="border border-zinc-200" />
-                    <td className="border border-zinc-200" />
-                    <td className="border border-zinc-200" />
-                    <td className="border border-zinc-200" />
-                    <td className="border border-zinc-200" />
-                    <td className="border border-zinc-200" />
-                    <td className="border border-zinc-200" />
+                    <td className="logbook-grid-cell border border-zinc-200" />
+                    <td className="logbook-grid-cell border border-zinc-200" />
+                    <td className="logbook-grid-cell border border-zinc-200" />
+                    <td className="logbook-grid-cell border border-zinc-200" />
+                    <td className="logbook-grid-cell border border-zinc-200" />
+                    <td className="logbook-grid-cell border border-zinc-200" />
+                    <td className="logbook-grid-cell border border-zinc-200" />
                   </tr>
                 );
               }
@@ -2590,7 +2616,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                                                 key={cellIdx}
                                                 contentEditable
                                                 suppressContentEditableWarning
-                                                className="border border-slate-400 h-[34px] bg-white/80 outline-none"
+                                                className="logbook-grid-cell border border-slate-400 h-[34px] outline-none"
                                                 title="خانة كتابة إضافية بين الأسابيع"
                                               />
                                             ))}
@@ -2599,16 +2625,16 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                                       </>
                                     )}
                                     <tr key={r.id} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-[#f9faf6]'}>
-                                  <td className="border border-zinc-200 px-2 py-2 font-bold text-center whitespace-nowrap text-zinc-900">
+                                  <td className="logbook-grid-cell border border-zinc-200 px-2 py-2 font-bold text-center whitespace-nowrap text-zinc-900">
                                     {r.dayName}
                                   </td>
                                   <td className="writing-grid-cell border border-zinc-200 px-1 py-2 text-center font-mono text-[10px] text-zinc-700">
                                     {r.dateStr}
                                   </td>
-                                  <td className="border border-zinc-200 px-2 py-2 text-center font-mono text-[10px]">
+                                  <td className="logbook-grid-cell border border-zinc-200 px-2 py-2 text-center font-mono text-[10px]">
                                     {r.time}
                                   </td>
-                                  <td className="border border-zinc-200 px-2 py-2 text-center font-bold">
+                                  <td className="logbook-grid-cell border border-zinc-200 px-2 py-2 text-center font-bold">
                                     <span
                                       className={`inline-block px-1.5 py-0.5 rounded text-[10px] border ${
                                         r.level === '4م'
@@ -2628,8 +2654,8 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                                     style={{ minHeight: NOTEBOOK_CONTENT_MIN_HEIGHT, height: NOTEBOOK_CONTENT_MIN_HEIGHT }}
                                     dangerouslySetInnerHTML={{ __html: previewContent }}
                                   />
-                                  <td className="border border-zinc-200" />
-                                  <td className="border border-zinc-200" />
+                                  <td className="logbook-grid-cell border border-zinc-200" />
+                                  <td className="logbook-grid-cell border border-zinc-200" />
                                   <td className="writing-grid-cell border border-zinc-200 px-2 py-2 text-zinc-600 min-h-[72px]">{r.note}</td>
                                 </tr>
                                   </React.Fragment>
@@ -2637,14 +2663,14 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                               })}
                               {Array.from({ length: Math.max(0, ROWS_PER_PAGE - pageRows.length) }).map((_, emptyIdx) => (
                                 <tr key={`empty-p-${emptyIdx}`} className="bg-white">
-                                  <td className="border border-zinc-200 h-[32px]" />
-                                  <td className="border border-zinc-200" />
-                                  <td className="border border-zinc-200" />
-                                  <td className="border border-zinc-200" />
-                                  <td className="border border-zinc-200" />
-                                  <td className="border border-zinc-200" />
-                                  <td className="border border-zinc-200" />
-                                  <td className="border border-zinc-200" />
+                                  <td className="logbook-grid-cell border border-zinc-200 h-[32px]" />
+                                  <td className="logbook-grid-cell border border-zinc-200" />
+                                  <td className="logbook-grid-cell border border-zinc-200" />
+                                  <td className="logbook-grid-cell border border-zinc-200" />
+                                  <td className="logbook-grid-cell border border-zinc-200" />
+                                  <td className="logbook-grid-cell border border-zinc-200" />
+                                  <td className="logbook-grid-cell border border-zinc-200" />
+                                  <td className="logbook-grid-cell border border-zinc-200" />
                                 </tr>
                               ))}
                             </tbody>
