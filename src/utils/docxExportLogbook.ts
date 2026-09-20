@@ -132,11 +132,12 @@ const svgToPngData = async (svg: string, width = 420, height = 420): Promise<Uin
 };
 
 export const generateLogbookDocx = async (
-  logs: LogEntry[], 
+  logs: LogEntry[],
   config: MemoConfig,
   gridRows: any[] = [],
   holidays: any[] = [],
-  assignedLevels: string[] = []
+  assignedLevels: string[] = [],
+  orientation: 'portrait' | 'landscape' = 'portrait'
 ): Promise<Blob> => {
 
   const rows: TableRow[] = [];
@@ -163,11 +164,20 @@ export const generateLogbookDocx = async (
       return d.toISOString().split('T')[0];
     })();
     if (previousWeekKey && currentWeekKey !== previousWeekKey) {
-      rows.push(new TableRow({
-        children: [
-          createCell("مساحة إضافية للأسبوع — ملاحظات / إضافة / تعديل", true, "FFFBEA", 1, 1, 18, AlignmentType.CENTER, 8)
-        ]
-      }));
+      for (let weekSpaceIdx = 0; weekSpaceIdx < 2; weekSpaceIdx++) {
+        rows.push(new TableRow({
+          children: [
+            createCell("", false, "FFFFFF", 1, 1, 18, AlignmentType.CENTER, 12),
+            createCell("", false, "FFFFFF", 1, 1, 18, AlignmentType.CENTER, 12),
+            createCell("", false, "FFFFFF", 1, 1, 18, AlignmentType.CENTER, 12),
+            createCell("", false, "FFFFFF", 1, 1, 18, AlignmentType.CENTER, 12),
+            createCell("", false, "FFFFFF", 1, 1, 18, AlignmentType.RIGHT, 38),
+            createCell("", false, "FFFFFF", 1, 1, 18, AlignmentType.CENTER, 6),
+            createCell("", false, "FFFFFF", 1, 1, 18, AlignmentType.CENTER, 6),
+            createCell("", false, "FFFFFF", 1, 1, 18, AlignmentType.CENTER, 10)
+          ]
+        }));
+      }
     }
     previousWeekKey = currentWeekKey;
     const bgColor = index % 2 === 0 ? "FFFFFF" : "F9FAF6";
@@ -346,7 +356,7 @@ export const generateLogbookDocx = async (
         // First Section: Front Page (Portrait or Landscape, let's keep Landscape to be consistent)
         properties: {
           page: {
-            size: { orientation: PageOrientation.LANDSCAPE },
+            size: { orientation: orientation === 'landscape' ? PageOrientation.LANDSCAPE : PageOrientation.PORTRAIT },
             margin: { top: 720, bottom: 720, right: 720, left: 720 }
           }
         },
@@ -359,8 +369,6 @@ export const generateLogbookDocx = async (
                   teacherStampRun(),
                   new TextRun({ text: "   الصفحة ", font: "Arial", rightToLeft: true }),
                   new TextRun({ children: [PageNumber.CURRENT], font: "Arial" }),
-                  new TextRun({ text: " من ", font: "Arial", rightToLeft: true }),
-                  new TextRun({ children: [PageNumber.TOTAL_PAGES], font: "Arial" }),
                   new TextRun({ text: " من ", font: "Arial", rightToLeft: true }),
                   new TextRun({ children: [PageNumber.TOTAL_PAGES], font: "Arial" })
                 ]
