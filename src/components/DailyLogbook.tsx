@@ -2547,7 +2547,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                                         </td>
                                       </tr>
                                     )}
-                                    <tr key={r.id> className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-[#f9faf6]'}>
+                                    <tr key={r.id} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-[#f9faf6]'}>
                                   <td className="border border-zinc-200 px-2 py-2 font-bold text-center whitespace-nowrap text-zinc-900">
                                     {r.dayName}
                                   </td>
