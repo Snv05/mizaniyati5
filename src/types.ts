@@ -107,6 +107,8 @@ export interface DailyLogEntry {
   isCompleted: boolean;
 }
 
+export type LessonType = 'curriculum' | 'introductory' | 'opening' | 'health' | 'remediation' | 'assessment' | 'holiday';
+
 export interface AnnualDistributionItem {
   id: string;
   level: '1am' | '2am' | '3am' | '4am';
@@ -121,4 +123,9 @@ export interface AnnualDistributionItem {
   allocatedHours: number;
   notes?: string;
   status: 'completed' | 'in_progress' | 'pending';
+  lessonType?: LessonType;
+  sourceSequenceId?: string;
+  sourceResourceId?: string;
+  sourceLearningUnitId?: string;
+  sourceActivityId?: string;
 }
