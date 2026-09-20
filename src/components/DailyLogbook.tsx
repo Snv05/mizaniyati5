@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { generateLogbookDocx } from "../utils/docxExportLogbook";
+import { generateLogbookDocx, generatePreviewMatchDocx } from "../utils/docxExportLogbook";
 import {
   BookOpen,
   Calendar,
@@ -757,29 +757,53 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
   // Paginate into 20 rows per page
   const handleExportWord = async () => {
     try {
-      const blob = await generateLogbookDocx(rows, config, gridRows, holidays, assignedLevels, orientation);
+      if (rows.length === 0) {
+        showToast('ولّد الدفتر أولاً قبل تصدير Word');
+        return;
+      }
+      if (!isPreviewModalOpen) {
+        setPreviewMode('all');
+        setIsPreviewModalOpen(true);
+        await new Promise(resolve => setTimeout(resolve, 150));
+      }
+      if (document.fonts?.ready) await document.fonts.ready;
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+      const pages = Array.from(
+        document.querySelectorAll<HTMLElement>('[data-preview-export-page="true"]')
+      );
+      if (!pages.length) throw new Error('تعذر العثور على صفحات المعاينة للتصدير');
+
+      const blob = await generatePreviewMatchDocx(pages, orientation);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `الدفتر_اليومي_${config.teacherName}.docx`;
+      a.download = `الدفتر-اليومي-مطابق-للمعاينة-${orientation === 'landscape' ? 'أفقي' : 'عمودي'}.docx`;
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-      showToast("تم تصدير الدفتر اليومي بنجاح (Word)");
+      a.remove();
+      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+      showToast('تم تصدير Word مطابقاً لصفحات المعاينة');
     } catch (error) {
       console.error(error);
-      showToast("حدث خطأ أثناء التصدير");
+      showToast('تعذر تصدير Word المطابق للمعاينة');
     }
   };
 
-  const handleExportPdf = () => {
+  const handleExportPdf = async () => {
     if (rows.length === 0) {
       showToast('ولّد الدفتر أولاً قبل تصدير PDF');
       return;
     }
-    setIsPreviewModalOpen(false);
-    setTimeout(() => window.print(), 120);
+    // PDF must be generated from the same DOM that the user is seeing.
+    if (!isPreviewModalOpen) {
+      setPreviewMode('all');
+      setIsPreviewModalOpen(true);
+      await new Promise(resolve => setTimeout(resolve, 150));
+    }
+    if (document.fonts?.ready) await document.fonts.ready;
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    window.print();
   };
 
   const paginatedPages = useMemo(() => {
@@ -1402,7 +1426,21 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
         .print-page { direction: rtl; box-sizing: border-box; }
         .writing-grid-cell { background-color: rgba(255,255,255,.90); background-image: linear-gradient(rgba(100,116,139,.18) 1px, transparent 1px), linear-gradient(90deg, rgba(100,116,139,.18) 1px, transparent 1px); background-size: 8px 8px; }
         .logbook-grid-cell { background-color: rgba(255,255,255,.90); background-image: linear-gradient(rgba(100,116,139,.16) 1px, transparent 1px), linear-gradient(90deg, rgba(100,116,139,.16) 1px, transparent 1px); background-size: 8px 8px; }
-        @media print { .no-print { display:none !important; } .preview-scroll { overflow: visible !important; } .print-page { box-shadow:none !important; margin:0 !important; border:0 !important; } }
+        @media print {
+  @page { size: A4 portrait; margin: 0 !important; }
+  body { margin: 0 !important; padding: 0 !important; background: #fff !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  body > * { visibility: hidden !important; }
+  .print-preview-root, .print-preview-root * { visibility: visible !important; }
+  .print-preview-root { position: static !important; inset: auto !important; width: 100% !important; height: auto !important; background: #fff !important; overflow: visible !important; display: block !important; }
+  .print-preview-root .preview-controls { display: none !important; }
+  .print-preview-root .preview-scroll { overflow: visible !important; padding: 0 !important; background: #fff !important; display: block !important; }
+  .print-preview-root .preview-scroll > div { transform: none !important; width: auto !important; gap: 0 !important; }
+  .print-preview-root .print-page { box-shadow:none !important; margin:0 !important; border:0 !important; width: 210mm !important; height: 297mm !important; min-height: 297mm !important; max-width:none !important; page-break-after: always !important; break-after: page !important; overflow:hidden !important; }
+  .print-preview-root .print-page:last-child { page-break-after: auto !important; break-after: auto !important; }
+  .no-print { display:none !important; }
+  .logbook-table { border-collapse: collapse !important; }
+  .writing-grid-cell, .logbook-grid-cell { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+}
         .cover-page { background-color: #fffdf7; background-image: radial-gradient(circle at 15% 10%, rgba(6,78,59,.08), transparent 28%), radial-gradient(circle at 85% 20%, rgba(210,16,52,.06), transparent 25%), linear-gradient(rgba(120,113,108,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(120,113,108,.035) 1px, transparent 1px); background-size: auto, auto, 18px 18px, 18px 18px; }
         .logbook-table { border-collapse: collapse !important; }
         .logbook-table th, .logbook-table td { border: 1.5px solid #64748b !important; }
@@ -2466,9 +2504,9 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
 
       {/* Full-Screen Print & Preview Modal */}
       {isPreviewModalOpen && (
-        <div className="fixed inset-0 z-[100] flex flex-col bg-[#1f2937] no-print" dir="rtl">
+        <div className="fixed inset-0 z-[100] flex flex-col bg-[#1f2937] print-preview-root" dir="rtl">
           {/* Preview Modal Header */}
-          <div className="h-[56px] bg-[#111827] border-b border-zinc-700 flex items-center justify-between px-3 md:px-5 shrink-0">
+          <div className="preview-controls h-[56px] bg-[#111827] border-b border-zinc-700 flex items-center justify-between px-3 md:px-5 shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-white text-[#111827] grid place-items-center font-extrabold text-[14px]">
                 👁️
@@ -2562,11 +2600,11 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                 className="flex flex-col items-center gap-8 md:gap-10 w-full"
                 style={{ transform: `scale(${previewZoom / 100})`, transformOrigin: 'top center' }}
               >
-                {renderCoverFirstPage()}
+                {React.cloneElement(renderCoverFirstPage(), { 'data-preview-export-page': 'true' })}
                 {previewPagesToDisplay.map((pageRows, pageIdx) => (
                   <div
                     key={pageIdx}
-                    className="print-page grid-paper-bg shadow-[0_25px_80px_rgba(0,0,0,0.5),0_0_0_1px_rgba(0,0,0,0.1)] rounded-[2px] overflow-hidden shrink-0"
+                    data-preview-export-page="true" className="print-page grid-paper-bg shadow-[0_25px_80px_rgba(0,0,0,0.5),0_0_0_1px_rgba(0,0,0,0.1)] rounded-[2px] overflow-hidden shrink-0"
                     style={{ width: `${pageDimensions.w}mm`, minHeight: `${pageDimensions.h}mm` }}
                   >
                     <div style={{ padding: PAGE_INNER_PADDING }} className="h-full flex flex-col justify-between">
