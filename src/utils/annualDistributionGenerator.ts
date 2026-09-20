@@ -105,8 +105,8 @@ export function generateAnnualDistribution(
         midan: '',
         maqta: '',
         mawrid: '',
-        session1: 'تعارف',
-        session2: 'الدرس الافتتاحي',
+        session1: 'تعارف + الدرس الافتتاحي',
+        session2: '',
         month,
         dates
       });
