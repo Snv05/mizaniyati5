@@ -44,7 +44,7 @@ const createParagraph = (text: string, bold = false, color = "000000", size = 20
           color: color,
           rightToLeft: true,
           size: size,
-          font: "Arial"
+          font: "Tajawal"
         });
       });
       return [ ...runs, ...(i < arr.length - 1 ? [new TextRun({ break: 1 })] : []) ];
