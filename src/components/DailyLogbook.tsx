@@ -103,7 +103,7 @@ type AnnualStoredItem = { id?: string; level?: string; lessonType?: string; mida
 
 const getStoredAnnualSchedule = (level: '1م' | '2م' | '3م' | '4م'): { startDate: string; items: AnnualStoredItem[] } | null => {
   try {
-    const raw = JSON.parse(localStorage.getItem('algeria_sciences_annual_dist_v4') || '{}');
+    const raw = JSON.parse(localStorage.getItem('algeria_sciences_annual_dist_v5') || '{}');
     const key = level.replace('م', 'am') as '1am' | '2am' | '3am' | '4am';
     const value = raw?.[key];
     if (!value?.startDate || !Array.isArray(value.items)) return null;
@@ -292,7 +292,7 @@ function buildHierarchicalContent(
   if (!sameMawrid && row.mawrid) parts.push(`<u>المورد:</u> ${row.mawrid}`);
   if (!sameTa3alom && row.ta3alom) parts.push(`<u>تعلم المورد:</u> ${row.ta3alom}`);
 
-  const activities = (row.activitiesList || []).filter(Boolean);
+  const activities = (row.activitiesList || []).filter(Boolean).slice(0, 2);
   if (activities.length > 0) {
     parts.push(`<u>الأنشطة:</u> ${activities.join(' / ')}`);
   }
