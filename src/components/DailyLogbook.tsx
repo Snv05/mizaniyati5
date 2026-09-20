@@ -369,6 +369,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
         if (parsed.rows && Array.isArray(parsed.rows)) setRows(parsed.rows);
         if (parsed.startDate) setStartDate(parsed.startDate);
         if (parsed.period) setPeriod(parsed.period);
+        if (parsed.orientation === 'portrait' || parsed.orientation === 'landscape') setOrientation(parsed.orientation);
         if (parsed.gridRows && Array.isArray(parsed.gridRows)) {
           const valid: TimetableGridRow[] = [];
           const seen = new Set<string>();
@@ -413,6 +414,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
       rows,
       startDate,
       period,
+      orientation,
     };
     localStorage.setItem(
       'daftar_table_v2027',
@@ -421,7 +423,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
     if ((window as any).syncToCloud) {
       (window as any).syncToCloud('logbook', dataToSave);
     }
-  }, [wilaya, school, teacher, subject, config.schoolYear, showSubjectInHeader, showYearInHeader, gridRows, holidays, rows, startDate, period]);
+  }, [wilaya, school, teacher, subject, config.schoolYear, showSubjectInHeader, showYearInHeader, gridRows, holidays, rows, startDate, period, orientation]);
 
   // Keyboard navigation for preview modal
   useEffect(() => {
