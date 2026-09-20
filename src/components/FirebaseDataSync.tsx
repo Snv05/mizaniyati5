@@ -29,7 +29,7 @@ export const FirebaseDataSync: React.FC = () => {
         if (distDoc.exists()) {
           const data = distDoc.data();
           if (data.distribution) {
-            localStorage.setItem('algeria_sciences_annual_dist_v4', JSON.stringify(data.distribution));
+            localStorage.setItem('algeria_sciences_annual_dist_v5', JSON.stringify(data.distribution));
             window.dispatchEvent(new CustomEvent('firebase-sync-complete', { detail: { type: 'dist' } }));
           }
         }
