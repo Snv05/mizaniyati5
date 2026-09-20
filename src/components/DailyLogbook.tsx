@@ -644,10 +644,15 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
             const hasCurriculumSourceForSession =
               ordinal === 0 ? !!annualItem.sourceActivityId : !!annualItem.sourceActivityId2;
 
-            if (annualItem.lessonType && annualItem.lessonType !== 'curriculum' && !hasCurriculumSourceForSession) {
-              currentLessonType = annualItem.lessonType as LogEntry['lessonType'];
+            const isAssessmentSession =
+              ordinal === 1 &&
+              !annualItem.sourceActivityId2 &&
+              (!!annualItem.taqwim || String(scheduledTitle || '').trim().startsWith('تقويم'));
+
+            if (isAssessmentSession || (annualItem.lessonType && annualItem.lessonType !== 'curriculum' && !hasCurriculumSourceForSession)) {
+              currentLessonType = isAssessmentSession ? 'assessment' : annualItem.lessonType as LogEntry['lessonType'];
               matchedAnnual = true;
-              const specialTitle = scheduledTitle || '';
+              const specialTitle = scheduledTitle || (annualItem.taqwim ? `تقويم: ${annualItem.taqwim}` : 'تقويم');
               res = {
                 level: lvl,
                 memoNumber: '',
