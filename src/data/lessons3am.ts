@@ -30,6 +30,10 @@ export function buildLessons3AM(): any[] {
         diagramTitle = firstDiagram?.title;
 
         allLessons.push({
+          sourceSequenceId: seq.sequence_id,
+          sourceResourceId: res.resource_id,
+          sourceLearningUnitId: lu.learning_unit_id,
+          sourceOfficial: lu.official_source === true,
           level: '3am',
           memoNumber: memoCounter.toString().padStart(2, '0'),
           midan: seq.field_name || '',
@@ -55,6 +59,7 @@ export function buildLessons3AM(): any[] {
           irsaeTables: lu.irsae_tables,
           taqwimTables: lu.taqwim_tables,
           anshita: lu.activities.map(a => ({
+            sourceActivityId: a.activity_id,
             title: a.activity_title,
             asila: a.ustadh_activity,
             ajwiba: a.mutaalim_activity,
