@@ -18,6 +18,7 @@ export interface GeneratedSession {
   sourceResourceId?: string;
   sourceLearningUnitId?: string;
   sourceActivityId?: string;
+  sourceActivityId2?: string;
   learningUnit?: string;
 }
 
@@ -207,6 +208,7 @@ export function generateAnnualDistribution(
       sourceResourceId: act1.sourceResourceId,
       sourceLearningUnitId: act1.sourceLearningUnitId,
       sourceActivityId: act1.sourceActivityId,
+      sourceActivityId2: act2?.sourceActivityId,
       learningUnit: act1.learningUnit
     });
     weekNum++;
