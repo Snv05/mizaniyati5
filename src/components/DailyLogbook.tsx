@@ -1283,6 +1283,27 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
               </div>
             )}
           </div>
+
+          {/* ختم الأستاذ + توقيع في الصفحة الأولى — لضمان أن كل صفحة تحتوي الختم */}
+          <div className="mt-auto pt-3 border-t border-zinc-200 flex items-end justify-between gap-6 text-[10px]">
+            <div className="text-center min-w-[140px]">
+              <div className="font-bold text-zinc-800">توقيع الأستاذ(ة)</div>
+              <div className="mt-5 border-t border-dashed border-zinc-400 h-7" />
+            </div>
+            <div className="text-center">
+              <div className="font-bold text-zinc-800 mb-1">ختم الأستاذ(ة)</div>
+              <div className="flex justify-center">
+                <TeacherOfficialStamp config={config} size="sm" />
+              </div>
+            </div>
+            <div className="text-center min-w-[140px]">
+              <div className="font-bold text-zinc-800">تأشيرة المؤسسة</div>
+              <div className="mt-5 border-t border-dashed border-zinc-400 h-7" />
+            </div>
+            <div className="font-bold text-zinc-700 whitespace-nowrap">
+              صفحة 1 من {getTotalLogbookPages(rows.length)}
+            </div>
+          </div>
         </div>
       </div>
     );
