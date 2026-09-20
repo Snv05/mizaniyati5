@@ -1448,6 +1448,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
   .print-preview-root .preview-scroll > div { transform: none !important; width: auto !important; gap: 0 !important; }
   .print-preview-root .print-page { box-shadow:none !important; margin:0 !important; border:0 !important; width: 210mm !important; height: 297mm !important; min-height: 297mm !important; max-width:none !important; page-break-after: always !important; break-after: page !important; overflow:hidden !important; }
   .print-preview-root .print-page:last-child { page-break-after: auto !important; break-after: auto !important; }
+  .print-preview-root.print-orientation-landscape .print-page { width: 297mm !important; height: 210mm !important; min-height: 210mm !important; }
   .no-print { display:none !important; }
   .logbook-table { border-collapse: collapse !important; }
   .writing-grid-cell, .logbook-grid-cell { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
@@ -2515,7 +2516,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
 
       {/* Full-Screen Print & Preview Modal */}
       {isPreviewModalOpen && (
-        <div className="fixed inset-0 z-[100] flex flex-col bg-[#1f2937] print-preview-root" dir="rtl">
+        <div className={`fixed inset-0 z-[100] flex flex-col bg-[#1f2937] print-preview-root print-orientation-${orientation}`} dir="rtl">
           {/* Preview Modal Header */}
           <div className="preview-controls h-[56px] bg-[#111827] border-b border-zinc-700 flex items-center justify-between px-3 md:px-5 shrink-0">
             <div className="flex items-center gap-3">
