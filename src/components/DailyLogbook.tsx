@@ -221,10 +221,22 @@ const AUTO_FILLED_TIMETABLE_ROWS: TimetableGridRow[] = EMPTY_TIMETABLE_ROWS.map(
   cells: createEmptyDayCells(),
 }));
 
-const ROWS_PER_PAGE = 20;
+const ROWS_PER_PAGE = 18;
 const PAGE_DIMENSIONS_MM = { w: 210, h: 297 };
 const PRINT_MARGIN = '14mm';
 const PAGE_INNER_PADDING = '14px';
+const NOTEBOOK_CONTENT_MIN_HEIGHT = '72px';
+
+function getSchoolWeekKey(dateStr: string): string {
+  const d = new Date(`${dateStr}T12:00:00`);
+  if (Number.isNaN(d.getTime())) return dateStr;
+  d.setDate(d.getDate() - d.getDay());
+  return formatDateToIsoString(d);
+}
+
+function getTotalLogbookPages(rowCount: number): number {
+  return 1 + Math.max(1, Math.ceil(rowCount / ROWS_PER_PAGE));
+}
 
 export function detectLevelFromSection(sec: string): '1م' | '2م' | '3م' | '4م' | null {
   if (!sec) return null;
@@ -1138,7 +1150,8 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           </div>
 
           <div className="flex justify-between items-center text-[9px] text-zinc-500 pt-2 border-t border-zinc-100">
-            <span>الصفحة الأولى (وثيقة الغلاف واستعمال الزمن الرسمي)</span>
+            <span>الصفحة الأولى (الغلاف واستعمال الزمن الرسمي)</span>
+            <span className="font-bold text-zinc-700">صفحة 1 من {getTotalLogbookPages(rows.length)}</span>
             <span>الجمهورية الجزائرية الديمقراطية الشعبية 🇩🇿</span>
           </div>
 
@@ -1283,7 +1296,16 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
     >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
-        @media print { @page { size: landscape; margin: 0; } body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+        @media print {
+          @page { size: A4 landscape; margin: 0; }
+          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .grid-paper-bg {
+            background-color: #ffffff !important;
+            background-image: linear-gradient(#cce0ff 1px, transparent 1px), linear-gradient(90deg, #cce0ff 1px, transparent 1px) !important;
+            background-size: 24px 24px !important;
+          }
+          .print-page { break-inside: avoid; page-break-inside: avoid; }
+        }
         }
         .print-page { direction: rtl; box-sizing: border-box; }
         .print-page.bg-white { background-color: transparent !important; }
@@ -1987,9 +2009,12 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
               const tableBodyRows: React.ReactNode[] = [];
               let prevDateStr = '';
               let prevWasMorning = false;
+              let prevWeekKey = '';
 
               pageRows.forEach((r, rowIdx) => {
                 const isNewDate = r.dateStr !== prevDateStr;
+                const weekKey = getSchoolWeekKey(r.dateStr);
+                const isNewWeek = !!prevWeekKey && weekKey !== prevWeekKey;
                 const previousRow = rowIdx > 0 ? pageRows[rowIdx - 1] : undefined;
                 const displayContent = buildHierarchicalContent(r, previousRow);
                 const isMorning = isMorningTime(r.time);
@@ -1997,7 +2022,15 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                 const morningToAfternoonBreak =
                   !isNewDate && prevWasMorning && isAfternoon;
                 
-                if (isNewDate && rowIdx > 0) {
+                if (isNewWeek) {
+                  tableBodyRows.push(
+                    <tr key={`week-space-${r.id}`} className="bg-[#fffef5]">
+                      <td colSpan={8} className="border border-amber-200 text-amber-800 text-center font-bold text-[10px] h-[28px]">
+                        مساحة إضافية للأسبوع — ملاحظات / إضافة / تعديل
+                      </td>
+                    </tr>
+                  );
+                } else if (isNewDate && rowIdx > 0) {
                   tableBodyRows.push(
                     <tr key={`divider-${r.id}-day`} className="bg-[#f0f9ff]">
                       <td colSpan={8} className="border-t border-b border-[#bae6fd] h-1.5" />
@@ -2012,6 +2045,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                 }
 
                 prevDateStr = r.dateStr;
+                prevWeekKey = weekKey;
                 if (isMorning) prevWasMorning = true;
                 if (isAfternoon) prevWasMorning = false;
 
@@ -2041,7 +2075,11 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                         {r.section}
                       </span>
                     </td>
-                    <td className="border border-zinc-200 px-3 py-2 text-zinc-900 leading-relaxed text-right whitespace-pre-line" dangerouslySetInnerHTML={{ __html: displayContent }} />
+                    <td
+                      className="border border-zinc-200 px-3 py-2 text-zinc-900 leading-relaxed text-right whitespace-pre-line align-top"
+                      style={{ minHeight: NOTEBOOK_CONTENT_MIN_HEIGHT, height: NOTEBOOK_CONTENT_MIN_HEIGHT }}
+                      dangerouslySetInnerHTML={{ __html: displayContent }}
+                    />
                     <td className="border border-zinc-200 px-2 py-2 text-zinc-600 text-[10px] w-[50px] text-center">
                       {r.attendance || '—'}
                     </td>
@@ -2162,7 +2200,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                       </div>
                       <div className="px-4 pb-2 flex justify-center items-center border-t border-zinc-100 pt-2">
                         <span className="bg-zinc-900 text-white px-4 py-1 rounded-full font-bold text-[11px]">
-                           {pageIdx + 1}
+                           صفحة {pageIdx + 2} من {getTotalLogbookPages(rows.length)}
                         </span>
                       </div>
                       <div className="h-1 flex -mx-[1px]">
@@ -2475,8 +2513,20 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                               </tr>
                             </thead>
                             <tbody>
-                              {pageRows.map((r, rowIdx) => (
-                                <tr key={r.id} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-[#f9faf6]'}>
+                              {pageRows.map((r, rowIdx) => {
+                                const previousRow = rowIdx > 0 ? pageRows[rowIdx - 1] : undefined;
+                                const isNewWeek = rowIdx > 0 && getSchoolWeekKey(r.dateStr) !== getSchoolWeekKey(pageRows[rowIdx - 1].dateStr);
+                                const previewContent = buildHierarchicalContent(r, previousRow);
+                                return (
+                                  <React.Fragment key={r.id}>
+                                    {isNewWeek && (
+                                      <tr className="bg-[#fffef5]">
+                                        <td colSpan={8} className="border border-amber-200 text-amber-800 text-center font-bold text-[10px] h-[28px]">
+                                          مساحة إضافية للأسبوع — ملاحظات / إضافة / تعديل
+                                        </td>
+                                      </tr>
+                                    )}
+                                    <tr key={r.id> className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-[#f9faf6]'}>
                                   <td className="border border-zinc-200 px-2 py-2 font-bold text-center whitespace-nowrap text-zinc-900">
                                     {r.dayName}
                                   </td>
@@ -2501,12 +2551,18 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                                       {r.section}
                                     </span>
                                   </td>
-                                  <td className="border border-zinc-200 px-3 py-2 text-zinc-900 leading-relaxed whitespace-pre-line text-right" dangerouslySetInnerHTML={{ __html: r.content }} />
+                                  <td
+                                    className="border border-zinc-200 px-3 py-2 text-zinc-900 leading-relaxed whitespace-pre-line text-right align-top"
+                                    style={{ minHeight: NOTEBOOK_CONTENT_MIN_HEIGHT, height: NOTEBOOK_CONTENT_MIN_HEIGHT }}
+                                    dangerouslySetInnerHTML={{ __html: previewContent }}
+                                  />
                                   <td className="border border-zinc-200" />
                                   <td className="border border-zinc-200" />
                                   <td className="border border-zinc-200 px-2 py-2 text-zinc-600">{r.note}</td>
                                 </tr>
-                              ))}
+                                  </React.Fragment>
+                                );
+                              })}
                               {Array.from({ length: Math.max(0, ROWS_PER_PAGE - pageRows.length) }).map((_, emptyIdx) => (
                                 <tr key={`empty-p-${emptyIdx}`} className="bg-white">
                                   <td className="border border-zinc-200 h-[32px]" />
@@ -2549,7 +2605,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
 
                         <div className="px-4 pb-2 flex justify-center items-center border-t border-zinc-100 pt-2">
                           <span className="bg-zinc-900 text-white px-4 py-1 rounded-full font-bold text-[11px]">
-                            {formatPageNumberLabel(previewMode === 'single' ? 0 : pageIdx, paginatedPages.length)}
+                            {formatPageNumberLabel(previewMode === 'single' ? 1 : pageIdx + 1, getTotalLogbookPages(rows.length))}
                           </span>
                         </div>
 
