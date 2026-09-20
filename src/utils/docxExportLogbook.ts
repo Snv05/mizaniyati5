@@ -387,7 +387,7 @@ export const generateLogbookDocx = async (
         // Second Section: Main Logbook Entries
         properties: {
           page: {
-            size: { orientation: PageOrientation.LANDSCAPE },
+            size: { orientation: orientation === 'landscape' ? PageOrientation.LANDSCAPE : PageOrientation.PORTRAIT },
             margin: { top: 720, bottom: 720, right: 720, left: 720 }
           }
         },
