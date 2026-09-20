@@ -116,18 +116,42 @@ export function generateAnnualDistribution(
     }
 
     if (weekNum === 2) {
-      generated.push({
-        id: is1AM ? 'annual-2-health-remediation' : 'annual-2-health',
-        level: lessons[0]?.level,
-        lessonType: 'health',
-        midan: '',
-        maqta: '',
-        mawrid: '',
-        session1: 'الصحة المدرسية',
-        session2: is1AM ? 'معالجة بيداغوجية' : '',
-        month,
-        dates
-      });
+      // Week 2:
+      // 1AM = school health + pedagogical remediation.
+      // Other levels = school health + the first official curriculum activity.
+      if (is1AM) {
+        generated.push({
+          id: 'annual-2-health-remediation',
+          level: lessons[0]?.level,
+          lessonType: 'health',
+          midan: '',
+          maqta: '',
+          mawrid: '',
+          session1: 'الصحة المدرسية',
+          session2: 'معالجة بيداغوجية',
+          month,
+          dates
+        });
+      } else {
+        const act1 = flatActivities[actIdx++];
+        generated.push({
+          id: 'annual-2-health-curriculum',
+          level: lessons[0]?.level,
+          lessonType: 'health',
+          midan: act1?.midan || '',
+          maqta: act1?.maqta || '',
+          mawrid: act1?.mawrid || '',
+          session1: 'الصحة المدرسية',
+          session2: act1?.title || '',
+          month,
+          dates,
+          sourceSequenceId: act1?.sourceSequenceId,
+          sourceResourceId: act1?.sourceResourceId,
+          sourceLearningUnitId: act1?.sourceLearningUnitId,
+          sourceActivityId: act1?.sourceActivityId,
+          learningUnit: act1?.learningUnit
+        });
+      }
       weekNum++;
       currentDate.setDate(currentDate.getDate() + 7);
       continue;
