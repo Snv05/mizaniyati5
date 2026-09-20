@@ -138,18 +138,21 @@ export function generateAnnualDistribution(
         generated.push({
           id: 'annual-2-start-study',
           level: lessons[0]?.level,
-          lessonType: 'curriculum',
+          // Week 2 session 1 is the pedagogical starting situation for
+          // the first field/sequence and its first learning unit.
+          // Session 2 remains the first official curriculum activity.
+          lessonType: 'introductory',
           midan: act1?.midan || '',
           maqta: act1?.maqta || '',
           mawrid: act1?.mawrid || '',
-          session1: 'بداية الدراسة',
+          session1: 'وضعية انطلاقية للميدان والمقطع',
           session2: act1?.title || '',
           month,
           dates,
           sourceSequenceId: act1?.sourceSequenceId,
           sourceResourceId: act1?.sourceResourceId,
           sourceLearningUnitId: act1?.sourceLearningUnitId,
-          sourceActivityId: act1?.sourceActivityId,
+          sourceActivityId2: act1?.sourceActivityId,
           learningUnit: act1?.learningUnit
         });
       }
