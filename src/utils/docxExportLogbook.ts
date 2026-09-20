@@ -35,7 +35,7 @@ const createParagraph = (text: string, bold = false, color = "000000", size = 20
             color: color,
             rightToLeft: true,
             size: size,
-            font: "Arial"
+            font: "Tajawal"
           });
         }
         return new TextRun({
@@ -65,6 +65,14 @@ const createCell = (text: string, bold = false, bgColor?: string, columnSpan?: n
 };
 
 const WEEK_DAYS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
+
+const getExportLessonContent = (log: LogEntry): string => {
+  const activities = (log.activitiesList || []).filter(Boolean).slice(0, 2);
+  const lines: string[] = [];
+  if (activities.length) lines.push(`الأنشطة: ${activities.join(' / ')}`);
+  if ((log as any).taqwim) lines.push(`التقويم: ${(log as any).taqwim}`);
+  return lines.join('\n') || log.content || '';
+};
 
 const base64ToUint8Array = (base64: string): Uint8Array => {
   const binary = window.atob(base64);
@@ -187,7 +195,7 @@ export const generateLogbookDocx = async (
         createCell(log.dateStr, false, bgColor, 1, 1, 18),
         createCell(log.time, false, bgColor, 1, 1, 18),
         createCell(log.section, true, bgColor, 1, 1, 20),
-        createCell(`${log.content || ''}\n\n\n______________________________\n______________________________`, false, bgColor, 1, 1, 20, AlignmentType.RIGHT),
+        createCell(`${getExportLessonContent(log)}\n\n\n______________________________\n______________________________`, false, bgColor, 1, 1, 20, AlignmentType.RIGHT),
         createCell(log.attendance || '', false, bgColor, 1, 1, 18),
         createCell(log.wasail || '', false, bgColor, 1, 1, 18),
         createCell(`${log.note || ''}\n\n`, false, bgColor, 1, 1, 18),
@@ -339,14 +347,14 @@ export const generateLogbookDocx = async (
   const teacherStampRun = () => new ImageRun({
     type: "png",
     data: teacherStampData,
-    transformation: { width: 58, height: 58 }
+    transformation: { width: 82, height: 82 }
   });
 
   const doc = new Document({
     styles: {
       default: {
         document: {
-          run: { rightToLeft: true, font: "Arial" },
+          run: { rightToLeft: true, font: "Tajawal" },
           paragraph: {  alignment: AlignmentType.RIGHT }
         }
       }
@@ -364,7 +372,7 @@ export const generateLogbookDocx = async (
           default: new Footer({
             children: [
               new Paragraph({
-                alignment: AlignmentType.CENTER,
+                alignment: AlignmentType.LEFT,
                 children: [
                   teacherStampRun(),
                   new TextRun({ text: "   الصفحة ", font: "Arial", rightToLeft: true }),
