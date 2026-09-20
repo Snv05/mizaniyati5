@@ -222,7 +222,7 @@ const AUTO_FILLED_TIMETABLE_ROWS: TimetableGridRow[] = EMPTY_TIMETABLE_ROWS.map(
 }));
 
 const ROWS_PER_PAGE = 18;
-const PAGE_DIMENSIONS_MM = { w: 210, h: 297 };
+const getPageDimensions = (orientation: 'portrait' | 'landscape') => orientation === 'landscape' ? { w: 297, h: 210 } : { w: 210, h: 297 };
 const PRINT_MARGIN = '14mm';
 const PAGE_INNER_PADDING = '14px';
 const NOTEBOOK_CONTENT_MIN_HEIGHT = '72px';
@@ -314,6 +314,8 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
 
   // Generation controls
   const [period, setPeriod] = useState<string>('شهر');
+  const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
+  const pageDimensions = getPageDimensions(orientation);
   const [startDate, setStartDate] = useState<string>(() => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
@@ -697,7 +699,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
   // Paginate into 20 rows per page
   const handleExportWord = async () => {
     try {
-      const blob = await generateLogbookDocx(rows, config, gridRows, holidays, assignedLevels);
+      const blob = await generateLogbookDocx(rows, config, gridRows, holidays, assignedLevels, orientation);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -914,8 +916,8 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
     <div
       className="print-page grid-paper-bg shadow-[0_20px_60px_rgba(0,0,0,0.12)] rounded-[2px] border border-zinc-200 overflow-hidden mx-auto mb-8"
       style={{
-        width: `${PAGE_DIMENSIONS_MM.w}mm`,
-        minHeight: `${PAGE_DIMENSIONS_MM.h}mm`,
+        width: `${pageDimensions.w}mm`,
+        minHeight: `${pageDimensions.h}mm`,
         maxWidth: '100%',
       }}
     >
@@ -1175,8 +1177,8 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
             : "print-page bg-white shadow-[0_20px_60px_rgba(0,0,0,0.12)] rounded-[2px] border border-zinc-200 overflow-hidden mx-auto mb-8 flex flex-col"
         }
         style={{
-          width: `${PAGE_DIMENSIONS_MM.w}mm`,
-          minHeight: `${PAGE_DIMENSIONS_MM.h}mm`,
+          width: `${pageDimensions.w}mm`,
+          minHeight: `${pageDimensions.h}mm`,
           maxWidth: isPreview ? undefined : '100%',
         }}
       >
@@ -1318,26 +1320,27 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap');
         @media print {
-          @page { size: A4 landscape; margin: 0; }
+          @page { size: A4 ${orientation}; margin: 0; }
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .grid-paper-bg {
             background-color: #ffffff !important;
-            background-image: linear-gradient(#cce0ff 1px, transparent 1px), linear-gradient(90deg, #cce0ff 1px, transparent 1px) !important;
-            background-size: 24px 24px !important;
+            background-image: linear-gradient(rgba(148,163,184,.28) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,.28) 1px, transparent 1px) !important;
+            background-size: 12px 12px !important;
           }
           .print-page { break-inside: avoid; page-break-inside: avoid; }
         }
-        }
         .print-page { direction: rtl; box-sizing: border-box; }
+        .logbook-table { border-collapse: collapse !important; }
+        .logbook-table th, .logbook-table td { border: 1.5px solid #64748b !important; }
         .print-page.bg-white { background-color: transparent !important; }
         .preview-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
         .preview-scroll::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
         .preview-scroll::-webkit-scrollbar-track { background: #111827; }
         .grid-paper-bg {
           background-color: #ffffff;
-          background-image: linear-gradient(#cce0ff 1px, transparent 1px),
-                            linear-gradient(90deg, #cce0ff 1px, transparent 1px);
-          background-size: 24px 24px;
+          background-image: linear-gradient(rgba(148,163,184,.28) 1px, transparent 1px),
+                            linear-gradient(90deg, rgba(148,163,184,.28) 1px, transparent 1px);
+          background-size: 12px 12px;
         }
       `}</style>
 
@@ -1970,7 +1973,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           {paginatedPages.length === 0 && (
             <div
               className="bg-white rounded-[20px] border-2 border-dashed border-zinc-300 p-10 text-center shadow-sm mx-auto"
-              style={{ width: `${PAGE_DIMENSIONS_MM.w}mm`, maxWidth: '100%', minHeight: '340px' }}
+              style={{ width: `${pageDimensions.w}mm`, maxWidth: '100%', minHeight: '340px' }}
             >
               <div className="w-12 h-12 mx-auto rounded-full bg-[#064e3b] text-white grid place-items-center mb-4 text-[20px]">
                 🇩🇿
@@ -2135,8 +2138,8 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                   key={pageIdx}
                   className="print-page grid-paper-bg shadow-[0_20px_60px_rgba(0,0,0,0.12)] rounded-[2px] border border-zinc-200 overflow-hidden mx-auto mb-8"
                   style={{
-                    width: `${PAGE_DIMENSIONS_MM.w}mm`,
-                    minHeight: `${PAGE_DIMENSIONS_MM.h}mm`,
+                    width: `${pageDimensions.w}mm`,
+                    minHeight: `${pageDimensions.h}mm`,
                     maxWidth: '100%',
                   }}
                 >
@@ -2180,7 +2183,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                       </div>
 
                       <div className="p-0 flex-1 mt-1">
-                        <table className="w-full border-collapse text-[11px] leading-5 table-fixed">
+                        <table className="logbook-table w-full border-collapse text-[11px] leading-5 table-fixed">
                           <thead>
                             <tr className="bg-[#064e3b] text-white">
                               <th className="border border-[#0a3d2e] px-2 py-2 font-bold w-[62px]">اليوم</th>
@@ -2472,7 +2475,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                   <div
                     key={pageIdx}
                     className="print-page grid-paper-bg shadow-[0_25px_80px_rgba(0,0,0,0.5),0_0_0_1px_rgba(0,0,0,0.1)] rounded-[2px] overflow-hidden shrink-0"
-                    style={{ width: `${PAGE_DIMENSIONS_MM.w}mm`, minHeight: `${PAGE_DIMENSIONS_MM.h}mm` }}
+                    style={{ width: `${pageDimensions.w}mm`, minHeight: `${pageDimensions.h}mm` }}
                   >
                     <div style={{ padding: PAGE_INNER_PADDING }} className="h-full flex flex-col justify-between">
                       {/* Header */}
