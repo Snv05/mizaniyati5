@@ -929,7 +929,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
   // مكون بطاقة/صفحة الغلاف واستعمال الزمن (الصفحة الأولى عند الطباعة)
   const renderCoverFirstPage = () => (
     <div
-      className="print-page grid-paper-bg shadow-[0_20px_60px_rgba(0,0,0,0.12)] rounded-[2px] border border-zinc-200 overflow-hidden mx-auto mb-8"
+      className="print-page cover-page shadow-[0_20px_60px_rgba(0,0,0,0.12)] rounded-[2px] border border-zinc-200 overflow-hidden mx-auto mb-8"
       style={{
         width: `${pageDimensions.w}mm`,
         minHeight: `${pageDimensions.h}mm`,
@@ -1347,7 +1347,9 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           }
           .print-page { break-inside: avoid; page-break-inside: avoid; }
         }
-        .print-page { direction: rtl; box-sizing: border-box; background-color: #ffffff; background-image: linear-gradient(rgba(148,163,184,.22) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,.22) 1px, transparent 1px); background-size: 10px 10px; }
+        .print-page { direction: rtl; box-sizing: border-box; }
+        .writing-grid-cell { background-color: rgba(255,255,255,.86); background-image: linear-gradient(rgba(148,163,184,.20) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,.20) 1px, transparent 1px); background-size: 8px 8px; }
+        .cover-page { background-color: #fffdf7; background-image: radial-gradient(circle at 15% 10%, rgba(6,78,59,.08), transparent 28%), radial-gradient(circle at 85% 20%, rgba(210,16,52,.06), transparent 25%), linear-gradient(rgba(120,113,108,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(120,113,108,.035) 1px, transparent 1px); background-size: auto, auto, 18px 18px, 18px 18px; }
         .logbook-table { border-collapse: collapse !important; }
         .logbook-table th, .logbook-table td { border: 1.5px solid #64748b !important; }
         .preview-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -2083,7 +2085,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                             key={cellIdx}
                             contentEditable
                             suppressContentEditableWarning
-                            className="border border-slate-400 h-[34px] bg-white/80 outline-none"
+                            className="writing-grid-cell border border-slate-400 h-[34px] outline-none"
                             title="خانة كتابة إضافية بين الأسابيع"
                           />
                         ))}
@@ -2506,7 +2508,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                 className="flex flex-col items-center gap-8 md:gap-10 w-full"
                 style={{ transform: `scale(${previewZoom / 100})`, transformOrigin: 'top center' }}
               >
-                {renderFrontPage(true)}
+                {renderCoverFirstPage()}
                 {previewPagesToDisplay.map((pageRows, pageIdx) => (
                   <div
                     key={pageIdx}
@@ -2600,7 +2602,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                                   <td className="border border-zinc-200 px-2 py-2 font-bold text-center whitespace-nowrap text-zinc-900">
                                     {r.dayName}
                                   </td>
-                                  <td className="border border-zinc-200 px-1 py-2 text-center font-mono text-[10px] text-zinc-700">
+                                  <td className="writing-grid-cell border border-zinc-200 px-1 py-2 text-center font-mono text-[10px] text-zinc-700">
                                     {r.dateStr}
                                   </td>
                                   <td className="border border-zinc-200 px-2 py-2 text-center font-mono text-[10px]">
@@ -2622,13 +2624,13 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                                     </span>
                                   </td>
                                   <td
-                                    className="border border-zinc-200 px-3 py-2 text-zinc-900 leading-relaxed whitespace-pre-line text-right align-top"
+                                    className="writing-grid-cell border border-zinc-200 px-3 py-2 text-zinc-900 leading-relaxed whitespace-pre-line text-right align-top"
                                     style={{ minHeight: NOTEBOOK_CONTENT_MIN_HEIGHT, height: NOTEBOOK_CONTENT_MIN_HEIGHT }}
                                     dangerouslySetInnerHTML={{ __html: previewContent }}
                                   />
                                   <td className="border border-zinc-200" />
                                   <td className="border border-zinc-200" />
-                                  <td className="border border-zinc-200 px-2 py-2 text-zinc-600">{r.note}</td>
+                                  <td className="writing-grid-cell border border-zinc-200 px-2 py-2 text-zinc-600 min-h-[72px]">{r.note}</td>
                                 </tr>
                                   </React.Fragment>
                                 );
