@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { generatePreviewMatchDocx } from "../utils/docxExportLogbook";
+import { generatePreviewMatchPdf } from "../utils/pdfExportLogbook";
 import {
   BookOpen,
   Calendar,
@@ -791,30 +792,30 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
   };
 
   const handleExportPdf = async () => {
-    if (rows.length === 0) {
-      showToast('ولّد الدفتر أولاً قبل تصدير PDF');
-      return;
+    try {
+      if (rows.length === 0) {
+        showToast('ولّد الدفتر أولاً قبل تصدير PDF');
+        return;
+      }
+      if (!isPreviewModalOpen) {
+        setPreviewMode('all');
+        setIsPreviewModalOpen(true);
+        await new Promise(resolve => setTimeout(resolve, 150));
+      }
+      if (document.fonts?.ready) await document.fonts.ready;
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+      const pages = Array.from(
+        document.querySelectorAll<HTMLElement>('[data-preview-export-page="true"]')
+      );
+      if (!pages.length) throw new Error('تعذر العثور على صفحات المعاينة للتصدير');
+
+      await generatePreviewMatchPdf(pages, orientation);
+      showToast('تم تصدير PDF مطابقاً لصفحات المعاينة');
+    } catch (error) {
+      console.error(error);
+      showToast('تعذر تصدير PDF المطابق للمعاينة');
     }
-    // PDF must be generated from the same DOM that the user is seeing.
-    if (!isPreviewModalOpen) {
-      setPreviewMode('all');
-      setIsPreviewModalOpen(true);
-      await new Promise(resolve => setTimeout(resolve, 150));
-    }
-    if (document.fonts?.ready) await document.fonts.ready;
-    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-    const styleId = 'daily-logbook-print-orientation';
-    document.getElementById(styleId)?.remove();
-    const printStyle = document.createElement('style');
-    printStyle.id = styleId;
-    printStyle.textContent = `@media print { @page { size: A4 ${orientation}; margin: 0 !important; } }`;
-    document.head.appendChild(printStyle);
-    const cleanup = () => {
-      document.getElementById(styleId)?.remove();
-      window.removeEventListener('afterprint', cleanup);
-    };
-    window.addEventListener('afterprint', cleanup);
-    window.print();
   };
 
   const paginatedPages = useMemo(() => {
