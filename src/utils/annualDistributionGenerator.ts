@@ -96,7 +96,8 @@ export function generateAnnualDistribution(
       lastMawrid = flatActivities[actIdx].mawrid || lastMawrid;
     }
 
-    // Requested pedagogical opening sequence. These are not curriculum records.
+    // Opening week: every level has the opening lesson first,
+    // followed by school health as the second session of the same week.
     if (weekNum === 1) {
       generated.push({
         id: 'annual-1-opening',
@@ -106,7 +107,7 @@ export function generateAnnualDistribution(
         maqta: '',
         mawrid: '',
         session1: 'تعارف + الدرس الافتتاحي',
-        session2: '',
+        session2: 'الصحة المدرسية',
         month,
         dates
       });
@@ -116,18 +117,18 @@ export function generateAnnualDistribution(
     }
 
     if (weekNum === 2) {
-      // Week 2:
-      // 1AM = school health + pedagogical remediation.
-      // Other levels = school health + the first official curriculum activity.
+      // After the opening/health week:
+      // 1AM gets two pedagogical-remediation sessions.
+      // Other levels start the regular school study sequence.
       if (is1AM) {
         generated.push({
-          id: 'annual-2-health-remediation',
+          id: 'annual-2-remediation',
           level: lessons[0]?.level,
-          lessonType: 'health',
+          lessonType: 'remediation',
           midan: '',
           maqta: '',
           mawrid: '',
-          session1: 'الصحة المدرسية',
+          session1: 'معالجة بيداغوجية',
           session2: 'معالجة بيداغوجية',
           month,
           dates
@@ -135,13 +136,13 @@ export function generateAnnualDistribution(
       } else {
         const act1 = flatActivities[actIdx++];
         generated.push({
-          id: 'annual-2-health-curriculum',
+          id: 'annual-2-start-study',
           level: lessons[0]?.level,
-          lessonType: 'health',
+          lessonType: 'curriculum',
           midan: act1?.midan || '',
           maqta: act1?.maqta || '',
           mawrid: act1?.mawrid || '',
-          session1: 'الصحة المدرسية',
+          session1: 'بداية الدراسة',
           session2: act1?.title || '',
           month,
           dates,
