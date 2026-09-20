@@ -484,3 +484,71 @@ export const generateLogbookDocx = async (
 
   return Packer.toBlob(doc);
 };
+
+
+/**
+ * Creates a DOCX whose pages are exact raster captures of the on-screen
+ * print preview. This intentionally preserves the visual layout, colors,
+ * borders, RTL placement and stamp exactly as the preview shows them.
+ */
+export const generatePreviewMatchDocx = async (
+  pageElements: HTMLElement[],
+  orientation: 'portrait' | 'landscape' = 'portrait'
+): Promise<Blob> => {
+  if (!pageElements.length) throw new Error("لا توجد صفحات للمعاينة");
+
+  const html2canvas = (await import("html2canvas")).default;
+  if (document.fonts?.ready) await document.fonts.ready;
+
+  const pageWidthPx = orientation === 'landscape' ? 1123 : 794;
+  const pageHeightPx = orientation === 'landscape' ? 794 : 1123;
+  const pageImages: Uint8Array[] = [];
+
+  for (const element of pageElements) {
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: "#ffffff",
+      logging: false,
+      width: element.scrollWidth,
+      height: element.scrollHeight,
+      windowWidth: Math.max(document.documentElement.clientWidth, element.scrollWidth),
+      windowHeight: Math.max(document.documentElement.clientHeight, element.scrollHeight),
+    });
+    const data = canvas.toDataURL("image/png");
+    pageImages.push(base64ToUint8Array(data.split(",")[1]));
+  }
+
+  const doc = new Document({
+    sections: pageImages.map((data, index) => ({
+      properties: {
+        page: {
+          size: {
+            width: orientation === 'landscape' ? 16838 : 11906,
+            height: orientation === 'landscape' ? 11906 : 16838,
+            orientation: orientation === 'landscape' ? PageOrientation.LANDSCAPE : PageOrientation.PORTRAIT,
+          },
+          margin: { top: 0, bottom: 0, left: 0, right: 0 },
+        },
+      },
+      children: [
+        new Paragraph({
+          spacing: { before: 0, after: 0, line: 240 },
+          children: [
+            new ImageRun({
+              type: "png",
+              data,
+              transformation: { width: pageWidthPx, height: pageHeightPx },
+            }),
+          ],
+        }),
+        ...(index < pageImages.length - 1
+          ? [new Paragraph({ children: [new PageBreak()] })]
+          : []),
+      ],
+    })),
+  });
+
+  return Packer.toBlob(doc);
+};
