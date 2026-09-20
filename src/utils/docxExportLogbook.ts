@@ -403,7 +403,7 @@ export const generateLogbookDocx = async (
           default: new Footer({
             children: [
               new Paragraph({
-                alignment: AlignmentType.CENTER,
+                alignment: AlignmentType.LEFT,
                 children: [
                   teacherStampRun(),
                   new TextRun({ text: "   الصفحة ", font: "Arial", rightToLeft: true }),
