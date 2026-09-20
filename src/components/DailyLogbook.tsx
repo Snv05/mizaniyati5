@@ -642,7 +642,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                 : annualItem.session2;
 
             const hasCurriculumSourceForSession =
-              ordinal === 0 ? !!annualItem.sourceActivityId : !!annualItem.sourceActivityId2 || !!annualItem.sourceActivityId;
+              ordinal === 0 ? !!annualItem.sourceActivityId : !!annualItem.sourceActivityId2;
 
             if (annualItem.lessonType && annualItem.lessonType !== 'curriculum' && !hasCurriculumSourceForSession) {
               currentLessonType = annualItem.lessonType as LogEntry['lessonType'];
