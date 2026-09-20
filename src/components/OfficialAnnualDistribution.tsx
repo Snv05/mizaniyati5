@@ -52,18 +52,27 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
       const maqta1 = 'المقطع الأول: التغذية عند الإنسان';
       const maqta2 = 'المقطع الثاني: التنسيق الوظيفي في العضوية';
       const maqta3 = 'المقطع الثالث: انتقال الصفات الوراثية';
+      const specialRows = dynamicCurriculum.filter(item => !item.maqta && item.lessonType !== 'holiday');
       return [
-        dynamicCurriculum.filter(item => item.maqta === maqta1),
+        [...specialRows, ...dynamicCurriculum.filter(item => item.maqta === maqta1)],
         dynamicCurriculum.filter(item => item.maqta === maqta2),
         dynamicCurriculum.filter(item => item.maqta === maqta3)
-      ];
+      ].filter(page => page.length > 0);
     } else if (level === '1am') {
        // 1AM uses the same three-page document model as the other levels.
        // Pages are source-order chunks of the official sequences; activities
        // are never reordered and no unsupported content is introduced.
-       const sequenceNames = Array.from(new Set(dynamicCurriculum.map(item => item.maqta).filter(Boolean)));
+       const specialRows = dynamicCurriculum.filter(item => !item.maqta && item.lessonType !== 'holiday');
+       const curriculumRows = dynamicCurriculum.filter(item => !!item.maqta);
+       const sequenceNames = Array.from(new Set(curriculumRows.map(item => item.maqta).filter(Boolean)));
        const chunks = [sequenceNames.slice(0, 3), sequenceNames.slice(3, 6), sequenceNames.slice(6)];
-       return chunks.map(chunk => dynamicCurriculum.filter(item => chunk.includes(item.maqta))).filter(page => page.length > 0);
+       const chunkPages = chunks
+         .map(chunk => curriculumRows.filter(item => chunk.includes(item.maqta)))
+         .filter(page => page.length > 0);
+       if (specialRows.length > 0 && chunkPages.length > 0) {
+         chunkPages[0] = [...specialRows, ...chunkPages[0]];
+       }
+       return chunkPages;
     } else if (level === '2am') {
        // Page 1: September -> November
        // Page 2: December -> March
