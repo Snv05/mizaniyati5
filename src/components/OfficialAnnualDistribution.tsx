@@ -97,7 +97,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
   useEffect(() => {
     if (pages.length === 0) return;
     try {
-      const key = 'algeria_sciences_annual_dist_v4';
+      const key = 'algeria_sciences_annual_dist_v5';
       const existing = JSON.parse(localStorage.getItem(key) || '{}');
       existing[level] = {
         startDate: startDate || existing[level]?.startDate || deriveStartDate(config.schoolYear),
@@ -153,7 +153,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
           {/* Header */}
           <div className="text-center mb-4">
             <h1 className="text-sm font-bold">الجمهورية الجزائرية الديمقراطية الشعبية</h1>
-            <h2 className="text-sm font-bold mb-2">وزارة التربية والتعليم</h2>
+            <h2 className="text-sm font-bold mb-2">وزارة التربية الوطنية</h2>
             
             <div className="flex justify-center items-center gap-4 mb-2">
               <div className="w-12 h-12 bg-rose-50 rounded-full flex items-center justify-center border border-rose-100 print:hidden">
@@ -206,7 +206,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
                   return (
                     <tr key={i} className="bg-[#dcfce7] print:bg-[#f0f0f0] font-bold">
                       <td contentEditable suppressContentEditableWarning className="border border-black p-1 editable-cell outline-none">{row.month}</td>
-                      <td contentEditable suppressContentEditableWarning className="border border-black p-1 font-mono text-[10px] editable-cell outline-none">{row.dates}</td>
+                      <td contentEditable suppressContentEditableWarning className="border border-black p-1 font-mono text-[10px] editable-cell outline-none">{row.dates || '—'}</td>
                       <td colSpan={4} contentEditable suppressContentEditableWarning className="border border-black p-1 text-center text-[12px] editable-cell outline-none">{row.holidayLabel}</td>
                     </tr>
                   );
@@ -222,8 +222,8 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
                     <td contentEditable suppressContentEditableWarning className="border border-black p-1 font-mono text-[10px] font-bold align-middle editable-cell outline-none">{row.dates}</td>
                     <td contentEditable suppressContentEditableWarning className="border border-black p-1 font-bold align-middle editable-cell outline-none">{row.maqta}</td>
                     <td contentEditable suppressContentEditableWarning className="border border-black p-1 font-bold align-middle editable-cell outline-none">{row.mawrid}</td>
-                    <td contentEditable suppressContentEditableWarning className="border border-black p-1.5 text-right font-medium align-middle editable-cell outline-none">{row.session1}</td>
-                    <td contentEditable suppressContentEditableWarning className="border border-black p-1.5 text-right font-medium align-middle editable-cell outline-none">{row.session2}</td>
+                    <td contentEditable suppressContentEditableWarning className="border border-black p-1.5 text-right font-medium align-middle editable-cell outline-none">{(row.session1 || '').trim() || (row.taqwim ? `تقويم: ${row.taqwim}` : '—')}</td>
+                    <td contentEditable suppressContentEditableWarning className="border border-black p-1.5 text-right font-medium align-middle editable-cell outline-none">{(row.session2 || '').trim() || (row.taqwim ? `تقويم: ${row.taqwim}` : '—')}</td>
                   </tr>
                 );
               })}
