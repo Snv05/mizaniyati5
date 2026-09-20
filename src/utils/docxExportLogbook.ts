@@ -543,9 +543,6 @@ export const generatePreviewMatchDocx = async (
             }),
           ],
         }),
-        ...(index < pageImages.length - 1
-          ? [new Paragraph({ children: [new PageBreak()] })]
-          : []),
       ],
     })),
   });
