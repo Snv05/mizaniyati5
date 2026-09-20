@@ -140,6 +140,7 @@ export const generateLogbookDocx = async (
 ): Promise<Blob> => {
 
   const rows: TableRow[] = [];
+  let previousWeekKey = '';
   rows.push(new TableRow({
     tableHeader: true,
     children: [
@@ -155,6 +156,20 @@ export const generateLogbookDocx = async (
   }));
 
   logs.forEach((log, index) => {
+    const currentWeekKey = (() => {
+      const d = new Date(`${log.dateStr}T12:00:00`);
+      if (Number.isNaN(d.getTime())) return log.dateStr;
+      d.setDate(d.getDate() - d.getDay());
+      return d.toISOString().split('T')[0];
+    })();
+    if (previousWeekKey && currentWeekKey !== previousWeekKey) {
+      rows.push(new TableRow({
+        children: [
+          createCell("مساحة إضافية للأسبوع — ملاحظات / إضافة / تعديل", true, "FFFBEA", 1, 1, 18, AlignmentType.CENTER, 8)
+        ]
+      }));
+    }
+    previousWeekKey = currentWeekKey;
     const bgColor = index % 2 === 0 ? "FFFFFF" : "F9FAF6";
     rows.push(new TableRow({
       children: [
@@ -162,10 +177,10 @@ export const generateLogbookDocx = async (
         createCell(log.dateStr, false, bgColor, 1, 1, 18),
         createCell(log.time, false, bgColor, 1, 1, 18),
         createCell(log.section, true, bgColor, 1, 1, 20),
-        createCell(log.content, false, bgColor, 1, 1, 20, AlignmentType.RIGHT),
+        createCell(`${log.content || ''}\n\n\n______________________________\n______________________________`, false, bgColor, 1, 1, 20, AlignmentType.RIGHT),
         createCell(log.attendance || '', false, bgColor, 1, 1, 18),
         createCell(log.wasail || '', false, bgColor, 1, 1, 18),
-        createCell(log.note || '', false, bgColor, 1, 1, 18),
+        createCell(`${log.note || ''}\n\n`, false, bgColor, 1, 1, 18),
       ]
     }));
   });
@@ -343,7 +358,11 @@ export const generateLogbookDocx = async (
                 children: [
                   teacherStampRun(),
                   new TextRun({ text: "   الصفحة ", font: "Arial", rightToLeft: true }),
-                  new TextRun({ children: [PageNumber.CURRENT], font: "Arial" })
+                  new TextRun({ children: [PageNumber.CURRENT], font: "Arial" }),
+                  new TextRun({ text: " من ", font: "Arial", rightToLeft: true }),
+                  new TextRun({ children: [PageNumber.TOTAL_PAGES], font: "Arial" }),
+                  new TextRun({ text: " من ", font: "Arial", rightToLeft: true }),
+                  new TextRun({ children: [PageNumber.TOTAL_PAGES], font: "Arial" })
                 ]
               })
             ]
