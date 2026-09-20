@@ -41,7 +41,7 @@ export const AnnualDistribution: React.FC<AnnualDistributionProps> = ({
 
   const [items, setItems] = useState<AnnualDistributionItem[]>(() => {
     try {
-      const saved = localStorage.getItem('algeria_sciences_annual_dist_v4');
+      const saved = localStorage.getItem('algeria_sciences_annual_dist_v5');
       if (saved) {
         // We always want to merge the latest ANNUAL_DISTRIBUTIONS with any custom items saved by the user
         // This ensures updates to the source code apply to existing users.
@@ -132,7 +132,7 @@ export const AnnualDistribution: React.FC<AnnualDistributionProps> = ({
         return item;
       });
       try {
-        localStorage.setItem('algeria_sciences_annual_dist_v4', JSON.stringify(updated));
+        localStorage.setItem('algeria_sciences_annual_dist_v5', JSON.stringify(updated));
         if ((window as any).syncToCloud) (window as any).syncToCloud('dist', updated);
       } catch {
         // ignore
@@ -167,7 +167,7 @@ export const AnnualDistribution: React.FC<AnnualDistributionProps> = ({
     setItems((prev) => {
       const updated = [...prev, itemToAdd];
       try {
-        localStorage.setItem('algeria_sciences_annual_dist_v4', JSON.stringify(updated));
+        localStorage.setItem('algeria_sciences_annual_dist_v5', JSON.stringify(updated));
       } catch {
         // ignore
       }
