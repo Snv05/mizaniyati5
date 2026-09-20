@@ -53,6 +53,10 @@ export interface CurriculumResourceItem {
   ta3alom?: string;
   formattedText: string;
   activities: string[];
+  sourceSequenceId?: string;
+  sourceResourceId?: string;
+  sourceLearningUnitId?: string;
+  sourceActivityIds?: string[];
 }
 
 const transformLessonMemoToLogbook = (lessons: LessonMemo[], levelLabel: '1م' | '2م' | '3م' | '4م'): CurriculumResourceItem[] => {
@@ -75,7 +79,11 @@ const transformLessonMemoToLogbook = (lessons: LessonMemo[], levelLabel: '1م' |
       mawrid: lesson.mawrid || '',
       ta3alom: lesson.ta3alom || '',
       activities: lesson.anshita.map(a => a.title),
-      formattedText: txt
+      formattedText: txt,
+      sourceSequenceId: lesson.sourceSequenceId,
+      sourceResourceId: lesson.sourceResourceId,
+      sourceLearningUnitId: lesson.sourceLearningUnitId,
+      sourceActivityIds: lesson.anshita.map(a => a.sourceActivityId).filter(Boolean) as string[]
     };
   });
 };
@@ -88,7 +96,7 @@ const buildCurriculumDatabase = (lessons?: LessonMemo[]): Record<'1م' | '2م' |
   '4م': transformLessonMemoToLogbook((lessons || LESSONS_4AM).filter(l => l.level === '4am'), '4م'),
 });
 
-type AnnualStoredItem = { midan?: string; maqta?: string; mawrid?: string; session1?: string; session2?: string; isHoliday?: boolean; isExam?: boolean; month?: string; dates?: string };
+type AnnualStoredItem = { id?: string; level?: string; lessonType?: string; midan?: string; maqta?: string; mawrid?: string; session1?: string; session2?: string; sourceSequenceId?: string; sourceResourceId?: string; sourceLearningUnitId?: string; sourceActivityId?: string; sourceActivityId2?: string; isHoliday?: boolean; isExam?: boolean; month?: string; dates?: string };
 
 const getStoredAnnualSchedule = (level: '1م' | '2م' | '3م' | '4م'): { startDate: string; items: AnnualStoredItem[] } | null => {
   try {
@@ -101,7 +109,14 @@ const getStoredAnnualSchedule = (level: '1م' | '2م' | '3م' | '4م'): { startD
   }
 };
 
-const findLessonForScheduledTitle = (bank: CurriculumResourceItem[], title: string): CurriculumResourceItem | null => {
+const findLessonForScheduledSource = (bank: CurriculumResourceItem[], item: AnnualStoredItem, sessionOrdinal: number): CurriculumResourceItem | null => {
+  const activityId = sessionOrdinal === 0 ? item.sourceActivityId : item.sourceActivityId2;
+  if (activityId) {
+    const exact = bank.find(resource => resource.sourceActivityIds?.includes(activityId));
+    if (exact) return exact;
+  }
+  if (!item.session1 && !item.session2) return null;
+  const title = sessionOrdinal === 0 ? item.session1 : item.session2;
   if (!title) return null;
   return bank.find(resource => resource.activities.includes(title)) || null;
 };
@@ -538,13 +553,25 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                 ? annualItem.session2
                 : annualItem.session2;
 
-            const scheduled = scheduledTitle
-              ? findLessonForScheduledTitle(bank, scheduledTitle)
-              : null;
-
-            if (scheduled) {
-              res = scheduled;
+            if (annualItem.lessonType && annualItem.lessonType !== 'curriculum') {
               matchedAnnual = true;
+              const specialTitle = scheduledTitle || '';
+              res = {
+                level: lvl,
+                memoNumber: '',
+                midan: '',
+                maqta: '',
+                mawrid: '',
+                ta3alom: '',
+                formattedText: specialTitle,
+                activities: []
+              };
+            } else {
+              const scheduled = findLessonForScheduledSource(bank, annualItem, ordinal);
+              if (scheduled) {
+                res = scheduled;
+                matchedAnnual = true;
+              }
             }
           }
         }
@@ -573,6 +600,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           mawrid: res.mawrid,
           ta3alom: res.ta3alom,
           activitiesList: res.activities,
+          lessonType: annualItem?.lessonType || 'curriculum',
           note: '',
           resourceIndex: currentResIdx,
         });
