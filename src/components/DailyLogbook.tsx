@@ -603,7 +603,10 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                 ? annualItem.session2
                 : annualItem.session2;
 
-            if (annualItem.lessonType && annualItem.lessonType !== 'curriculum') {
+            const hasCurriculumSourceForSession =
+              ordinal === 0 ? !!annualItem.sourceActivityId : !!annualItem.sourceActivityId2 || !!annualItem.sourceActivityId;
+
+            if (annualItem.lessonType && annualItem.lessonType !== 'curriculum' && !hasCurriculumSourceForSession) {
               currentLessonType = annualItem.lessonType as LogEntry['lessonType'];
               matchedAnnual = true;
               const specialTitle = scheduledTitle || '';
