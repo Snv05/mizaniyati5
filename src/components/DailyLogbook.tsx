@@ -2473,11 +2473,11 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => window.print()}
+                onClick={handleExportPdf}
                 className="inline-flex items-center gap-1.5 bg-[#006233] hover:bg-[#004d28] text-white px-3 py-1.5 rounded-full text-[11px] font-bold transition shadow-sm cursor-pointer"
               >
                 <Printer className="w-3.5 h-3.5" />
-                <span>طباعة الدفتر</span>
+                <span>تصدير PDF</span>
               </button>
 
               <div className="flex items-center bg-[#1f2937] border border-zinc-600 rounded-full p-0.5">
