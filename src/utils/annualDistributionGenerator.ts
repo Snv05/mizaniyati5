@@ -1,6 +1,9 @@
 import { LessonMemo } from '../types';
 
 export interface GeneratedSession {
+  id?: string;
+  level?: LessonMemo['level'];
+  lessonType?: 'curriculum' | 'introductory' | 'opening' | 'health' | 'remediation' | 'assessment' | 'holiday';
   midan: string;
   maqta: string;
   mawrid: string;
@@ -11,7 +14,10 @@ export interface GeneratedSession {
   holidayLabel?: string;
   month: string;
   dates: string;
+  sourceSequenceId?: string;
+  sourceResourceId?: string;
   sourceLearningUnitId?: string;
+  sourceActivityId?: string;
   learningUnit?: string;
 }
 
@@ -22,7 +28,7 @@ export function generateAnnualDistribution(
 ): GeneratedSession[] {
   // For 1AM, keep every learning unit intact: activities from one learning unit
   // must never be paired with activities from another resource.
-  const flatActivities: { midan: string; maqta: string; mawrid: string; title: string; sourceLearningUnitId?: string; learningUnit?: string }[] = [];
+  const flatActivities: { midan: string; maqta: string; mawrid: string; title: string; sourceSequenceId?: string; sourceResourceId?: string; sourceLearningUnitId?: string; sourceActivityId?: string; learningUnit?: string }[] = [];
   
   // Build sessions only from curriculum activities; never invent curriculum content.
   for (const lesson of lessons) {
@@ -32,7 +38,10 @@ export function generateAnnualDistribution(
         maqta: lesson.maqta,
         mawrid: lesson.mawrid,
         title: act.title,
+        sourceSequenceId: lesson.sourceSequenceId,
+        sourceResourceId: lesson.sourceResourceId,
         sourceLearningUnitId: lesson.sourceLearningUnitId,
+        sourceActivityId: act.sourceActivityId,
         learningUnit: lesson.ta3alom
       });
     }
@@ -75,7 +84,7 @@ export function generateAnnualDistribution(
   let lastMawrid = '';
   const is1AM = lessons.some(lesson => lesson.level === '1am');
 
-  while (actIdx < flatActivities.length) {
+  while (actIdx < flatActivities.length || weekNum <= 2) {
     const month = ARABIC_MONTHS[currentDate.getMonth()];
     const dates = getFormattedDateRange(currentDate);
 
@@ -84,6 +93,43 @@ export function generateAnnualDistribution(
       lastMidan = flatActivities[actIdx].midan || lastMidan;
       lastMaqta = flatActivities[actIdx].maqta || lastMaqta;
       lastMawrid = flatActivities[actIdx].mawrid || lastMawrid;
+    }
+
+    // Requested pedagogical opening sequence. These are not curriculum records.
+    if (weekNum === 1) {
+      generated.push({
+        id: 'annual-1-opening',
+        level: lessons[0]?.level,
+        lessonType: 'introductory',
+        midan: '',
+        maqta: '',
+        mawrid: '',
+        session1: 'تعارف وتوجيهات',
+        session2: 'الدرس الافتتاحي',
+        month,
+        dates
+      });
+      weekNum++;
+      currentDate.setDate(currentDate.getDate() + 7);
+      continue;
+    }
+
+    if (weekNum === 2) {
+      generated.push({
+        id: is1AM ? 'annual-2-health-remediation' : 'annual-2-health',
+        level: lessons[0]?.level,
+        lessonType: 'health',
+        midan: '',
+        maqta: '',
+        mawrid: '',
+        session1: 'الصحة المدرسية',
+        session2: is1AM ? 'معالجة بيداغوجية' : '',
+        month,
+        dates
+      });
+      weekNum++;
+      currentDate.setDate(currentDate.getDate() + 7);
+      continue;
     }
 
     // Check holiday
@@ -147,6 +193,9 @@ export function generateAnnualDistribution(
     }
 
     generated.push({
+      id: 'annual-' + weekNum + '-' + (act1.sourceActivityId || actIdx),
+      level: lessons[0]?.level,
+      lessonType: 'curriculum',
       midan: act1.midan,
       maqta: act1.maqta,
       mawrid: act1.mawrid,
@@ -154,7 +203,10 @@ export function generateAnnualDistribution(
       session2: act2 ? act2.title : '',
       month,
       dates,
+      sourceSequenceId: act1.sourceSequenceId,
+      sourceResourceId: act1.sourceResourceId,
       sourceLearningUnitId: act1.sourceLearningUnitId,
+      sourceActivityId: act1.sourceActivityId,
       learningUnit: act1.learningUnit
     });
     weekNum++;
