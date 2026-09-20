@@ -618,6 +618,11 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
         let res = bank[currentResIdx];
         let currentLessonType: LogEntry['lessonType'] = 'curriculum';
         let matchedAnnual = false;
+        let linkedSourceSequenceId = res.sourceSequenceId;
+        let linkedSourceResourceId = res.sourceResourceId;
+        let linkedSourceLearningUnitId = res.sourceLearningUnitId;
+        let linkedSourceActivityId = res.sourceActivityIds?.[0];
+        let linkedSourceActivityId2 = res.sourceActivityIds?.[1];
         if (annual) {
           const start = new Date(annual.startDate);
           while (start.getDay() !== 0) start.setDate(start.getDate() + 1);
@@ -659,6 +664,11 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
               if (scheduled) {
                 currentLessonType = 'curriculum';
                 res = scheduled;
+                linkedSourceSequenceId = annualItem.sourceSequenceId || scheduled.sourceSequenceId;
+                linkedSourceResourceId = annualItem.sourceResourceId || scheduled.sourceResourceId;
+                linkedSourceLearningUnitId = annualItem.sourceLearningUnitId || scheduled.sourceLearningUnitId;
+                linkedSourceActivityId = annualItem.sourceActivityId || scheduled.sourceActivityIds?.[0];
+                linkedSourceActivityId2 = annualItem.sourceActivityId2 || scheduled.sourceActivityIds?.[1];
                 matchedAnnual = true;
               }
             }
@@ -690,11 +700,11 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           ta3alom: res.ta3alom,
           activitiesList: res.activities.slice(0, 2),
           taqwim: res.taqwim || '',
-          sourceSequenceId: annual && matchedAnnual ? (annual.items[weekIndex!]?.sourceSequenceId || res.sourceSequenceId) : res.sourceSequenceId,
-          sourceResourceId: annual && matchedAnnual ? (annual.items[weekIndex!]?.sourceResourceId || res.sourceResourceId) : res.sourceResourceId,
-          sourceLearningUnitId: annual && matchedAnnual ? (annual.items[weekIndex!]?.sourceLearningUnitId || res.sourceLearningUnitId) : res.sourceLearningUnitId,
-          sourceActivityId: annual && matchedAnnual ? (annual.items[weekIndex!]?.sourceActivityId || res.sourceActivityIds?.[0]) : res.sourceActivityIds?.[0],
-          sourceActivityId2: annual && matchedAnnual ? annual.items[weekIndex!]?.sourceActivityId2 : res.sourceActivityIds?.[1],
+          sourceSequenceId: linkedSourceSequenceId,
+          sourceResourceId: linkedSourceResourceId,
+          sourceLearningUnitId: linkedSourceLearningUnitId,
+          sourceActivityId: linkedSourceActivityId,
+          sourceActivityId2: linkedSourceActivityId2,
           lessonType: currentLessonType,
           note: '',
           resourceIndex: currentResIdx,
