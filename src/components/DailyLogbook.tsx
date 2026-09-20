@@ -59,6 +59,11 @@ export interface CurriculumResourceItem {
   sourceLearningUnitId?: string;
   sourceActivityIds?: string[];
   taqwim?: string;
+  sourceSequenceId?: string;
+  sourceResourceId?: string;
+  sourceLearningUnitId?: string;
+  sourceActivityId?: string;
+  sourceActivityId2?: string;
 }
 
 const transformLessonMemoToLogbook = (lessons: LessonMemo[], levelLabel: '1م' | '2م' | '3م' | '4م'): CurriculumResourceItem[] => {
@@ -131,7 +136,8 @@ const findLessonForScheduledSource = (bank: CurriculumResourceItem[], item: Annu
   if (!item.session1 && !item.session2) return null;
   const title = sessionOrdinal === 0 ? item.session1 : item.session2;
   if (!title) return null;
-  return bank.find(resource => resource.activities.includes(title)) || null;
+  const titleMatches = bank.filter(resource => resource.activities.includes(title));
+  return titleMatches.length === 1 ? titleMatches[0] : null;
 };
 
 const LEVEL_NAMES_MAP: Record<string, string> = {
@@ -684,6 +690,11 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           ta3alom: res.ta3alom,
           activitiesList: res.activities.slice(0, 2),
           taqwim: res.taqwim || '',
+          sourceSequenceId: annual && matchedAnnual ? (annual.items[weekIndex!]?.sourceSequenceId || res.sourceSequenceId) : res.sourceSequenceId,
+          sourceResourceId: annual && matchedAnnual ? (annual.items[weekIndex!]?.sourceResourceId || res.sourceResourceId) : res.sourceResourceId,
+          sourceLearningUnitId: annual && matchedAnnual ? (annual.items[weekIndex!]?.sourceLearningUnitId || res.sourceLearningUnitId) : res.sourceLearningUnitId,
+          sourceActivityId: annual && matchedAnnual ? (annual.items[weekIndex!]?.sourceActivityId || res.sourceActivityIds?.[0]) : res.sourceActivityIds?.[0],
+          sourceActivityId2: annual && matchedAnnual ? annual.items[weekIndex!]?.sourceActivityId2 : res.sourceActivityIds?.[1],
           lessonType: currentLessonType,
           note: '',
           resourceIndex: currentResIdx,
