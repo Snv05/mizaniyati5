@@ -205,6 +205,7 @@ export interface LogEntry {
   resourceIndex?: number;
   attendance?: string;
   wasail?: string;
+  lessonType?: 'curriculum' | 'introductory' | 'opening' | 'health' | 'remediation' | 'assessment' | 'holiday';
 }
 
 const EMPTY_TIMETABLE_ROWS: TimetableGridRow[] = Array.from({ length: 8 }, (_, i) => ({
@@ -534,6 +535,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
         // session1 and session2 in occurrence order for this section in that week.
         const annual = getStoredAnnualSchedule(lvl);
         let res = bank[currentResIdx];
+        let currentLessonType: LogEntry['lessonType'] = 'curriculum';
         let matchedAnnual = false;
         if (annual) {
           const start = new Date(annual.startDate);
@@ -554,6 +556,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                 : annualItem.session2;
 
             if (annualItem.lessonType && annualItem.lessonType !== 'curriculum') {
+              currentLessonType = annualItem.lessonType as LogEntry['lessonType'];
               matchedAnnual = true;
               const specialTitle = scheduledTitle || '';
               res = {
@@ -569,6 +572,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
             } else {
               const scheduled = findLessonForScheduledSource(bank, annualItem, ordinal);
               if (scheduled) {
+                currentLessonType = 'curriculum';
                 res = scheduled;
                 matchedAnnual = true;
               }
@@ -600,7 +604,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           mawrid: res.mawrid,
           ta3alom: res.ta3alom,
           activitiesList: res.activities,
-          lessonType: annualItem?.lessonType || 'curriculum',
+          lessonType: currentLessonType,
           note: '',
           resourceIndex: currentResIdx,
         });
