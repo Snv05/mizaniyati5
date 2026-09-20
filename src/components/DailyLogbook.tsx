@@ -240,6 +240,40 @@ function formatDateToIsoString(d: Date): string {
   return d.toISOString().split('T')[0];
 }
 
+/**
+ * عرض هرمي لمحتوى الدفتر:
+ * نحتفظ بالبيانات كاملة في قاعدة البيانات، لكن لا نكرر
+ * الميدان/المقطع/المورد/تعلم المورد في كل صف عندما لا تتغير.
+ */
+function buildHierarchicalContent(
+  row: LogEntry,
+  previous?: LogEntry
+): string {
+  if (row.lessonType && row.lessonType !== 'curriculum') {
+    return row.content || '';
+  }
+
+  const parts: string[] = [];
+  const sameLevel = !!previous && previous.level === row.level;
+  const sameMidan = sameLevel && previous?.midan === row.midan;
+  const sameMaqta = sameMidan && previous?.maqta === row.maqta;
+  const sameMawrid = sameMaqta && previous?.mawrid === row.mawrid;
+  const sameTa3alom = sameMawrid && previous?.ta3alom === row.ta3alom;
+
+  if (!sameLevel && row.level) parts.push(`<u>المستوى:</u> ${row.level}`);
+  if (!sameMidan && row.midan) parts.push(`<u>الميدان:</u> ${row.midan}`);
+  if (!sameMaqta && row.maqta) parts.push(`<u>المقطع:</u> ${row.maqta}`);
+  if (!sameMawrid && row.mawrid) parts.push(`<u>المورد:</u> ${row.mawrid}`);
+  if (!sameTa3alom && row.ta3alom) parts.push(`<u>تعلم المورد:</u> ${row.ta3alom}`);
+
+  const activities = (row.activitiesList || []).filter(Boolean);
+  if (activities.length > 0) {
+    parts.push(`<u>الأنشطة:</u> ${activities.join(' / ')}`);
+  }
+
+  return parts.join('\n') || row.content || '';
+}
+
 
 
 export const DailyLogbook: React.FC<DailyLogbookProps> = ({
@@ -1956,6 +1990,8 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
 
               pageRows.forEach((r, rowIdx) => {
                 const isNewDate = r.dateStr !== prevDateStr;
+                const previousRow = rowIdx > 0 ? pageRows[rowIdx - 1] : undefined;
+                const displayContent = buildHierarchicalContent(r, previousRow);
                 const isMorning = isMorningTime(r.time);
                 const isAfternoon = isAfternoonTime(r.time);
                 const morningToAfternoonBreak =
@@ -2005,7 +2041,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                         {r.section}
                       </span>
                     </td>
-                    <td className="border border-zinc-200 px-3 py-2 text-zinc-900 leading-relaxed text-right whitespace-pre-line" dangerouslySetInnerHTML={{ __html: r.content }} />
+                    <td className="border border-zinc-200 px-3 py-2 text-zinc-900 leading-relaxed text-right whitespace-pre-line" dangerouslySetInnerHTML={{ __html: displayContent }} />
                     <td className="border border-zinc-200 px-2 py-2 text-zinc-600 text-[10px] w-[50px] text-center">
                       {r.attendance || '—'}
                     </td>
