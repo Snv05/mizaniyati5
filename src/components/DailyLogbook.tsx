@@ -35,6 +35,7 @@ import { LESSONS_1AM } from '../data/lessons1am';
 import { LESSONS_2AM } from '../data/lessons2am';
 import { LESSONS_3AM } from '../data/lessons3am';
 import { LESSONS_4AM } from '../data/lessons4am';
+import { generateAnnualDistribution } from '../utils/annualDistributionGenerator';
 
 interface DailyLogbookProps {
   selectedLevel?: '1am' | '2am' | '3am' | '4am';
@@ -581,7 +582,16 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
 
         // Smart linkage: match the exact annual-distribution week, then consume
         // session1 and session2 in occurrence order for this section in that week.
-        const annual = getStoredAnnualSchedule(lvl);
+        const storedAnnual = getStoredAnnualSchedule(lvl);
+        const annual = storedAnnual || (() => {
+          const sourceLessons =
+            lvl === '1م' ? LESSONS_1AM :
+            lvl === '2م' ? LESSONS_2AM :
+            lvl === '3م' ? LESSONS_3AM :
+            LESSONS_4AM;
+          const generated = generateAnnualDistribution(sourceLessons, startDate, holidays);
+          return generated.length > 0 ? { startDate, items: generated } : null;
+        })();
         let res = bank[currentResIdx];
         let currentLessonType: LogEntry['lessonType'] = 'curriculum';
         let matchedAnnual = false;
