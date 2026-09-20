@@ -128,4 +128,6 @@ export interface AnnualDistributionItem {
   sourceResourceId?: string;
   sourceLearningUnitId?: string;
   sourceActivityId?: string;
+  /** Stable source identifier for the second scheduled activity/session. */
+  sourceActivityId2?: string;
 }
