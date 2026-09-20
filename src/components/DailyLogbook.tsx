@@ -1168,7 +1168,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
         </div>
 
         {/* Cover Page Footer with Stamps */}
-        <div className="mt-auto pt-3 border-t border-zinc-200">
+        <div className="mt-auto pt-3 border-t border-zinc-200 relative pb-2">
           <div className="grid grid-cols-4 gap-3 text-[10px] text-center mb-3">
             <div>
               <div className="font-bold text-zinc-800">توقيع الأستاذ(ة)</div>
@@ -1176,8 +1176,8 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
             </div>
             <div>
               <div className="font-bold text-zinc-800">ختم الأستاذ(ة)</div>
-              <div className="mt-1 flex justify-center">
-                <TeacherOfficialStamp config={config} size="sm" />
+              <div className="absolute left-3 bottom-2 flex justify-start">
+                <TeacherOfficialStamp config={config} size="md" />
               </div>
             </div>
             <div>
@@ -2679,7 +2679,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                       </div>
 
                       {/* Official Footer */}
-                      <div className="mt-auto">
+                      <div className="mt-auto relative pb-12">
                         <div className="px-4 py-3 border-t border-zinc-200 grid grid-cols-4 gap-4 text-[11px] bg-white">
                           <div className="text-center">
                             <div className="font-bold text-zinc-900">توقيع الأستاذ(ة)</div>
@@ -2687,8 +2687,8 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                           </div>
                           <div className="text-center">
                             <div className="font-bold text-zinc-900">ختم الأستاذ(ة)</div>
-                            <div className="mt-2 flex justify-center">
-                              <TeacherOfficialStamp config={config} size="sm" />
+                            <div className="absolute left-3 bottom-3 flex justify-start">
+                              <TeacherOfficialStamp config={config} size="md" />
                             </div>
                           </div>
                           <div className="text-center">
