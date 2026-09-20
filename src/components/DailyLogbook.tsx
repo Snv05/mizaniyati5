@@ -235,6 +235,7 @@ const AUTO_FILLED_TIMETABLE_ROWS: TimetableGridRow[] = EMPTY_TIMETABLE_ROWS.map(
   cells: createEmptyDayCells(),
 }));
 
+const LOGBOOK_DATA_VERSION = '2026-09-20-v5';
 const ROWS_PER_PAGE = 18;
 const getPageDimensions = (orientation: 'portrait' | 'landscape') => orientation === 'landscape' ? { w: 297, h: 210 } : { w: 210, h: 297 };
 const PRINT_MARGIN = '14mm';
@@ -379,7 +380,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           })).filter((h: HolidayEntry) => !!h.startDate);
           if (normalized.length > 0) setHolidays(normalized);
         }
-        if (parsed.rows && Array.isArray(parsed.rows)) setRows(parsed.rows);
+        if (parsed.logbookDataVersion === LOGBOOK_DATA_VERSION && parsed.rows && Array.isArray(parsed.rows)) setRows(parsed.rows);
         if (parsed.startDate) setStartDate(parsed.startDate);
         if (parsed.period) setPeriod(parsed.period);
         if (parsed.orientation === 'portrait' || parsed.orientation === 'landscape') setOrientation(parsed.orientation);
@@ -416,6 +417,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
   // Save to localStorage on change
   useEffect(() => {
     const dataToSave = {
+      logbookDataVersion: LOGBOOK_DATA_VERSION,
       wilaya,
       school,
       teacher,
