@@ -60,9 +60,6 @@ export interface CurriculumResourceItem {
   sourceLearningUnitId?: string;
   sourceActivityIds?: string[];
   taqwim?: string;
-  sourceSequenceId?: string;
-  sourceResourceId?: string;
-  sourceLearningUnitId?: string;
   sourceActivityId?: string;
   sourceActivityId2?: string;
 }
@@ -755,7 +752,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
     }, 100);
   };
 
-  // Paginate into 20 rows per page
+  // Paginate into the configured number of rows per page
   const handleExportWord = async () => {
     try {
       if (rows.length === 0) {
@@ -1439,7 +1436,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
         .writing-grid-cell { background-color: rgba(255,255,255,.90); background-image: linear-gradient(rgba(100,116,139,.18) 1px, transparent 1px), linear-gradient(90deg, rgba(100,116,139,.18) 1px, transparent 1px); background-size: 8px 8px; }
         .logbook-grid-cell { background-color: rgba(255,255,255,.90); background-image: linear-gradient(rgba(100,116,139,.16) 1px, transparent 1px), linear-gradient(90deg, rgba(100,116,139,.16) 1px, transparent 1px); background-size: 8px 8px; }
         @media print {
-  @page { size: A4 portrait; margin: 0 !important; }
+  @page { size: A4 ${orientation}; margin: 0 !important; }
   body { margin: 0 !important; padding: 0 !important; background: #fff !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   body > * { visibility: hidden !important; }
   .print-preview-root, .print-preview-root * { visibility: visible !important; }
@@ -1454,7 +1451,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
   .logbook-table { border-collapse: collapse !important; }
   .writing-grid-cell, .logbook-grid-cell { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 }
-        .cover-page { background-color: #fffdf7; background-image: radial-gradient(circle at 15% 10%, rgba(6,78,59,.08), transparent 28%), radial-gradient(circle at 85% 20%, rgba(210,16,52,.06), transparent 25%), linear-gradient(rgba(120,113,108,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(120,113,108,.035) 1px, transparent 1px); background-size: auto, auto, 18px 18px, 18px 18px; }
+        .cover-page { background-color: #fffdf7; background-image: radial-gradient(circle at 15% 10%, rgba(6,78,59,.08), transparent 28%), radial-gradient(circle at 85% 20%, rgba(210,16,52,.06), transparent 25%); }
         .logbook-table { border-collapse: collapse !important; }
         .logbook-table th, .logbook-table td { border: 1.5px solid #64748b !important; }
         .preview-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -2534,7 +2531,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                   )}
                 </div>
                 <div className="text-zinc-400 text-[10px] mt-1 hidden md:block">
-                  A4 • 20 سطر • المستويات المسندة: {assignedLevels.join('، ') || '—'}
+                  A4 • ${ROWS_PER_PAGE} سطر • المستويات المسندة: {assignedLevels.join('، ') || '—'}
                 </div>
               </div>
             </div>
