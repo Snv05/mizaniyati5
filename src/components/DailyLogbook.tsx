@@ -1310,8 +1310,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           minHeight: `${pageDimensions.h}mm`,
           maxWidth: isPreview ? undefined : '100%',
           backgroundColor: '#ffffff',
-          backgroundImage: 'linear-gradient(rgba(148,163,184,.22) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,.22) 1px, transparent 1px)',
-          backgroundSize: '10px 10px',
+          // الصفحة الأولى بدون مربعات صغيرة؛ شبكة الكتابة تُستخدم فقط في الصفحات الداخلية.
         }}
       >
         <div style={{ padding: PAGE_INNER_PADDING }} className="h-full flex flex-col">
@@ -1554,7 +1553,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                 ربط تلقائي بالمنهاج وقاعدة بيانات المستويات المسندة للأستاذ
               </p>
               <p className="text-[11px] text-zinc-500 mt-1">
-                A4 • 20 سطر • فلترة ذكية للسنوات المسندة • تسلسل بيداغوجي للموارد
+                A4 • {ROWS_PER_PAGE} سطر • فلترة ذكية للسنوات المسندة • تسلسل بيداغوجي للموارد
               </p>
             </div>
           </div>
@@ -2578,6 +2577,14 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
               </button>
               <button
                 type="button"
+                onClick={handleExportEditableWord}
+                className="inline-flex items-center gap-1.5 bg-[#7c3aed] hover:bg-[#6d28d9] text-white px-3 py-1.5 rounded-full text-[11px] font-bold transition shadow-sm cursor-pointer"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>Word قابل للتعديل</span>
+              </button>
+              <button
+                type="button"
                 onClick={handleExportPdf}
                 className="inline-flex items-center gap-1.5 bg-[#006233] hover:bg-[#004d28] text-white px-3 py-1.5 rounded-full text-[11px] font-bold transition shadow-sm cursor-pointer"
               >
@@ -2828,7 +2835,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
 
       {/* Page Footer */}
       <footer className="no-print text-center text-[10px] text-zinc-500 py-6 border-t border-zinc-200 bg-white">
-        الدفتر اليومي - استعمال زمن جدولي • A4 • 20 سطر • علوم الطبيعة والحياة للطور المتوسط • 🇩🇿 •{' '}
+        الدفتر اليومي - استعمال زمن جدولي • A4 • {ROWS_PER_PAGE} سطر • علوم الطبيعة والحياة للطور المتوسط • 🇩🇿 •{' '}
         {totalFilledTimetableSlots} حصة أسبوعياً • {assignedLevels.length} مستويات مسندة
       </footer>
     </div>
