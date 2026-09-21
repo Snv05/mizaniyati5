@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { generatePreviewMatchDocx } from "../utils/docxExportLogbook";
+import { generateLogbookDocx, generatePreviewMatchDocx } from "../utils/docxExportLogbook";
 import { generatePreviewMatchPdf } from "../utils/pdfExportLogbook";
 import {
   BookOpen,
@@ -785,6 +785,35 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
     } catch (error) {
       console.error(error);
       showToast('تعذر تصدير Word المطابق للمعاينة');
+    }
+  };
+
+  const handleExportEditableWord = async () => {
+    try {
+      if (rows.length === 0) {
+        showToast('ولّد الدفتر أولاً قبل تصدير Word القابل للتعديل');
+        return;
+      }
+      const blob = await generateLogbookDocx(
+        rows,
+        config,
+        gridRows,
+        holidays,
+        assignedLevels,
+        orientation
+      );
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `الدفتر-اليومي-قابل-للتعديل-${orientation === 'landscape' ? 'أفقي' : 'عمودي'}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+      showToast('تم تصدير Word قابل للتعديل');
+    } catch (error) {
+      console.error(error);
+      showToast('تعذر تصدير Word القابل للتعديل');
     }
   };
 
