@@ -57,17 +57,16 @@ export const generatePreviewMatchPdf = async (
     if (index > 0) pdf.addPage();
 
     const imageData = canvas.toDataURL("image/png");
-    const ratio = Math.min(pageWidth / canvas.width, pageHeight / canvas.height);
-    const renderedWidth = canvas.width * ratio;
-    const renderedHeight = canvas.height * ratio;
 
+    // كل عنصر تصدير هو صفحة A4 فعلية؛ نملأ صفحة PDF كاملة حتى لا تظهر
+    // هوامش إضافية أو يتم تصغير الصفحة بسبب فرق بسيط في أبعاد الـcanvas.
     pdf.addImage(
       imageData,
       "PNG",
-      (pageWidth - renderedWidth) / 2,
-      (pageHeight - renderedHeight) / 2,
-      renderedWidth,
-      renderedHeight,
+      0,
+      0,
+      pageWidth,
+      pageHeight,
       undefined,
       "FAST"
     );
