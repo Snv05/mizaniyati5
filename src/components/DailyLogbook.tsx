@@ -240,11 +240,11 @@ const AUTO_FILLED_TIMETABLE_ROWS: TimetableGridRow[] = EMPTY_TIMETABLE_ROWS.map(
 }));
 
 const LOGBOOK_DATA_VERSION = '2026-09-20-v5';
-const ROWS_PER_PAGE = 18;
+const ROWS_PER_PAGE = 12;
 const getPageDimensions = (orientation: 'portrait' | 'landscape') => orientation === 'landscape' ? { w: 297, h: 210 } : { w: 210, h: 297 };
 const PRINT_MARGIN = '14mm';
-const PAGE_INNER_PADDING = '14px';
-const NOTEBOOK_CONTENT_MIN_HEIGHT = '72px';
+const PAGE_INNER_PADDING = '12px';
+const NOTEBOOK_CONTENT_MIN_HEIGHT = '58px';
 
 function getSchoolWeekKey(dateStr: string): string {
   const d = new Date(`${dateStr}T12:00:00`);
@@ -1046,8 +1046,9 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
       className="print-page cover-page shadow-[0_20px_60px_rgba(0,0,0,0.12)] rounded-[2px] border border-zinc-200 overflow-hidden mx-auto mb-8"
       style={{
         width: `${pageDimensions.w}mm`,
+        height: `${pageDimensions.h}mm`,
         minHeight: `${pageDimensions.h}mm`,
-        maxWidth: '100%',
+        maxWidth: 'none',
       }}
     >
       <div style={{ padding: '16px' }} className="h-full flex flex-col justify-between">
@@ -2307,8 +2308,9 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                   className="print-page grid-paper-bg shadow-[0_20px_60px_rgba(0,0,0,0.12)] rounded-[2px] border border-zinc-200 overflow-hidden mx-auto mb-8"
                   style={{
                     width: `${pageDimensions.w}mm`,
+                    height: `${pageDimensions.h}mm`,
                     minHeight: `${pageDimensions.h}mm`,
-                    maxWidth: '100%',
+                    maxWidth: 'none',
                   }}
                 >
                   <div style={{ padding: PAGE_INNER_PADDING }} className="h-full flex flex-col justify-between">
