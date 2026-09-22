@@ -759,10 +759,10 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
         showToast('ولّد الدفتر أولاً قبل تصدير Word');
         return;
       }
-      if (!isPreviewModalOpen) {
+      if (!isPreviewModalOpen || previewMode !== 'all') {
         setPreviewMode('all');
         setIsPreviewModalOpen(true);
-        await new Promise(resolve => setTimeout(resolve, 150));
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
       if (document.fonts?.ready) await document.fonts.ready;
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
@@ -823,10 +823,10 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
         showToast('ولّد الدفتر أولاً قبل تصدير PDF');
         return;
       }
-      if (!isPreviewModalOpen) {
+      if (!isPreviewModalOpen || previewMode !== 'all') {
         setPreviewMode('all');
         setIsPreviewModalOpen(true);
-        await new Promise(resolve => setTimeout(resolve, 150));
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
       if (document.fonts?.ready) await document.fonts.ready;
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
