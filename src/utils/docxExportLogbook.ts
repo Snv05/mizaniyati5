@@ -14,7 +14,6 @@ import {
   PageOrientation,
   Header,
   Footer,
-  PageBreak,
   ImageRun,
   PageNumber
 } from "docx";
@@ -190,6 +189,7 @@ export const generateLogbookDocx = async (
     previousWeekKey = currentWeekKey;
     const bgColor = index % 2 === 0 ? "FFFFFF" : "F9FAF6";
     rows.push(new TableRow({
+      cantSplit: true,
       children: [
         createCell(log.dayName, true, bgColor, 1, 1, 20),
         createCell(log.dateStr, false, bgColor, 1, 1, 18),
@@ -364,8 +364,12 @@ export const generateLogbookDocx = async (
         // First Section: Front Page (Portrait or Landscape, let's keep Landscape to be consistent)
         properties: {
           page: {
-            size: { orientation: orientation === 'landscape' ? PageOrientation.LANDSCAPE : PageOrientation.PORTRAIT },
-            margin: { top: 720, bottom: 720, right: 720, left: 720 }
+            size: {
+            width: orientation === 'landscape' ? 16838 : 11906,
+            height: orientation === 'landscape' ? 11906 : 16838,
+            orientation: orientation === 'landscape' ? PageOrientation.LANDSCAPE : PageOrientation.PORTRAIT
+          },
+            margin: { top: 720, bottom: 900, right: 720, left: 720 }
           }
         },
         footers: {
@@ -385,18 +389,19 @@ export const generateLogbookDocx = async (
           })
         },
         children: [
-          ...frontPageChildren,
-          new Paragraph({
-            children: [new PageBreak()]
-          }),
+          ...frontPageChildren
         ]
       },
       {
         // Second Section: Main Logbook Entries
         properties: {
           page: {
-            size: { orientation: orientation === 'landscape' ? PageOrientation.LANDSCAPE : PageOrientation.PORTRAIT },
-            margin: { top: 720, bottom: 720, right: 720, left: 720 }
+            size: {
+            width: orientation === 'landscape' ? 16838 : 11906,
+            height: orientation === 'landscape' ? 11906 : 16838,
+            orientation: orientation === 'landscape' ? PageOrientation.LANDSCAPE : PageOrientation.PORTRAIT
+          },
+            margin: { top: 720, bottom: 900, right: 720, left: 720 }
           }
         },
         footers: {
