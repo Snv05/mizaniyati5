@@ -2653,7 +2653,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                   <div
                     key={pageIdx}
                     data-preview-export-page="true" className="print-page grid-paper-bg shadow-[0_25px_80px_rgba(0,0,0,0.5),0_0_0_1px_rgba(0,0,0,0.1)] rounded-[2px] overflow-hidden shrink-0"
-                    style={{ width: `${pageDimensions.w}mm`, minHeight: `${pageDimensions.h}mm` }}
+                    style={{ width: `${pageDimensions.w}mm`, height: `${pageDimensions.h}mm`, minHeight: `${pageDimensions.h}mm`, maxWidth: "none" }}
                   >
                     <div style={{ padding: PAGE_INNER_PADDING }} className="h-full flex flex-col justify-between">
                       {/* Header */}
