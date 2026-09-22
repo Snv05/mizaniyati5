@@ -627,13 +627,13 @@ export const App: React.FC = () => {
         <div
           className="flex-1 flex flex-col lg:flex-row relative overflow-hidden"
           style={{
-            backgroundImage: `linear-gradient(rgba(248,250,252,0.90), rgba(248,250,252,0.94)), url(${curriculumBackground})`,
+            backgroundImage: `linear-gradient(rgba(248,250,252,0.38), rgba(248,250,252,0.50)), url(${curriculumBackground})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundAttachment: 'fixed',
           }}
         >
-          <div className="absolute inset-0 pointer-events-none bg-white/10" aria-hidden="true" />
+          <div className="absolute inset-0 pointer-events-none bg-white/5" aria-hidden="true" />
           {/* Sidebar Controls for Memos */}
           <SidebarControls
             selectedLevel={selectedLevel}
@@ -705,13 +705,13 @@ export const App: React.FC = () => {
         <div
           className="flex-1 flex flex-col relative overflow-hidden"
           style={{
-            backgroundImage: `linear-gradient(rgba(248,250,252,0.93), rgba(248,250,252,0.96)), url(${curriculumBackground})`,
+            backgroundImage: `linear-gradient(rgba(248,250,252,0.40), rgba(248,250,252,0.52)), url(${curriculumBackground})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundAttachment: 'fixed',
           }}
         >
-          <div className="absolute inset-0 pointer-events-none bg-white/10" aria-hidden="true" />
+          <div className="absolute inset-0 pointer-events-none bg-white/5" aria-hidden="true" />
           <AnnualDistribution
             selectedLevel={selectedLevel}
             setSelectedLevel={(lvl) => setActiveSection(lvl)}
