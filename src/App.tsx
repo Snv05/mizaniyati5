@@ -375,42 +375,32 @@ export const App: React.FC = () => {
   // Realistic curriculum background: the interface stays unchanged while the
   // visual atmosphere follows the current school field + learning sequence.
   const curriculumBackground = useMemo(() => {
-    const text = [activeMidan, selectedMaqta, selectedMawrid, selectedTa3alom].join(' ');
-    const has = (...words: string[]) => words.some((word) => text.includes(word));
-
-    if (selectedLevel === '4am') {
-      if (has('انتقال الصفات الوراثية', 'الوراث', 'الطفر')) return 'https://images.unsplash.com/photo-1530210124550-912dc1381cb8?auto=format&fit=crop&w=2400&q=85';
-      if (has('التنسيق الوظيفي', 'المناعة', 'التلقيح', 'الدم')) return 'https://images.unsplash.com/photo-1579154204601-01588f351e67?auto=format&fit=crop&w=2400&q=85';
-      if (has('التغذية')) return 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=2400&q=85';
-      return 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=2400&q=85';
-    }
-
-    if (selectedLevel === '3am') {
-      if (has('التربة')) return 'https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=2400&q=85';
-      if (has('الموارد الطبيعية الباطنية', 'الموارد', 'الباطنية')) return 'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=2400&q=85';
-      if (has('الديناميكية الداخلية', 'الداخلية', 'الكرة الأرضية')) return 'https://images.unsplash.com/photo-1507413245164-6160d8298b31?auto=format&fit=crop&w=2400&q=85';
-      if (has('الديناميكية الخارجية', 'التعرية')) return 'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=2400&q=85';
-      return 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=2400&q=85';
-    }
-
-    if (selectedLevel === '2am') {
-      if (has('التكاثر', 'إعمار')) return 'https://images.unsplash.com/photo-1464207687429-7505649dae38?auto=format&fit=crop&w=2400&q=85';
-      if (has('تصنيف', 'الكائنات')) return 'https://images.unsplash.com/photo-1535083783855-76ae62b2914e?auto=format&fit=crop&w=2400&q=85';
-      if (has('توزع', 'أوساطها')) return 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=2400&q=85';
-      return 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=2400&q=85';
-    }
-
+    const text = [activeMidan, selectedMaqta, selectedMawrid, selectedTa3alom].join(' ').toLowerCase();
+    const has = (...words: string[]) => words.some((word) => text.includes(word.toLowerCase()));
     if (selectedLevel === '1am') {
-      if (activeMidan === 'الإنسان والصحة' || has('التغذية عند الإنسان', 'التحصل على الطاقة', 'الإطراح عند الإنسان', 'التكاثر عند الإنسان')) {
-        return 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=2400&q=85';
-      }
-      if (has('التغذية عند النبات', 'الوسط الحي', 'توزع الكائنات', 'التكاثر وإعمار', 'تصنيف الكائنات')) {
-        return 'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=2400&q=85';
-      }
-      return 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=2400&q=85';
+      if (activeMidan.includes('الصحة') || has('التغذية عند الإنسان', 'التحصل على الطاقة', 'الإطراح عند الإنسان', 'التكاثر عند الإنسان')) return 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=2400&q=90';
+      return 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=2400&q=90';
     }
-
-    return 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=2400&q=85';
+    if (selectedLevel === '2am') {
+      if (has('التكاثر', 'إعمار')) return 'https://images.unsplash.com/photo-1464207687429-7505649dae38?auto=format&fit=crop&w=2400&q=90';
+      if (has('تصنيف', 'الكائنات')) return 'https://images.unsplash.com/photo-1535083783855-76ae62b2914e?auto=format&fit=crop&w=2400&q=90';
+      if (has('توزع', 'أوساطها')) return 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=2400&q=90';
+      return 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=2400&q=90';
+    }
+    if (selectedLevel === '3am') {
+      if (has('التربة')) return 'https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=2400&q=90';
+      if (has('الموارد الطبيعية الباطنية', 'الموارد', 'الباطنية')) return 'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=2400&q=90';
+      if (has('الديناميكية الداخلية', 'الداخلية', 'الكرة الأرضية')) return 'https://images.unsplash.com/photo-1507413245164-6160d8298b31?auto=format&fit=crop&w=2400&q=90';
+      if (has('الديناميكية الخارجية', 'التعرية')) return 'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=2400&q=90';
+      return 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=2400&q=90';
+    }
+    if (selectedLevel === '4am') {
+      if (has('انتقال الصفات الوراثية', 'الوراث', 'الطفر')) return 'https://images.unsplash.com/photo-1530210124550-912dc1381cb8?auto=format&fit=crop&w=2400&q=90';
+      if (has('التنسيق الوظيفي', 'المناعة', 'التلقيح', 'الدم')) return 'https://images.unsplash.com/photo-1579154204601-01588f351e67?auto=format&fit=crop&w=2400&q=90';
+      if (has('التغذية')) return 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=2400&q=90';
+      return 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=2400&q=90';
+    }
+    return 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=2400&q=90';
   }, [selectedLevel, activeMidan, selectedMaqta, selectedMawrid, selectedTa3alom]);
 
   return (
@@ -630,10 +620,12 @@ export const App: React.FC = () => {
             backgroundImage: `linear-gradient(rgba(248,250,252,0.38), rgba(248,250,252,0.50)), url(${curriculumBackground})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            backgroundAttachment: 'fixed',
+            backgroundAttachment: 'scroll',
+            backgroundRepeat: 'no-repeat',
+            backgroundColor: '#dbeafe',
           }}
         >
-          <div className="absolute inset-0 pointer-events-none bg-white/5" aria-hidden="true" />
+          <div className="absolute inset-0 pointer-events-none bg-white/0" aria-hidden="true" />
           {/* Sidebar Controls for Memos */}
           <SidebarControls
             selectedLevel={selectedLevel}
