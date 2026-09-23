@@ -38,8 +38,8 @@
 
 ### 1. استنساخ المستودع
 ```bash
-git clone https://github.com/Snv05/mizaniyati-3.git
-cd mizaniyati-3
+git clone https://github.com/Snv05/mizaniyati5.git
+cd mizaniyati5
 ```
 
 ### 2. تثبيت المعتمديات
