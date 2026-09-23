@@ -394,9 +394,10 @@ export const App: React.FC = () => {
       nutrition: 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=2400&q=90',
     };
     if (selectedLevel === '1am') {
-      if (activeMidan.includes('الصحة') || has('التغذية عند الإنسان','التحصل على الطاقة','الإطراح عند الإنسان','التكاثر عند الإنسان')) return img.human;
-      if (has('الوسط الحي','توزع الكائنات','التغذية عند النبات','تصنيف')) return img.ecology;
-      return img.nature;
+      // 1AM: هوية بصرية مبنية مباشرة على محاور السنة:
+      // التغذية عند الإنسان + التغذية عند النبات الأخضر + التحصل على الطاقة.
+      // رسم علمي متجهي يوضح العلاقة بين الشمس والنبات والغذاء والطاقة، بدل صورة فوتوغرافية عامة.
+      return 'https://upload.wikimedia.org/wikipedia/commons/b/bc/Photosynthesis_en.svg';
     }
     if (selectedLevel === '2am') {
       if (has('التكاثر','إعمار')) return img.reproduction;
