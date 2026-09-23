@@ -372,35 +372,50 @@ export const App: React.FC = () => {
 
   const currentLevelLabel = midanTheme.levelLabel;
 
-  // Realistic curriculum background: the interface stays unchanged while the
-  // visual atmosphere follows the current school field + learning sequence.
+  // Explicit visual map: each level and field/sequence has its own realistic photo.
   const curriculumBackground = useMemo(() => {
-    const text = [activeMidan, selectedMaqta, selectedMawrid, selectedTa3alom].join(' ').toLowerCase();
-    const has = (...words: string[]) => words.some((word) => text.includes(word.toLowerCase()));
+    const t = [activeMidan, selectedMaqta, selectedMawrid, selectedTa3alom].join(' ').toLowerCase();
+    const has = (...words: string[]) => words.some(w => t.includes(w.toLowerCase()));
+    const img = {
+      nature: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=2400&q=90',
+      human: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=2400&q=90',
+      ecology: 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=2400&q=90',
+      biodiversity: 'https://images.unsplash.com/photo-1535083783855-76ae62b2914e?auto=format&fit=crop&w=2400&q=90',
+      reproduction: 'https://images.unsplash.com/photo-1464207687429-7505649dae38?auto=format&fit=crop&w=2400&q=90',
+      soil: 'https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=2400&q=90',
+      geology: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=2400&q=90',
+      internalEarth: 'https://images.unsplash.com/photo-1507413245164-6160d8298b31?auto=format&fit=crop&w=2400&q=90',
+      resources: 'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=2400&q=90',
+      erosion: 'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=2400&q=90',
+      genetics: 'https://images.unsplash.com/photo-1530210124550-912dc1381cb8?auto=format&fit=crop&w=2400&q=90',
+      immunity: 'https://images.unsplash.com/photo-1579154204601-01588f351e67?auto=format&fit=crop&w=2400&q=90',
+      nutrition: 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=2400&q=90',
+    };
     if (selectedLevel === '1am') {
-      if (activeMidan.includes('الصحة') || has('التغذية عند الإنسان', 'التحصل على الطاقة', 'الإطراح عند الإنسان', 'التكاثر عند الإنسان')) return 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=2400&q=90';
-      return 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=2400&q=90';
+      if (activeMidan.includes('الصحة') || has('التغذية عند الإنسان','التحصل على الطاقة','الإطراح عند الإنسان','التكاثر عند الإنسان')) return img.human;
+      if (has('الوسط الحي','توزع الكائنات','التغذية عند النبات','تصنيف')) return img.ecology;
+      return img.nature;
     }
     if (selectedLevel === '2am') {
-      if (has('التكاثر', 'إعمار')) return 'https://images.unsplash.com/photo-1464207687429-7505649dae38?auto=format&fit=crop&w=2400&q=90';
-      if (has('تصنيف', 'الكائنات')) return 'https://images.unsplash.com/photo-1535083783855-76ae62b2914e?auto=format&fit=crop&w=2400&q=90';
-      if (has('توزع', 'أوساطها')) return 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=2400&q=90';
-      return 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=2400&q=90';
+      if (has('التكاثر','إعمار')) return img.reproduction;
+      if (has('تصنيف','التنوع البيولوجي')) return img.biodiversity;
+      if (has('توزع','أوساطها','الوسط الحي')) return img.ecology;
+      return img.nature;
     }
     if (selectedLevel === '3am') {
-      if (has('التربة')) return 'https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&w=2400&q=90';
-      if (has('الموارد الطبيعية الباطنية', 'الموارد', 'الباطنية')) return 'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=2400&q=90';
-      if (has('الديناميكية الداخلية', 'الداخلية', 'الكرة الأرضية')) return 'https://images.unsplash.com/photo-1507413245164-6160d8298b31?auto=format&fit=crop&w=2400&q=90';
-      if (has('الديناميكية الخارجية', 'التعرية')) return 'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=2400&q=90';
-      return 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=2400&q=90';
+      if (has('الديناميكية الداخلية','الزلازل','البراكين','الكرة الأرضية')) return img.internalEarth;
+      if (has('الديناميكية الخارجية','التعرية')) return img.erosion;
+      if (has('الموارد الطبيعية الباطنية','الموارد','الباطنية')) return img.resources;
+      if (has('التربة')) return img.soil;
+      return img.geology;
     }
     if (selectedLevel === '4am') {
-      if (has('انتقال الصفات الوراثية', 'الوراث', 'الطفر')) return 'https://images.unsplash.com/photo-1530210124550-912dc1381cb8?auto=format&fit=crop&w=2400&q=90';
-      if (has('التنسيق الوظيفي', 'المناعة', 'التلقيح', 'الدم')) return 'https://images.unsplash.com/photo-1579154204601-01588f351e67?auto=format&fit=crop&w=2400&q=90';
-      if (has('التغذية')) return 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=2400&q=90';
-      return 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=2400&q=90';
+      if (has('انتقال الصفات الوراثية','الوراث','الجينات','الطفر')) return img.genetics;
+      if (has('التنسيق الوظيفي','المناعة','التلقيح','الدم')) return img.immunity;
+      if (has('التغذية','الأيض')) return img.nutrition;
+      return img.human;
     }
-    return 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=2400&q=90';
+    return img.nature;
   }, [selectedLevel, activeMidan, selectedMaqta, selectedMawrid, selectedTa3alom]);
 
   return (
@@ -610,6 +625,7 @@ export const App: React.FC = () => {
           onOpenLogbook={() => setActiveSection('logbook')}
           onOpenSettings={() => setActiveSection('settings')}
           config={config}
+          curriculumBackground={curriculumBackground}
         />
       )}
 
