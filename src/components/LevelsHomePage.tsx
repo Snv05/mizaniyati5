@@ -120,10 +120,10 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
     <div className="relative flex-1 min-h-full py-8 px-4 sm:px-6 lg:px-12 flex flex-col items-center overflow-hidden">
       <div className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20" style={{ backgroundImage: `url(${curriculumBackground || 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=2400&q=90'})` }} aria-hidden="true" />
       <div className="absolute inset-0 bg-gradient-to-b from-white/90 via-white/82 to-slate-100/92" aria-hidden="true" />
-      <div className="w-full max-w-4xl space-y-6">
+      <div className="w-full max-w-6xl space-y-7 relative z-10">
 
         {/* Designer Signature Top Banner */}
-        <div className="w-full bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm relative overflow-hidden">
+        <div className="w-full glass-panel rounded-3xl p-4 sm:p-5 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-100 rounded-bl-full opacity-50 pointer-events-none" />
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-teal-50 rounded-tr-full opacity-60 pointer-events-none" />
           
@@ -162,7 +162,7 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
 
         
         {/* Section Header with Graduation Icon */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-gray-200">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/70">
           <div>
             <div className="flex items-center gap-2.5">
               <div className="w-10 h-10 rounded-xl bg-[#0f766e]/10 text-[#0f766e] flex items-center justify-center shadow-2xs">
@@ -185,7 +185,7 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
         </div>
 
         {/* 4 Levels Cards List styled according to each specific Midan */}
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {levelThemes.map((lvl) => {
             const count = LESSONS_DATA.filter((l) => l.level === lvl.id).length;
             return (
@@ -195,7 +195,7 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
                 type="button"
                 onClick={() => onSelectYear(lvl.id)}
                 style={{ backgroundImage: `linear-gradient(rgba(255,255,255,0.72), rgba(255,255,255,0.84)), url(${lvl.backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
-                className={`relative overflow-hidden w-full text-right p-6 rounded-2xl border-2 transition-all duration-200 shadow-xs hover:shadow-lg cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-l ${lvl.bgGradient} ${lvl.borderClass} group`}
+                className={`relative overflow-hidden w-full text-right p-6 rounded-3xl border transition-all duration-300 shadow-md hover:shadow-xl hover:-translate-y-1 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 min-h-[230px] bg-white/82 backdrop-blur-md ${lvl.borderClass} group`}
               >
                 {/* Background Pattern Watermark for the specific Midan */}
                 {lvl.patternOverlay}
@@ -226,7 +226,7 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
                     )}
                   </div>
 
-                  <p className="text-[13px] text-gray-600 font-medium">
+                  <p className="text-[13px] text-slate-700 font-semibold leading-6">
                     {lvl.midanFocus}
                   </p>
 
@@ -245,7 +245,7 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
                 {/* Left side: Action Button */}
                 <div className="relative z-10 flex items-center gap-2 self-end sm:self-center">
                   <div
-                    className="px-4 py-2.5 rounded-xl text-white text-[13px] font-black flex items-center gap-1.5 transition-all group-hover:scale-105 shadow-xs"
+                    className="px-4 py-2.5 rounded-2xl text-white text-[13px] font-black flex items-center gap-1.5 transition-all group-hover:scale-105 shadow-xs"
                     style={{ backgroundColor: lvl.accentColor }}
                   >
                     <span>دخول إلى مذكرات وتدرج التعلمات</span>
@@ -258,13 +258,13 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
         </div>
 
         {/* Quick Access to Independent Tools: Logbook & Profile Settings */}
-        <div className="pt-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="pt-1 grid grid-cols-1 sm:grid-cols-2 gap-5">
           {/* Daily Logbook Card */}
           <button
             type="button"
             id="home-btn-logbook"
             onClick={onOpenLogbook}
-            className="p-5 rounded-2xl bg-white border border-gray-200 hover:border-emerald-400 hover:bg-emerald-50/40 transition shadow-2xs flex items-center justify-between text-right group cursor-pointer"
+            className="p-5 rounded-3xl bg-white/85 backdrop-blur border border-white/80 hover:border-emerald-400 hover:bg-emerald-50/60 transition shadow-md hover:shadow-lg flex items-center justify-between text-right group cursor-pointer"
           >
             <div className="flex items-center gap-3.5">
               <div className="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
@@ -287,7 +287,7 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
             type="button"
             id="home-btn-settings"
             onClick={onOpenSettings}
-            className="p-5 rounded-2xl bg-white border border-gray-200 hover:border-gray-400 hover:bg-gray-50 transition shadow-2xs flex items-center justify-between text-right group cursor-pointer"
+            className="p-5 rounded-3xl bg-white/85 backdrop-blur border border-white/80 hover:border-slate-400 hover:bg-slate-50/70 transition shadow-md hover:shadow-lg flex items-center justify-between text-right group cursor-pointer"
           >
             <div className="flex items-center gap-3.5">
               <div className="w-11 h-11 rounded-xl bg-gray-100 text-gray-700 flex items-center justify-center font-bold">
