@@ -639,6 +639,7 @@ export const App: React.FC = () => {
             }}
           />
           {/* Sidebar Controls for Memos */}
+          <div className="relative z-10 w-full flex flex-col lg:flex-row">
           <SidebarControls
             selectedLevel={selectedLevel}
             setSelectedLevel={(lvl) => setActiveSection(lvl)}
@@ -664,7 +665,7 @@ export const App: React.FC = () => {
           />
 
           {/* Paper Canvas */}
-          <main id="main-content" className="flex-1 p-4 md:p-8 overflow-y-auto flex flex-col items-center">
+          <main id="main-content" className="relative z-10 flex-1 p-4 md:p-8 overflow-y-auto flex flex-col items-center">
             <div className="w-full max-w-[960px] mb-3 flex items-center justify-between text-[12px] text-gray-500">
               <div className="flex items-center gap-2">
                 <button
@@ -702,6 +703,7 @@ export const App: React.FC = () => {
               editable={true}
             />
           </main>
+          </div>
         </div>
       )}
 
@@ -729,13 +731,16 @@ export const App: React.FC = () => {
               mixBlendMode: 'multiply',
             }}
           />
+          <div className="relative z-10 w-full min-h-full">
           <AnnualDistribution
             selectedLevel={selectedLevel}
             setSelectedLevel={(lvl) => setActiveSection(lvl)}
             config={config}
             showToast={showToast}
             curriculumLessons={curriculumLessons}
+            curriculumBackground={curriculumBackground}
           />
+          </div>
         </div>
       )}
 
