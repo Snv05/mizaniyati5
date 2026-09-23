@@ -646,7 +646,7 @@ export const App: React.FC = () => {
           {/* طبقة الخلفية التعليمية الهادئة والمريحة للقراءة */}
           <div
             key={curriculumBackground + bgClarity}
-            className="absolute inset-0 pointer-events-none z-0 transition-opacity duration-300"
+            className="absolute inset-0 pointer-events-none z-0 transition-opacity duration-300 overflow-hidden"
             aria-hidden="true"
             style={{
               backgroundImage: "url(" + curriculumBackground + ")",
@@ -658,7 +658,22 @@ export const App: React.FC = () => {
                 : 0.25,
               mixBlendMode: 'multiply',
             }}
-          />
+          >
+            {selectedLevel === '1am' && (
+              <>
+                <img
+                  src="https://www.svgrepo.com/download/16219/healthy-nutrition.svg"
+                  alt=""
+                  className="absolute left-[7%] top-[14%] w-28 md:w-40 lg:w-52 opacity-35"
+                />
+                <img
+                  src="https://www.svgrepo.com/download/159364/digestive-system.svg"
+                  alt=""
+                  className="absolute right-[7%] bottom-[10%] w-24 md:w-36 lg:w-48 opacity-25"
+                />
+              </>
+            )}
+          </div>
           {/* Sidebar Controls for Memos */}
           <div className="relative z-10 w-full flex flex-col lg:flex-row">
           <SidebarControls
@@ -770,17 +785,32 @@ export const App: React.FC = () => {
         >
           <div
             key={curriculumBackground}
-            className="absolute inset-0 pointer-events-none z-0"
+            className="absolute inset-0 pointer-events-none z-0 overflow-hidden"
             aria-hidden="true"
             style={{
               backgroundImage: "url(" + curriculumBackground + ")",
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               backgroundRepeat: 'no-repeat',
-              opacity: 0.14,
+              opacity: 0.20,
               mixBlendMode: 'multiply',
             }}
-          />
+          >
+            {selectedLevel === '1am' && (
+              <>
+                <img
+                  src="https://www.svgrepo.com/download/16219/healthy-nutrition.svg"
+                  alt=""
+                  className="absolute left-[6%] top-[12%] w-28 md:w-40 lg:w-52 opacity-35"
+                />
+                <img
+                  src="https://www.svgrepo.com/download/159364/digestive-system.svg"
+                  alt=""
+                  className="absolute right-[6%] bottom-[10%] w-24 md:w-36 lg:w-48 opacity-25"
+                />
+              </>
+            )}
+          </div>
           <div className="relative z-10 w-full min-h-full">
           <AnnualDistribution
             selectedLevel={selectedLevel}
