@@ -7,24 +7,31 @@ import {
   UserCog,
   FileText,
   Dna,
-  Mountain,
   TreePine,
   Sprout,
-  Activity,
-  HeartPulse,
-  Flame,
   Globe2,
-  ShieldCheck,
-  Compass,
+  Bot,
   Sparkles,
+  Info,
+  Layers,
+  FileDown,
+  Printer,
+  Compass,
+  Award,
+  Zap,
+  CheckCircle2,
+  MessageSquare,
+  HelpCircle,
 } from 'lucide-react';
 import { LESSONS_DATA } from '../data/lessonsData';
 import { MemoConfig } from '../types';
 
 interface LevelsHomePageProps {
-  onSelectYear: (level: '1am' | '2am' | '3am' | '4am') => void;
+  onSelectYear: (level: '1am' | '2am' | '3am' | '4am', subTab?: 'memos' | 'distribution') => void;
   onOpenLogbook: () => void;
   onOpenSettings: () => void;
+  onOpenAssistant?: () => void;
+  onOpenInfoModal?: (tab: 'about' | 'guide' | 'contact') => void;
   config: MemoConfig;
   curriculumBackground?: string;
 }
@@ -33,6 +40,8 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
   onSelectYear,
   onOpenLogbook,
   onOpenSettings,
+  onOpenAssistant,
+  onOpenInfoModal,
   config,
   curriculumBackground,
 }) => {
@@ -78,20 +87,20 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
     },
     {
       id: '3am' as const,
-      backgroundImage: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1800&q=85',
+      backgroundImage: '/src/assets/images/card_3am_geology_1790188430402.jpg',
       title: '3 متوسط',
       subtitle: 'السنة الثالثة متوسط',
-      midanName: 'ميدان: الإنسان والمحيط (الدينامية الداخلية للأرض)',
-      midanFocus: 'علم الجيولوجيا • الزلازل والبراكين • تكتونية الصفائح والبنية الباطنية للأرض',
-      accentColor: '#ea580c', // Terracotta / Earth Lava
-      darkAccent: '#c2410c',
-      bgGradient: 'from-amber-50/80 via-white to-orange-50/40',
-      borderClass: 'border-amber-300 hover:border-orange-500 hover:shadow-orange-100',
-      badgeBg: 'bg-amber-100 text-amber-900 border-amber-300',
-      iconBadge: <Mountain className="w-5 h-5 text-orange-600" />,
+      midanName: 'ميدان: الإنسان والمحيط (الدينامية الداخلية للأرض والجيولوجيا)',
+      midanFocus: 'علم الجيولوجيا • تكتونية الصفائح • الزلازل والبراكين • البنية الباطنية للكرة الأرضية',
+      accentColor: '#0f766e',
+      darkAccent: '#115e59',
+      bgGradient: 'from-teal-50/90 via-white to-amber-50/40',
+      borderClass: 'border-teal-300 hover:border-teal-500 hover:shadow-teal-100',
+      badgeBg: 'bg-teal-100 text-teal-900 border-teal-300',
+      iconBadge: <Globe2 className="w-5 h-5 text-teal-600" />,
       patternOverlay: (
-        <div className="absolute left-0 top-0 bottom-0 w-48 opacity-[0.08] pointer-events-none overflow-hidden flex items-center justify-center">
-          <Mountain className="w-40 h-40 text-orange-900" />
+        <div className="absolute left-0 top-0 bottom-0 w-48 opacity-[0.10] pointer-events-none overflow-hidden flex items-center justify-center">
+          <Globe2 className="w-40 h-40 text-teal-900" />
         </div>
       ),
     },
@@ -102,7 +111,7 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
       subtitle: 'السنة الرابعة متوسط (BEM)',
       midanName: 'ميدان: الإنسان والصحة',
       midanFocus: 'التغذية والأيض الخلوي • التنسيق الوظيفي العصبي والمناعي • الوراثة والجينات',
-      accentColor: '#c2185b', // Crimson Rose / Human Biology
+      accentColor: '#c2185b',
       darkAccent: '#9d174d',
       bgGradient: 'from-rose-50/80 via-white to-pink-50/40',
       borderClass: 'border-rose-300 hover:border-[#c2185b] hover:shadow-pink-100',
@@ -118,12 +127,17 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
 
   return (
     <div className="relative flex-1 min-h-full py-8 px-4 sm:px-6 lg:px-12 flex flex-col items-center overflow-hidden">
-      <div className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20" style={{ backgroundImage: `url(${curriculumBackground || 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=2400&q=90'})` }} aria-hidden="true" />
-      <div className="absolute inset-0 bg-gradient-to-b from-white/90 via-white/82 to-slate-100/92" aria-hidden="true" />
-      <div className="w-full max-w-6xl space-y-7 relative z-10">
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20"
+        style={{ backgroundImage: `url(${curriculumBackground || 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=2400&q=90'})` }}
+        aria-hidden="true"
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-white/92 via-white/85 to-slate-100/95" aria-hidden="true" />
+      
+      <div className="w-full max-w-6xl space-y-8 relative z-10">
 
         {/* Designer Signature Top Banner */}
-        <div className="w-full glass-panel rounded-3xl p-4 sm:p-5 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm relative overflow-hidden">
+        <div className="w-full glass-panel rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm relative overflow-hidden bg-white/90 border border-emerald-100">
           <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-100 rounded-bl-full opacity-50 pointer-events-none" />
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-teal-50 rounded-tr-full opacity-60 pointer-events-none" />
           
@@ -143,172 +157,349 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
             </div>
             <div>
               <div className="text-[12px] sm:text-[13px] text-gray-500 font-bold mb-0.5 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-emerald-500" /> تصميم وتطوير
+                <Sparkles className="w-3.5 h-3.5 text-emerald-500" /> تصميم وتطوير المنصة
               </div>
               <h2 className="text-xl sm:text-2xl font-black text-gray-900 leading-tight">بغداد الطيب</h2>
               <div className="text-[12px] font-extrabold text-emerald-800 bg-emerald-100/80 px-3 py-1 rounded-full inline-flex items-center gap-1.5 mt-1.5 border border-emerald-200/50">
-                <UserCog className="w-3.5 h-3.5" /> مصمم المنصة
+                <UserCog className="w-3.5 h-3.5" /> منصة المذكرة البيداغوجية لعلوم الطبيعة والحياة
               </div>
             </div>
           </div>
           
-          <div className="hidden sm:flex relative z-10 text-left items-center">
-            <div className="bg-gray-50 px-5 py-3 rounded-xl border border-gray-200 shadow-2xs">
-              <div className="text-[13px] font-bold text-gray-800">المنصة البيداغوجية الوطنية</div>
-              <div className="text-[11.5px] font-medium text-gray-500 mt-0.5">لأساتذة علوم الطبيعة والحياة</div>
+          <div className="hidden sm:flex relative z-10 text-left items-center gap-3">
+            <div className="bg-emerald-50/80 px-5 py-3 rounded-2xl border border-emerald-200 shadow-2xs text-right">
+              <div className="text-[13px] font-black text-emerald-950">منهاج الجيل الثاني المعتمد</div>
+              <div className="text-[11.5px] font-medium text-emerald-700 mt-0.5">الجمهورية الجزائرية الديمقراطية الشعبية</div>
             </div>
           </div>
         </div>
 
-        
-        {/* Section Header with Graduation Icon */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/70">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-xl bg-[#0f766e]/10 text-[#0f766e] flex items-center justify-center shadow-2xs">
-                <GraduationCap className="w-6 h-6" />
+        {/* ═══════════════════════════════════════════════════════════════
+            قسم الأزرار السريعة الأساسية (المذكرة، التدرج، الدفتر، الإعدادات)
+           ═══════════════════════════════════════════════════════════════ */}
+        <div>
+          <div className="flex items-center justify-between mb-3 px-1">
+            <h3 className="text-lg font-black text-gray-800 flex items-center gap-2">
+              <Zap className="w-5 h-5 text-amber-500" />
+              <span>الوصول السريع للأدوات البيداغوجية</span>
+            </h3>
+            <span className="text-xs text-gray-500 font-medium">كل ما يحتاجه الأستاذ بنقرة واحدة</span>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+            {/* زر سريع 1: المذكرة البيداغوجية */}
+            <button
+              type="button"
+              id="quick-btn-memos"
+              onClick={() => onSelectYear(config.level || '1am', 'memos')}
+              className="p-4 rounded-2xl bg-white border border-teal-200 hover:border-teal-500 hover:shadow-md transition text-right group cursor-pointer flex flex-col justify-between h-32 relative overflow-hidden"
+            >
+              <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center font-bold group-hover:scale-110 transition">
+                <FileText className="w-5 h-5" />
               </div>
-              <h2 className="text-2xl sm:text-3xl font-black text-gray-900">
-                المستويات الدراسية
-              </h2>
-            </div>
-            <p className="text-gray-600 text-[13.5px] mt-1 font-medium">
-              اختر المستوى الدراسي لتصفح المذكرات البيداغوجية وتدرج التعلمات الخاص بكل ميدان
-            </p>
-          </div>
+              <div>
+                <h4 className="font-black text-[14px] text-gray-900 group-hover:text-teal-700 transition">
+                  المذكرة البيداغوجية
+                </h4>
+                <p className="text-[11.5px] text-gray-500 mt-0.5 line-clamp-1">
+                  تحضير وتعديل المذكرات الرسمية
+                </p>
+              </div>
+              <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition">
+                <ChevronLeft className="w-4 h-4 text-teal-600" />
+              </div>
+            </button>
 
-          <div className="flex items-center gap-2">
-            <span className="text-[12px] bg-white px-3 py-1.5 rounded-xl border border-gray-200 text-teal-800 font-bold shadow-2xs">
-              منهاج الجيل الثاني المعتمد
-            </span>
+            {/* زر سريع 2: التدرج السنوي للتعلمات */}
+            <button
+              type="button"
+              id="quick-btn-distribution"
+              onClick={() => onSelectYear(config.level || '1am', 'distribution')}
+              className="p-4 rounded-2xl bg-white border border-blue-200 hover:border-blue-500 hover:shadow-md transition text-right group cursor-pointer flex flex-col justify-between h-32 relative overflow-hidden"
+            >
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold group-hover:scale-110 transition">
+                <CalendarDays className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-black text-[14px] text-gray-900 group-hover:text-blue-700 transition">
+                  التدرج السنوي
+                </h4>
+                <p className="text-[11.5px] text-gray-500 mt-0.5 line-clamp-1">
+                  مخطط التوزيع الوزاري وتتبع الأسابيع
+                </p>
+              </div>
+              <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition">
+                <ChevronLeft className="w-4 h-4 text-blue-600" />
+              </div>
+            </button>
+
+            {/* زر سريع 3: الدفتر اليومي */}
+            <button
+              type="button"
+              id="quick-btn-logbook"
+              onClick={onOpenLogbook}
+              className="p-4 rounded-2xl bg-white border border-emerald-200 hover:border-emerald-500 hover:shadow-md transition text-right group cursor-pointer flex flex-col justify-between h-32 relative overflow-hidden"
+            >
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold group-hover:scale-110 transition">
+                <BookOpenCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-black text-[14px] text-gray-900 group-hover:text-emerald-700 transition">
+                  الدفتر اليومي
+                </h4>
+                <p className="text-[11.5px] text-gray-500 mt-0.5 line-clamp-1">
+                  دفتر النصوص وتسجيل الحصص
+                </p>
+              </div>
+              <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition">
+                <ChevronLeft className="w-4 h-4 text-emerald-600" />
+              </div>
+            </button>
+
+            {/* زر سريع 4: إعدادات الحساب */}
+            <button
+              type="button"
+              id="quick-btn-settings"
+              onClick={onOpenSettings}
+              className="p-4 rounded-2xl bg-white border border-purple-200 hover:border-purple-500 hover:shadow-md transition text-right group cursor-pointer flex flex-col justify-between h-32 relative overflow-hidden"
+            >
+              <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold group-hover:scale-110 transition">
+                <UserCog className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-black text-[14px] text-gray-900 group-hover:text-purple-700 transition">
+                  إعدادات الحساب
+                </h4>
+                <p className="text-[11.5px] text-gray-500 mt-0.5 line-clamp-1">
+                  بيانات المؤسسة والختم الرسمي
+                </p>
+              </div>
+              <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition">
+                <ChevronLeft className="w-4 h-4 text-purple-600" />
+              </div>
+            </button>
           </div>
         </div>
 
-        {/* 4 Levels Cards List styled according to each specific Midan */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          {levelThemes.map((lvl) => {
-            const count = LESSONS_DATA.filter((l) => l.level === lvl.id).length;
-            return (
+        {/* ═══════════════════════════════════════════════════════════════
+            بطاقات المستويات الدراسية الأربعة (1، 2، 3، 4 متوسط)
+           ═══════════════════════════════════════════════════════════════ */}
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-gray-200">
+            <div>
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-[#0f766e]/10 text-[#0f766e] flex items-center justify-center shadow-2xs">
+                  <GraduationCap className="w-6 h-6" />
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-black text-gray-900">
+                  المستويات الدراسية (التعليم المتوسط)
+                </h2>
+              </div>
+              <p className="text-gray-600 text-[13.5px] mt-1 font-medium">
+                اختر المستوى الدراسي لتصفح المذكرات البيداغوجية وتدرج التعلمات الخاص بكل ميدان
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-[12px] bg-white px-3 py-1.5 rounded-xl border border-gray-200 text-teal-800 font-bold shadow-2xs">
+                مناهج الجيل الثاني الرسمية
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {levelThemes.map((lvl) => {
+              const count = LESSONS_DATA.filter((l) => l.level === lvl.id).length;
+              return (
+                <div
+                  key={lvl.id}
+                  id={`card-select-level-${lvl.id}`}
+                  style={{
+                    backgroundImage: `linear-gradient(rgba(255,255,255,0.78), rgba(255,255,255,0.88)), url(${lvl.backgroundImage})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                  }}
+                  className={`relative overflow-hidden w-full text-right p-6 rounded-3xl border transition-all duration-300 shadow-md hover:shadow-xl bg-white/85 backdrop-blur-md ${lvl.borderClass} group`}
+                >
+                  {lvl.patternOverlay}
+
+                  <div className="relative z-10 flex flex-col justify-between h-full space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <h3
+                          className="text-2xl sm:text-3xl font-black tracking-tight"
+                          style={{ color: lvl.accentColor }}
+                        >
+                          {lvl.title}
+                        </h3>
+                        <span className="text-base sm:text-lg font-black text-gray-800">
+                          {lvl.subtitle}
+                        </span>
+
+                        <span className={`text-[11.5px] font-black px-2.5 py-0.5 rounded-full border flex items-center gap-1.5 ${lvl.badgeBg}`}>
+                          {lvl.iconBadge}
+                          <span>{lvl.midanName}</span>
+                        </span>
+
+                        {lvl.id === '4am' && (
+                          <span className="bg-[#c2185b] text-white text-[11px] font-black px-2.5 py-0.5 rounded-full shadow-2xs">
+                            شهادة BEM
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="text-[13px] text-slate-700 font-semibold leading-6">
+                        {lvl.midanFocus}
+                      </p>
+
+                      <div className="flex items-center gap-3 pt-1 text-[12px] text-gray-600 font-bold">
+                        <span className="flex items-center gap-1.5 bg-white/90 px-2.5 py-1 rounded-lg border border-gray-200">
+                          <FileText className="w-3.5 h-3.5 text-gray-500" />
+                          <span>{count} مذكرة معتمدة</span>
+                        </span>
+                        <span className="flex items-center gap-1.5 bg-white/90 px-2.5 py-1 rounded-lg border border-gray-200">
+                          <Layers className="w-3.5 h-3.5 text-gray-500" />
+                          <span>نموذج مفصل ومدمج</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* أزرار الإجراء المزدوجة: المذكرات والتدرج السنوي */}
+                    <div className="pt-2 flex flex-wrap items-center gap-2.5 border-t border-gray-200/60">
+                      <button
+                        type="button"
+                        onClick={() => onSelectYear(lvl.id, 'memos')}
+                        style={{ backgroundColor: lvl.accentColor }}
+                        className="px-4 py-2 rounded-xl text-white text-[12.5px] font-black flex items-center gap-1.5 transition-all hover:opacity-95 shadow-xs cursor-pointer"
+                      >
+                        <FileText className="w-4 h-4" />
+                        <span>فتح المذكرات البيداغوجية</span>
+                        <ChevronLeft className="w-3.5 h-3.5" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => onSelectYear(lvl.id, 'distribution')}
+                        className="px-3.5 py-2 rounded-xl bg-white border border-gray-300 text-gray-800 text-[12.5px] font-bold flex items-center gap-1.5 hover:bg-gray-50 transition cursor-pointer"
+                      >
+                        <CalendarDays className="w-4 h-4 text-gray-500" />
+                        <span>التدرج السنوي</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ═══════════════════════════════════════════════════════════════
+            قسم المساعد البيداغوجي الذكي (AI Pedagogical Assistant)
+           ═══════════════════════════════════════════════════════════════ */}
+        <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-l from-teal-900 via-teal-800 to-emerald-900 text-white shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="space-y-3 text-right">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-emerald-200 text-xs font-bold border border-white/10">
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <span>مساعد بيداغوجي متخصص في منهاج علوم الطبيعة والحياة</span>
+              </div>
+              <h3 className="text-2xl sm:text-3xl font-black">
+                المساعد الذكي للأستاذ في التحضير والتقويم
+              </h3>
+              <p className="text-teal-100 text-sm max-w-2xl leading-relaxed">
+                استشر المساعد الذكي في صياغة الفرضيات، وضعيات الانطلاق، تكييف النشاطات التعليمية،
+                واقتراح بروتوكولات تجريبية مطابقة للتوجيهات البيداغوجية الرسمية لوزارة التربية الوطنية.
+              </p>
+              <div className="flex flex-wrap gap-2 pt-1 text-xs">
+                <span className="px-3 py-1 rounded-lg bg-white/10 text-white font-medium">✓ صياغة المشكل العلمي</span>
+                <span className="px-3 py-1 rounded-lg bg-white/10 text-white font-medium">✓ اقتراح استراتيجيات تعليمية</span>
+                <span className="px-3 py-1 rounded-lg bg-white/10 text-white font-medium">✓ تحليل النشاطات التجريبية</span>
+                <span className="px-3 py-1 rounded-lg bg-white/10 text-white font-medium">✓ معايير التقويم البيداغوجي</span>
+              </div>
+            </div>
+
+            <div className="shrink-0 w-full sm:w-auto flex flex-col sm:flex-row items-center gap-3">
               <button
-                key={lvl.id}
-                id={`card-select-level-${lvl.id}`}
                 type="button"
-                onClick={() => onSelectYear(lvl.id)}
-                style={{ backgroundImage: `linear-gradient(rgba(255,255,255,0.72), rgba(255,255,255,0.84)), url(${lvl.backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
-                className={`relative overflow-hidden w-full text-right p-6 rounded-3xl border transition-all duration-300 shadow-md hover:shadow-xl hover:-translate-y-1 cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 min-h-[230px] bg-white/82 backdrop-blur-md ${lvl.borderClass} group`}
+                id="home-open-assistant-btn"
+                onClick={onOpenAssistant}
+                className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-teal-950 font-black text-sm flex items-center justify-center gap-2 shadow-lg transition cursor-pointer"
               >
-                {/* Background Pattern Watermark for the specific Midan */}
-                {lvl.patternOverlay}
-
-                {/* Right side: Titles and Midan Info */}
-                <div className="relative z-10 flex-1 space-y-2">
-                  <div className="flex flex-wrap items-center gap-2.5">
-                    <h3
-                      className="text-2xl sm:text-3xl font-black tracking-tight"
-                      style={{ color: lvl.accentColor }}
-                    >
-                      {lvl.title}
-                    </h3>
-                    <span className="text-base sm:text-lg font-black text-gray-800">
-                      {lvl.subtitle}
-                    </span>
-
-                    {/* Midan Badge */}
-                    <span className={`text-[11.5px] font-black px-2.5 py-0.5 rounded-full border flex items-center gap-1.5 ${lvl.badgeBg}`}>
-                      {lvl.iconBadge}
-                      <span>{lvl.midanName}</span>
-                    </span>
-
-                    {lvl.id === '4am' && (
-                      <span className="bg-[#c2185b] text-white text-[11px] font-black px-2.5 py-0.5 rounded-full shadow-2xs">
-                        شهادة BEM
-                      </span>
-                    )}
-                  </div>
-
-                  <p className="text-[13px] text-slate-700 font-semibold leading-6">
-                    {lvl.midanFocus}
-                  </p>
-
-                  <div className="flex items-center gap-4 pt-1 text-[12px] text-gray-600 font-bold">
-                    <span className="flex items-center gap-1.5 bg-white/80 px-2.5 py-1 rounded-lg border border-gray-200">
-                      <FileText className="w-3.5 h-3.5 text-gray-500" />
-                      <span>`${count} مذكرة جاهزة`</span>
-                    </span>
-                    <span className="flex items-center gap-1.5 bg-white/80 px-2.5 py-1 rounded-lg border border-gray-200">
-                      <CalendarDays className="w-3.5 h-3.5 text-gray-500" />
-                      <span>تدرج التعلمات</span>
-                    </span>
-                  </div>
-                </div>
-
-                {/* Left side: Action Button */}
-                <div className="relative z-10 flex items-center gap-2 self-end sm:self-center">
-                  <div
-                    className="px-4 py-2.5 rounded-2xl text-white text-[13px] font-black flex items-center gap-1.5 transition-all group-hover:scale-105 shadow-xs"
-                    style={{ backgroundColor: lvl.accentColor }}
-                  >
-                    <span>دخول إلى مذكرات وتدرج التعلمات</span>
-                    <ChevronLeft className="w-4 h-4" />
-                  </div>
-                </div>
+                <Bot className="w-5 h-5 text-teal-950" />
+                <span>فتح المساعد الذكي الآن</span>
+                <ChevronLeft className="w-4 h-4" />
               </button>
-            );
-          })}
+            </div>
+          </div>
         </div>
 
-        {/* Quick Access to Independent Tools: Logbook & Profile Settings */}
-        <div className="pt-1 grid grid-cols-1 sm:grid-cols-2 gap-5">
-          {/* Daily Logbook Card */}
-          <button
-            type="button"
-            id="home-btn-logbook"
-            onClick={onOpenLogbook}
-            className="p-5 rounded-3xl bg-white/85 backdrop-blur border border-white/80 hover:border-emerald-400 hover:bg-emerald-50/60 transition shadow-md hover:shadow-lg flex items-center justify-between text-right group cursor-pointer"
-          >
-            <div className="flex items-center gap-3.5">
-              <div className="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
-                <BookOpenCheck className="w-6 h-6" />
-              </div>
-              <div>
-                <h4 className="font-black text-[14.5px] text-gray-900">
-                  الدفتر اليومي ودفتر النصوص
-                </h4>
-                <p className="text-[12px] text-gray-500">
-                  مستقل لمتابعة وتسجيل الحصص اليومية والأفواج
-                </p>
-              </div>
+        {/* ═══════════════════════════════════════════════════════════════
+            قسم معلومات وميزات المنصة البيداغوجية
+           ═══════════════════════════════════════════════════════════════ */}
+        <div className="p-6 rounded-3xl bg-white border border-gray-200/80 shadow-xs space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
+            <div>
+              <h3 className="text-xl font-black text-gray-900 flex items-center gap-2">
+                <Info className="w-5 h-5 text-teal-700" />
+                <span>حول منصة المذكرة البيداغوجية</span>
+              </h3>
+              <p className="text-gray-500 text-xs mt-0.5">
+                بيئة عمل متكاملة مخصصة لأساتذة مادة علوم الطبيعة والحياة بمرحلة التعليم المتوسط
+              </p>
             </div>
-            <ChevronLeft className="w-5 h-5 text-gray-400 group-hover:text-emerald-700 group-hover:-translate-x-1 transition" />
-          </button>
 
-          {/* Account Settings Card */}
-          <button
-            type="button"
-            id="home-btn-settings"
-            onClick={onOpenSettings}
-            className="p-5 rounded-3xl bg-white/85 backdrop-blur border border-white/80 hover:border-slate-400 hover:bg-slate-50/70 transition shadow-md hover:shadow-lg flex items-center justify-between text-right group cursor-pointer"
-          >
-            <div className="flex items-center gap-3.5">
-              <div className="w-11 h-11 rounded-xl bg-gray-100 text-gray-700 flex items-center justify-center font-bold">
-                <UserCog className="w-6 h-6" />
-              </div>
-              <div>
-                <h4 className="font-black text-[14.5px] text-gray-900">
-                  إعدادات الحساب والخاتم
-                </h4>
-                <p className="text-[12px] text-gray-500">
-                  تعديل اسم الأستاذ، المؤسسة، وتأشيرة الخاتم
-                </p>
-              </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onOpenInfoModal && onOpenInfoModal('about')}
+                className="px-3 py-1.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 transition cursor-pointer"
+              >
+                نبذة تعريفية
+              </button>
+              <button
+                type="button"
+                onClick={() => onOpenInfoModal && onOpenInfoModal('guide')}
+                className="px-3 py-1.5 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 transition cursor-pointer"
+              >
+                دليل الاستخدام
+              </button>
             </div>
-            <ChevronLeft className="w-5 h-5 text-gray-400 group-hover:text-gray-900 group-hover:-translate-x-1 transition" />
-          </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-right">
+            <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 space-y-2">
+              <div className="w-8 h-8 rounded-lg bg-teal-100 text-teal-800 flex items-center justify-center font-bold">
+                <Award className="w-4 h-4" />
+              </div>
+              <h4 className="font-black text-sm text-gray-900">مطابقة المناهج الرسمية</h4>
+              <p className="text-xs text-gray-600 leading-relaxed">
+                مذكرات وتدرجات مبنية حرفياً على وثائق منهاج الجيل الثاني، الأدلة البيداغوجية والمخططات السنوية الاستثنائية.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 space-y-2">
+              <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center font-bold">
+                <FileDown className="w-4 h-4" />
+              </div>
+              <h4 className="font-black text-sm text-gray-900">تصدير Word و PDF</h4>
+              <p className="text-xs text-gray-600 leading-relaxed">
+                تصدير احترافي متوافق تماماً مع جداول Microsoft Word وطباعة نظيفة جاهزة للمصادقة والتأشيرة.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 space-y-2">
+              <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+              <h4 className="font-black text-sm text-gray-900">تزامن وحفظ آمن</h4>
+              <p className="text-xs text-gray-600 leading-relaxed">
+                حفظ التعديلات محلياً وسحابياً عبر حساب Google، مع الحفاظ الكامل على خصوصية بيانات الأستاذ والمؤسسة.
+              </p>
+            </div>
+          </div>
         </div>
 
-
-        
-        
       </div>
     </div>
   );

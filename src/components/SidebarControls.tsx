@@ -98,7 +98,7 @@ export const SidebarControls: React.FC<SidebarControlsProps> = ({
               : selectedLevel === '2am'
               ? 'bg-purple-50/70 border-purple-200'
               : selectedLevel === '3am'
-              ? 'bg-amber-50/70 border-amber-200'
+              ? 'bg-teal-50/80 border-teal-300'
               : 'bg-rose-50/70 border-rose-200'
           }`}
         >
@@ -111,7 +111,7 @@ export const SidebarControls: React.FC<SidebarControlsProps> = ({
                     : selectedLevel === '2am'
                     ? 'text-purple-600'
                     : selectedLevel === '3am'
-                    ? 'text-orange-600'
+                    ? 'text-teal-700'
                     : 'text-[#c2185b]'
                 }`}
               />
@@ -124,7 +124,7 @@ export const SidebarControls: React.FC<SidebarControlsProps> = ({
                   : selectedLevel === '2am'
                   ? 'bg-purple-600'
                   : selectedLevel === '3am'
-                  ? 'bg-orange-600'
+                  ? 'bg-teal-700 border border-amber-300/40'
                   : 'bg-[#c2185b]'
               }`}
             >
@@ -208,7 +208,7 @@ export const SidebarControls: React.FC<SidebarControlsProps> = ({
                   : selectedLevel === '2am'
                   ? 'bg-purple-100 text-purple-800'
                   : selectedLevel === '3am'
-                  ? 'bg-amber-100 text-amber-900'
+                  ? 'bg-teal-100 text-teal-900 border border-teal-300'
                   : 'bg-[#c2185b]/10 text-[#c2185b]'
               }`}
             >
@@ -227,7 +227,7 @@ export const SidebarControls: React.FC<SidebarControlsProps> = ({
                     : selectedLevel === '2am'
                     ? 'bg-purple-600'
                     : selectedLevel === '3am'
-                    ? 'bg-orange-600'
+                    ? 'bg-teal-600'
                     : 'bg-[#c2185b]'
                 }`}
               />

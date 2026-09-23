@@ -109,7 +109,7 @@ export const generateMemoPdf = async (
   try {
     if (document.fonts?.ready) await document.fonts.ready;
     await waitForImages(paper);
-    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve(undefined))));
 
     const canvas = await html2canvas(paper, {
       scale: Math.min(2, window.devicePixelRatio || 1.5),

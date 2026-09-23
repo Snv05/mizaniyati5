@@ -36,7 +36,7 @@ export const generatePreviewMatchPdf = async (
     const element = pageElements[index];
     await waitForImages(element);
     await new Promise<void>((resolve) =>
-      requestAnimationFrame(() => requestAnimationFrame(resolve))
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
     );
 
     const canvas = await html2canvas(element, {

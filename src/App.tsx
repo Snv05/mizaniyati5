@@ -78,6 +78,8 @@ export const App: React.FC = () => {
   const [selectedMaqta, setSelectedMaqta] = useState<string>('');
   const [selectedMawrid, setSelectedMawrid] = useState<string>('');
   const [selectedTa3alom, setSelectedTa3alom] = useState<string>('');
+  // مستوى وضوح خلفية القسم: عالي الوضوح، متوازن، هادئ
+  const [bgClarity, setBgClarity] = useState<'vivid' | 'medium' | 'soft'>('vivid');
 
   // 3. Configuration / Teacher Profile State (Stored in sessionStorage for privacy & auto-cleanup on exit)
   const [config, setConfig] = useState<MemoConfig>(() => {
@@ -342,16 +344,16 @@ export const App: React.FC = () => {
         };
       case '3am':
         return {
-          midanName: '',
+          midanName: 'الدينامية الداخلية للأرض والظواهر الجيولوجية',
           levelLabel: 'السنة الثالثة متوسط (3AM)',
-          accentColor: '#ea580c',
-          subbarBg: 'from-amber-50/90 via-white to-orange-50/70 border-amber-200',
-          badgeBg: 'bg-amber-100 text-amber-900 border-amber-300',
-          activeTabBg: 'bg-orange-600 text-white shadow-xs',
-          hoverTabClass: 'text-gray-700 hover:text-orange-700 hover:bg-white/80',
-          pulseBg: 'bg-orange-600',
-          canvasBg: 'bg-gradient-to-br from-amber-50/50 via-[#f8fafc] to-orange-50/30',
-          titleColor: 'text-orange-700',
+          accentColor: '#0f766e', // لون الزمردي التيل المطابق لتصميم الصورة
+          subbarBg: 'from-teal-50/95 via-cyan-50/80 to-amber-50/60 border-teal-300',
+          badgeBg: 'bg-teal-100 text-teal-900 border-teal-300 shadow-2xs',
+          activeTabBg: 'bg-teal-700 text-white shadow-xs border border-amber-300/40',
+          hoverTabClass: 'text-teal-900 hover:text-teal-700 hover:bg-teal-100/70',
+          pulseBg: 'bg-teal-600',
+          canvasBg: 'bg-gradient-to-br from-teal-50/60 via-[#f0fdfa] to-emerald-50/40',
+          titleColor: 'text-teal-800',
         };
       case '4am':
       default:
@@ -403,11 +405,8 @@ export const App: React.FC = () => {
       return img.nature;
     }
     if (selectedLevel === '3am') {
-      if (has('الديناميكية الداخلية','الزلازل','البراكين','الكرة الأرضية')) return img.internalEarth;
-      if (has('الديناميكية الخارجية','التعرية')) return img.erosion;
-      if (has('الموارد الطبيعية الباطنية','الموارد','الباطنية')) return img.resources;
-      if (has('التربة')) return img.soil;
-      return img.geology;
+      // خلفية قسم السنة الثالثة متوسط فائقة الدقة والمطابقة لتصميم الجيولوجيا وديناميكية الكرة الأرضية
+      return '/src/assets/images/bg_3am_geology_1790188415960.jpg';
     }
     if (selectedLevel === '4am') {
       if (has('انتقال الصفات الوراثية','الوراث','الجينات','الطفر')) return img.genetics;
@@ -618,12 +617,14 @@ export const App: React.FC = () => {
       {/* Main Dynamic Workspace Views */}
       {activeSection === 'home' && (
         <LevelsHomePage
-          onSelectYear={(lvl) => {
+          onSelectYear={(lvl, subTab = 'memos') => {
             setActiveSection(lvl);
-            setYearSubTab('memos');
+            setYearSubTab(subTab);
           }}
           onOpenLogbook={() => setActiveSection('logbook')}
           onOpenSettings={() => setActiveSection('settings')}
+          onOpenAssistant={() => setIsAssistantOpen(true)}
+          onOpenInfoModal={(tab) => setInfoModalTab(tab)}
           config={config}
           curriculumBackground={curriculumBackground}
         />
@@ -633,24 +634,27 @@ export const App: React.FC = () => {
         <div
           className="flex-1 flex flex-col lg:flex-row relative overflow-hidden"
           style={{
-            backgroundImage: `linear-gradient(rgba(255,255,255,0.04), rgba(255,255,255,0.10)), url(${curriculumBackground})`,
+            backgroundImage: `url(${curriculumBackground})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundAttachment: 'scroll',
             backgroundRepeat: 'no-repeat',
-            backgroundColor: '#dbeafe',
+            backgroundColor: selectedLevel === '3am' ? '#f0fdfa' : '#f8fafc',
           }}
         >
+          {/* طبقة الخلفية التعليمية الهادئة والمريحة للقراءة */}
           <div
-            key={curriculumBackground}
-            className="absolute inset-0 pointer-events-none z-0"
+            key={curriculumBackground + bgClarity}
+            className="absolute inset-0 pointer-events-none z-0 transition-opacity duration-300"
             aria-hidden="true"
             style={{
               backgroundImage: "url(" + curriculumBackground + ")",
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               backgroundRepeat: 'no-repeat',
-              opacity: 0.32,
+              opacity: selectedLevel === '3am'
+                ? (bgClarity === 'vivid' ? 0.38 : bgClarity === 'medium' ? 0.22 : 0.12)
+                : 0.25,
               mixBlendMode: 'multiply',
             }}
           />
@@ -682,7 +686,7 @@ export const App: React.FC = () => {
 
           {/* Paper Canvas */}
           <main id="main-content" className="relative z-10 flex-1 p-4 md:p-8 overflow-y-auto flex flex-col items-center">
-            <div className="w-full max-w-[960px] mb-3 flex items-center justify-between text-[12px] text-gray-500">
+            <div className="w-full max-w-[960px] mb-3 flex flex-wrap items-center justify-between gap-2 text-[12px] text-gray-500">
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -698,6 +702,35 @@ export const App: React.FC = () => {
                   {currentLevelLabel}
                 </strong>
               </div>
+
+              {/* أداة التحكم السريعة في وضوح خلفية القسم */}
+              {selectedLevel === '3am' && (
+                <div className="flex items-center gap-1 bg-white/95 px-3 py-1 rounded-full border border-teal-300 text-[11.5px] font-bold shadow-xs no-print">
+                  <span className="text-teal-900 ml-1">وضوح الخلفية:</span>
+                  <button
+                    type="button"
+                    onClick={() => setBgClarity('vivid')}
+                    className={`px-2.5 py-0.5 rounded-full transition cursor-pointer ${bgClarity === 'vivid' ? 'bg-teal-700 text-white' : 'text-teal-800 hover:bg-teal-100'}`}
+                  >
+                    عالي (100%)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBgClarity('medium')}
+                    className={`px-2.5 py-0.5 rounded-full transition cursor-pointer ${bgClarity === 'medium' ? 'bg-teal-700 text-white' : 'text-teal-800 hover:bg-teal-100'}`}
+                  >
+                    متوازن
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBgClarity('soft')}
+                    className={`px-2.5 py-0.5 rounded-full transition cursor-pointer ${bgClarity === 'soft' ? 'bg-teal-700 text-white' : 'text-teal-800 hover:bg-teal-100'}`}
+                  >
+                    هادئ
+                  </button>
+                </div>
+              )}
+
               <div className="hidden sm:block text-gray-500 font-medium">
                 انقر على أي مربع في المذكرة للتعديل المباشر أو استخدم القائمة الجانبية
               </div>

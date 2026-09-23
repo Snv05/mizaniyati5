@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { LessonMemo, MemoConfig } from '../types';
 import { Layers, Columns } from 'lucide-react';
 import { TeacherOfficialStamp } from './TeacherOfficialStamp';
@@ -40,13 +40,13 @@ const THEMES: Record<string, {
     borderSoft: 'border-[#7c3aed]/30',
   },
   '3am': {
-    hex: '#ea580c',
-    headerGrad: 'from-[#fff7ed]/80 to-white',
-    badgeBg: 'bg-[#ea580c]/10 text-[#ea580c]',
-    boxBg: 'bg-[#fff7ed]/60 border-[#ea580c]/25',
-    tableHeadBg: 'bg-[#ea580c]',
-    cellHeaderBg: 'bg-[#ffedd5]/70 text-[#ea580c]',
-    borderSoft: 'border-[#ea580c]/30',
+    hex: '#0f766e',
+    headerGrad: 'from-[#f0fdfa]/90 via-[#e6fffa]/80 to-white',
+    badgeBg: 'bg-teal-100 text-teal-900 border border-teal-300',
+    boxBg: 'bg-[#f0fdfa]/70 border-teal-300/40',
+    tableHeadBg: 'bg-[#0f766e]',
+    cellHeaderBg: 'bg-[#ccfbf1]/80 text-[#0f766e]',
+    borderSoft: 'border-[#0f766e]/30',
   },
   '4am': {
     hex: '#c2185b',
@@ -109,6 +109,27 @@ export const MemoSheet: React.FC<MemoSheetProps> = ({
   const isMergedFormat = config.memoFormat === 'merged_teacher';
   const theme = THEMES[config.level || '2am'] || THEMES['2am'];
 
+  // حالات التحكم في تنسيقات كتابة الوضعية
+  const [situationFontSize, setSituationFontSize] = useState<'sm' | 'base' | 'lg' | 'xl'>('base');
+  const [situationBold, setSituationBold] = useState<boolean>(false);
+  const [situationAlign, setSituationAlign] = useState<'right' | 'center' | 'justify'>('right');
+  const [situationCardTheme, setSituationCardTheme] = useState<'theme' | 'classic' | 'white'>('theme');
+  const [situationLineHeight, setSituationLineHeight] = useState<'normal' | 'relaxed' | 'loose'>('relaxed');
+
+  const situationTextClass = `
+    ${situationFontSize === 'sm' ? 'text-[12px]' : situationFontSize === 'lg' ? 'text-[15.5px]' : situationFontSize === 'xl' ? 'text-[17.5px]' : 'text-[13.5px]'}
+    ${situationBold ? 'font-bold' : 'font-medium'}
+    ${situationAlign === 'center' ? 'text-center' : situationAlign === 'justify' ? 'text-justify' : 'text-right'}
+    ${situationLineHeight === 'normal' ? 'leading-normal' : situationLineHeight === 'loose' ? 'leading-loose' : 'leading-relaxed'}
+  `.trim();
+
+  const situationBoxClass = `
+    p-2.5 rounded-lg border transition-all
+    ${situationCardTheme === 'classic' ? 'bg-gray-50/90 border-gray-200 text-gray-800' :
+      situationCardTheme === 'white' ? 'bg-white border-gray-300 text-gray-900 shadow-2xs' :
+      `${theme.boxBg} text-gray-900`}
+  `.trim();
+
   const levelLabel =
     config.level === '4am'
       ? 'السنة الرابعة متوسط'
@@ -126,41 +147,196 @@ export const MemoSheet: React.FC<MemoSheetProps> = ({
       dir="rtl"
     >
       <style>{` .editable-cell { padding: 2px; border-radius: 4px; min-height: 1.5em; white-space: pre-wrap; word-break: break-word; outline: none; } .editable-cell:hover { background-color: rgba(0,0,0,0.03); } .editable-cell:focus { outline: 1px dashed ${theme.hex}; background-color: rgba(255,255,255,0.9); } `}</style>
-      {/* Format Selector in Editable Mode */}
-      {editable && onFormatChange && (
-        <div className="print:hidden mb-4 p-2 bg-gray-50 border border-gray-200 rounded-xl flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-[12.5px] font-bold text-gray-700">
-            <span>نموذج تخطيط المذكرة ({levelLabel}):</span>
-            <span style={{ color: theme.hex }} className="font-black">
-              {isMergedFormat ? 'مذكرة مدمجة (بدون خانة نشاط المتعلم)' : 'مذكرة مفصلة (خانة أستاذ + خانة متعلم)'}
-            </span>
+      
+      {/* شريط التحكم في تنسيقات كتابة الوضعية وتخطيط المذكرة */}
+      {editable && (
+        <div className="print:hidden mb-4 p-3 bg-white border border-teal-200/80 rounded-xl shadow-xs space-y-2.5">
+          {/* سطر 1: نموذج التخطيط وزر الاستعادة */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-gray-100">
+            <div className="flex items-center gap-2 text-[12.5px] font-black text-gray-800">
+              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: theme.hex }} />
+              <span>التحكم في تنسيقات كتابة الوضعية ({levelLabel}):</span>
+              <span className="text-[11.5px] font-normal text-gray-500">
+                (تخصيص نصوص الوضعيات والمشكل العلمي والفرضيات)
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {onFormatChange && (
+                <div className="flex items-center gap-1 bg-gray-50 p-0.5 rounded-lg border border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => onFormatChange('standard')}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-bold transition cursor-pointer ${
+                      !isMergedFormat ? 'bg-gray-900 text-white shadow-2xs' : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    <Columns className="w-3 h-3" />
+                    <span>مفصلة</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onFormatChange('merged_teacher')}
+                    style={isMergedFormat ? { backgroundColor: theme.hex, color: '#fff' } : undefined}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-bold transition cursor-pointer ${
+                      isMergedFormat ? 'shadow-2xs' : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    <Layers className="w-3 h-3" />
+                    <span>مدمجة</span>
+                  </button>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSituationFontSize('base');
+                  setSituationBold(false);
+                  setSituationAlign('right');
+                  setSituationCardTheme('theme');
+                  setSituationLineHeight('relaxed');
+                }}
+                className="text-[11px] font-bold text-gray-500 hover:text-gray-900 px-2 py-1 rounded border border-gray-200 hover:bg-gray-50 cursor-pointer"
+                title="استعادة إعدادات التنسيق الافتراضية"
+              >
+                استعادة الافتراضي
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-1.5 bg-white p-1 rounded-lg border border-gray-200 shadow-2xs">
-            <button
-              type="button"
-              onClick={() => onFormatChange('standard')}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-[11.5px] font-bold transition cursor-pointer ${
-                !isMergedFormat
-                  ? 'bg-gray-900 text-white shadow-2xs'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-              }`}
-            >
-              <Columns className="w-3.5 h-3.5" />
-              <span>مذكرة مفصلة (عمودين)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onFormatChange('merged_teacher')}
-              style={isMergedFormat ? { backgroundColor: theme.hex, color: '#fff' } : undefined}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-[11.5px] font-bold transition cursor-pointer ${
-                isMergedFormat
-                  ? 'shadow-2xs'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>مذكرة مدمجة (نشاط الأستاذ المدمج)</span>
-            </button>
+
+          {/* سطر 2: أدوات تنسيق نص الوضعية */}
+          <div className="flex flex-wrap items-center gap-2.5 text-[11.5px]">
+            {/* حجم الخط */}
+            <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-lg border border-gray-200">
+              <span className="text-gray-600 font-bold px-1">حجم الخط:</span>
+              <button
+                type="button"
+                onClick={() => setSituationFontSize('sm')}
+                className={`px-2 py-0.5 rounded font-bold transition cursor-pointer ${situationFontSize === 'sm' ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-200'}`}
+              >
+                صغير (12)
+              </button>
+              <button
+                type="button"
+                onClick={() => setSituationFontSize('base')}
+                className={`px-2 py-0.5 rounded font-bold transition cursor-pointer ${situationFontSize === 'base' ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-200'}`}
+              >
+                عادي (14)
+              </button>
+              <button
+                type="button"
+                onClick={() => setSituationFontSize('lg')}
+                className={`px-2 py-0.5 rounded font-bold transition cursor-pointer ${situationFontSize === 'lg' ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-200'}`}
+              >
+                متوسط (16)
+              </button>
+              <button
+                type="button"
+                onClick={() => setSituationFontSize('xl')}
+                className={`px-2 py-0.5 rounded font-bold transition cursor-pointer ${situationFontSize === 'xl' ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-200'}`}
+              >
+                كبير (18)
+              </button>
+            </div>
+
+            {/* سمك الخط */}
+            <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-lg border border-gray-200">
+              <span className="text-gray-600 font-bold px-1">السمك:</span>
+              <button
+                type="button"
+                onClick={() => setSituationBold(false)}
+                className={`px-2 py-0.5 rounded font-medium transition cursor-pointer ${!situationBold ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-200'}`}
+              >
+                عادي
+              </button>
+              <button
+                type="button"
+                onClick={() => setSituationBold(true)}
+                className={`px-2 py-0.5 rounded font-black transition cursor-pointer ${situationBold ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-200'}`}
+              >
+                عريض (B)
+              </button>
+            </div>
+
+            {/* محاذاة النص */}
+            <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-lg border border-gray-200">
+              <span className="text-gray-600 font-bold px-1">المحاذاة:</span>
+              <button
+                type="button"
+                onClick={() => setSituationAlign('right')}
+                className={`px-2 py-0.5 rounded font-bold transition cursor-pointer ${situationAlign === 'right' ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-200'}`}
+              >
+                يمين
+              </button>
+              <button
+                type="button"
+                onClick={() => setSituationAlign('center')}
+                className={`px-2 py-0.5 rounded font-bold transition cursor-pointer ${situationAlign === 'center' ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-200'}`}
+              >
+                توسيط
+              </button>
+              <button
+                type="button"
+                onClick={() => setSituationAlign('justify')}
+                className={`px-2 py-0.5 rounded font-bold transition cursor-pointer ${situationAlign === 'justify' ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-200'}`}
+              >
+                ضبط الأسطر
+              </button>
+            </div>
+
+            {/* مظهر بطاقة الوضعية */}
+            <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-lg border border-gray-200">
+              <span className="text-gray-600 font-bold px-1">مظهر الصندوق:</span>
+              <button
+                type="button"
+                onClick={() => setSituationCardTheme('theme')}
+                style={situationCardTheme === 'theme' ? { backgroundColor: theme.hex, color: '#fff' } : undefined}
+                className={`px-2 py-0.5 rounded font-bold transition cursor-pointer ${situationCardTheme === 'theme' ? '' : 'text-gray-700 hover:bg-gray-200'}`}
+              >
+                ملون بالسمة
+              </button>
+              <button
+                type="button"
+                onClick={() => setSituationCardTheme('classic')}
+                className={`px-2 py-0.5 rounded font-bold transition cursor-pointer ${situationCardTheme === 'classic' ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-200'}`}
+              >
+                رمادي
+              </button>
+              <button
+                type="button"
+                onClick={() => setSituationCardTheme('white')}
+                className={`px-2 py-0.5 rounded font-bold transition cursor-pointer ${situationCardTheme === 'white' ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-200'}`}
+              >
+                أبيض ناصع
+              </button>
+            </div>
+
+            {/* تباعد الأسطر */}
+            <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-lg border border-gray-200">
+              <span className="text-gray-600 font-bold px-1">تباعد الأسطر:</span>
+              <button
+                type="button"
+                onClick={() => setSituationLineHeight('normal')}
+                className={`px-2 py-0.5 rounded font-bold transition cursor-pointer ${situationLineHeight === 'normal' ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-200'}`}
+              >
+                عادي
+              </button>
+              <button
+                type="button"
+                onClick={() => setSituationLineHeight('relaxed')}
+                className={`px-2 py-0.5 rounded font-bold transition cursor-pointer ${situationLineHeight === 'relaxed' ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-200'}`}
+              >
+                مريح
+              </button>
+              <button
+                type="button"
+                onClick={() => setSituationLineHeight('loose')}
+                className={`px-2 py-0.5 rounded font-bold transition cursor-pointer ${situationLineHeight === 'loose' ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-200'}`}
+              >
+                واسع
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -330,14 +506,13 @@ export const MemoSheet: React.FC<MemoSheetProps> = ({
                 </td>
                 <td className="p-2.5 border-l border-gray-300 align-top text-gray-800 leading-relaxed">
                   <div className="mb-2">
-                    <span className="font-extrabold block mb-0.5" style={{ color: theme.hex }}>تقديم الوضعية وطرح المشكل العلمي:</span>
-                    <div className="editable-cell font-medium text-gray-800 bg-gray-50/70 p-2 rounded border border-gray-200" contentEditable="plaintext-only" suppressContentEditableWarning>{lesson.wadiya}</div>
-                    <div className="editable-cell font-bold mt-1 text-[13px]" style={{ color: theme.hex }} contentEditable="plaintext-only" suppressContentEditableWarning>{lesson.moshkila}</div>
+                    <span className="font-extrabold block mb-1 text-[13px]" style={{ color: theme.hex }}>تقديم الوضعية وطرح المشكل العلمي:</span>
+                    <div className={`editable-cell ${situationBoxClass} ${situationTextClass}`} contentEditable="plaintext-only" suppressContentEditableWarning>{lesson.wadiya}</div>
+                    <div className={`editable-cell font-bold mt-1.5 p-2 rounded border border-teal-200/50 bg-teal-50/40 ${situationTextClass}`} style={{ color: theme.hex }} contentEditable="plaintext-only" suppressContentEditableWarning>{lesson.moshkila}</div>
                   </div>
                   <div>
-                    <span className="font-bold text-gray-900 block mb-0.5">المهمة وصياغة الفرضيات:</span>
-                    <div className="editable-cell whitespace-pre-line text-gray-700 bg-white p-2 rounded border border-gray-200" contentEditable="plaintext-only" suppressContentEditableWarning>{lesson.faradiyat}</div>
-                      <RenderTable tables={lesson.wadiyaTables || []} themeHex={theme.hex} />
+                    <span className="font-bold text-gray-900 block mb-1 text-[12.5px]">المهمة وصياغة الفرضيات:</span>
+                    <div className={`editable-cell whitespace-pre-line ${situationBoxClass} ${situationTextClass}`} contentEditable="plaintext-only" suppressContentEditableWarning>{lesson.faradiyat}</div>
                     <RenderTable tables={lesson.wadiyaTables || []} themeHex={theme.hex} />
                   </div>
                 </td>
@@ -414,7 +589,6 @@ export const MemoSheet: React.FC<MemoSheetProps> = ({
                     {lesson.ustadhNashat?.irsae || 'يوجه المناقشة لتلخيص المكتسبات، وتنسيق الإجابات وهيكلة المفاهيم لبناء الحصيلة المعرفية المشتركة للمورد.'}
                   </div>
                   <div className="font-extrabold mb-1.5 flex items-center gap-1.5 text-[13px]" style={{ color: theme.hex }}>
-                    <span>📌</span>
                     <span>الحصيلة المعرفية والمفاهيمية المهيكلة (إرساء الموارد):</span>
                   </div>
                   <div className={`editable-cell ` + `text-gray-900 font-medium leading-relaxed p-3 rounded-lg border shadow-2xs whitespace-pre-line ${theme.boxBg}`} contentEditable="plaintext-only" suppressContentEditableWarning>{lesson.irsae}</div>
@@ -477,17 +651,17 @@ export const MemoSheet: React.FC<MemoSheetProps> = ({
                 <td className="p-2.5 border-l border-gray-300 align-top text-gray-800 leading-relaxed font-medium">
                   {lesson.ustadhNashat?.inilitaq || (
                     <div>
-                      <div className="font-bold text-gray-900 mb-1">تقديم الوضعية وطرح المشكل:</div>
-                      <div className="editable-cell" contentEditable="plaintext-only" suppressContentEditableWarning>{lesson.wadiya}</div>
-                      <div className="editable-cell font-bold mt-1.5" style={{ color: theme.hex }} contentEditable="plaintext-only" suppressContentEditableWarning>{lesson.moshkila}</div>
+                      <div className="font-bold text-gray-900 mb-1 text-[13px]">تقديم الوضعية وطرح المشكل العلمي:</div>
+                      <div className={`editable-cell ${situationBoxClass} ${situationTextClass}`} contentEditable="plaintext-only" suppressContentEditableWarning>{lesson.wadiya}</div>
+                      <div className={`editable-cell font-bold mt-1.5 p-2 rounded border border-teal-200/50 bg-teal-50/40 ${situationTextClass}`} style={{ color: theme.hex }} contentEditable="plaintext-only" suppressContentEditableWarning>{lesson.moshkila}</div>
                     </div>
                   )}
                 </td>
                 <td className="p-2.5 border-l border-gray-300 align-top text-gray-800 leading-relaxed font-medium">
                   {lesson.mutaalimNashat?.inilitaq || (
                     <div>
-                      <div className="font-bold text-gray-900 mb-1">الملاحظة وصياغة الفرضيات:</div>
-                      <div className="editable-cell whitespace-pre-line text-gray-700" contentEditable="plaintext-only" suppressContentEditableWarning>{lesson.faradiyat}</div>
+                      <div className="font-bold text-gray-900 mb-1 text-[12.5px]">الملاحظة وصياغة الفرضيات:</div>
+                      <div className={`editable-cell whitespace-pre-line ${situationBoxClass} ${situationTextClass}`} contentEditable="plaintext-only" suppressContentEditableWarning>{lesson.faradiyat}</div>
                     </div>
                   )}
                 </td>

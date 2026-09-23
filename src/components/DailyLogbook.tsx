@@ -224,6 +224,11 @@ export interface LogEntry {
   wasail?: string;
   lessonType?: 'curriculum' | 'introductory' | 'opening' | 'health' | 'remediation' | 'assessment' | 'holiday';
   taqwim?: string;
+  sourceSequenceId?: string;
+  sourceResourceId?: string;
+  sourceLearningUnitId?: string;
+  sourceActivityId?: string;
+  sourceActivityId2?: string;
 }
 
 const EMPTY_TIMETABLE_ROWS: TimetableGridRow[] = Array.from({ length: 8 }, (_, i) => ({

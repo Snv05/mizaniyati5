@@ -282,6 +282,34 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
                 className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-[13px] focus:outline-none focus:border-teal-700 bg-white font-medium text-gray-900"
               />
             </div>
+
+            {/* Principal Name (مدير المؤسسة) */}
+            <div>
+              <label className="block text-[12.5px] font-bold text-gray-700 mb-1">
+                مدير(ة) المؤسسة التعليمية
+              </label>
+              <input
+                type="text"
+                value={formData.principalName || ''}
+                onChange={(e) => handleChange('principalName', e.target.value)}
+                placeholder="اسم ولقب مدير المؤسسة"
+                className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-[13px] focus:outline-none focus:border-teal-700 bg-white font-medium text-gray-900"
+              />
+            </div>
+
+            {/* Inspector Name (المفتش) */}
+            <div>
+              <label className="block text-[12.5px] font-bold text-gray-700 mb-1">
+                مفتش(ة) مادة علوم الطبيعة والحياة
+              </label>
+              <input
+                type="text"
+                value={formData.inspectorName || ''}
+                onChange={(e) => handleChange('inspectorName', e.target.value)}
+                placeholder="اسم ولقب مفتش المقاطعة"
+                className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 text-[13px] focus:outline-none focus:border-teal-700 bg-white font-medium text-gray-900"
+              />
+            </div>
           </div>
         </div>
 
