@@ -617,7 +617,7 @@ export const App: React.FC = () => {
         <div
           className="flex-1 flex flex-col lg:flex-row relative overflow-hidden"
           style={{
-            backgroundImage: `linear-gradient(rgba(255,255,255,0.08), rgba(255,255,255,0.16)), url(${curriculumBackground})`,
+            backgroundImage: `linear-gradient(rgba(255,255,255,0.04), rgba(255,255,255,0.10)), url(${curriculumBackground})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundAttachment: 'scroll',
@@ -634,7 +634,7 @@ export const App: React.FC = () => {
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               backgroundRepeat: 'no-repeat',
-              opacity: 0.14,
+              opacity: 0.32,
               mixBlendMode: 'multiply',
             }}
           />
