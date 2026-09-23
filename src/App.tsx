@@ -419,7 +419,7 @@ export const App: React.FC = () => {
   }, [selectedLevel, activeMidan, selectedMaqta, selectedMawrid, selectedTa3alom]);
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex flex-col font-sans" dir="rtl">
+    <div className="min-h-screen flex flex-col font-sans app-shell" dir="rtl">
       {/* Toast Notification */}
       {toastMessage && (
         <div
@@ -432,8 +432,8 @@ export const App: React.FC = () => {
       )}
 
       {/* Main Streamlined Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-xs">
-        <div className="px-4 md:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3">
+      <header className="app-header sticky top-0 z-30">
+        <div className="px-4 md:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 max-w-[1600px] mx-auto w-full">
           {/* Right Section: Menu Drawer Trigger + Identity / Navigation / Year Tabs */}
           <div className="flex flex-wrap items-center gap-2.5">
             {/* Global Navigation Drawer Toggle */}
@@ -441,7 +441,7 @@ export const App: React.FC = () => {
               type="button"
               id="btn-open-nav-drawer"
               onClick={() => setIsNavDrawerOpen(true)}
-              className="inline-flex items-center justify-center p-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 transition cursor-pointer"
+              className="icon-button inline-flex items-center justify-center p-2.5 rounded-xl text-gray-700 transition cursor-pointer"
               title="القائمة الشاملة للمنصة"
             >
               <Menu className="w-5 h-5" />
@@ -450,7 +450,7 @@ export const App: React.FC = () => {
             {activeSection === 'home' ? (
               /* Home Platform Brand - Clean and focused */
               <div className="flex items-center gap-2.5 text-right">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0f766e] to-[#115e59] flex items-center justify-center text-white font-extrabold shadow-sm">
+                <div className="brand-mark w-10 h-10 rounded-2xl flex items-center justify-center text-white font-extrabold shadow-sm">
                   <BookOpen className="w-5 h-5" />
                 </div>
                 <div>
