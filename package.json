@@ -24,7 +24,9 @@
     "react-dom": "^19.0.1",
     "vite": "^6.2.3",
     "html2canvas": "^1.4.1",
-    "jspdf": "^3.0.3"
+    "jspdf": "^3.0.3",
+    "mammoth": "^1.10.0",
+    "pdfjs-dist": "^5.4.149"
   },
   "devDependencies": {
     "@firebase/eslint-plugin-security-rules": "^0.0.2",
