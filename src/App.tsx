@@ -400,20 +400,16 @@ export const App: React.FC = () => {
       return 'https://upload.wikimedia.org/wikipedia/commons/b/bc/Photosynthesis_en.svg';
     }
     if (selectedLevel === '2am') {
-      if (has('التكاثر','إعمار')) return img.reproduction;
-      if (has('تصنيف','التنوع البيولوجي')) return img.biodiversity;
-      if (has('توزع','أوساطها','الوسط الحي')) return img.ecology;
-      return img.nature;
+      // 2AM: هوية بصرية لعالم الوسط الحي، التنوع، التوزع والتكاثر.
+      return '/backgrounds/2am-ecosystem.svg';
     }
     if (selectedLevel === '3am') {
-      // خلفية قسم السنة الثالثة متوسط فائقة الدقة والمطابقة لتصميم الجيولوجيا وديناميكية الكرة الأرضية
-      return '/src/assets/images/bg_3am_geology_1790188415960.jpg';
+      // 3AM: الأرض، الديناميكية الداخلية والخارجية، الموارد والتربة.
+      return '/backgrounds/3am-earth.svg';
     }
     if (selectedLevel === '4am') {
-      if (has('انتقال الصفات الوراثية','الوراث','الجينات','الطفر')) return img.genetics;
-      if (has('التنسيق الوظيفي','المناعة','التلقيح','الدم')) return img.immunity;
-      if (has('التغذية','الأيض')) return img.nutrition;
-      return img.human;
+      // 4AM: الوراثة، التنسيق الوظيفي، الجسم والتغذية.
+      return '/backgrounds/4am-genetics.svg';
     }
     return img.nature;
   }, [selectedLevel, activeMidan, selectedMaqta, selectedMawrid, selectedTa3alom]);
