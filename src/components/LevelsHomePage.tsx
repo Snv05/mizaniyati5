@@ -26,6 +26,7 @@ interface LevelsHomePageProps {
   onOpenLogbook: () => void;
   onOpenSettings: () => void;
   config: MemoConfig;
+  curriculumBackground?: string;
 }
 
 export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
@@ -33,11 +34,13 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
   onOpenLogbook,
   onOpenSettings,
   config,
+  curriculumBackground,
 }) => {
   // Level theme cards custom-designed for each curriculum Midan (Domain)
   const levelThemes = [
     {
       id: '1am' as const,
+      backgroundImage: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=1800&q=85',
       title: '1 متوسط',
       subtitle: 'السنة الأولى متوسط',
       midanName: 'ميدان: الإنسان والصحة + الإنسان والمحيط',
@@ -56,6 +59,7 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
     },
     {
       id: '2am' as const,
+      backgroundImage: 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1800&q=85',
       title: '2 متوسط',
       subtitle: 'السنة الثانية متوسط',
       midanName: 'ميدان: الإنسان والمحيط',
@@ -74,6 +78,7 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
     },
     {
       id: '3am' as const,
+      backgroundImage: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1800&q=85',
       title: '3 متوسط',
       subtitle: 'السنة الثالثة متوسط',
       midanName: 'ميدان: الإنسان والمحيط (الدينامية الداخلية للأرض)',
@@ -92,6 +97,7 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
     },
     {
       id: '4am' as const,
+      backgroundImage: 'https://images.unsplash.com/photo-1579154204601-01588f351e67?auto=format&fit=crop&w=1800&q=85',
       title: '4 متوسط',
       subtitle: 'السنة الرابعة متوسط (BEM)',
       midanName: 'ميدان: الإنسان والصحة',
@@ -111,7 +117,9 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
   ];
 
   return (
-    <div className="flex-1 bg-gradient-to-b from-slate-50 via-gray-100/50 to-slate-100 py-8 px-4 sm:px-6 lg:px-12 flex flex-col items-center">
+    <div className="relative flex-1 min-h-full py-8 px-4 sm:px-6 lg:px-12 flex flex-col items-center overflow-hidden">
+      <div className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20" style={{ backgroundImage: `url(${curriculumBackground || 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=2400&q=90'})` }} aria-hidden="true" />
+      <div className="absolute inset-0 bg-gradient-to-b from-white/90 via-white/82 to-slate-100/92" aria-hidden="true" />
       <div className="w-full max-w-4xl space-y-6">
 
         {/* Designer Signature Top Banner */}
@@ -186,6 +194,7 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
                 id={`card-select-level-${lvl.id}`}
                 type="button"
                 onClick={() => onSelectYear(lvl.id)}
+                style={{ backgroundImage: `linear-gradient(rgba(255,255,255,0.72), rgba(255,255,255,0.84)), url(${lvl.backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
                 className={`relative overflow-hidden w-full text-right p-6 rounded-2xl border-2 transition-all duration-200 shadow-xs hover:shadow-lg cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-l ${lvl.bgGradient} ${lvl.borderClass} group`}
               >
                 {/* Background Pattern Watermark for the specific Midan */}
