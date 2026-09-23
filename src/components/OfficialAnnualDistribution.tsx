@@ -147,7 +147,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
           className="absolute inset-0 pointer-events-none z-0 rounded-2xl overflow-hidden print:hidden"
           aria-hidden="true"
           style={{
-            backgroundImage: "linear-gradient(rgba(255,255,255,0.20), rgba(255,255,255,0.28)), url(" + curriculumBackground + ")",
+            backgroundImage: "linear-gradient(rgba(255,255,255,0.08), rgba(255,255,255,0.16)), url(" + curriculumBackground + ")",
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
@@ -161,7 +161,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
       `}</style>
 
       {pages.map((page, pageIndex) => (
-        <div key={pageIndex} className={`relative z-10 bg-white/90 backdrop-blur-[1px] p-[10mm] mb-8 shadow-md print:bg-white print:shadow-none print:m-0 ${orientation === 'portrait' ? 'w-[210mm] min-h-[297mm]' : 'w-[297mm] min-h-[210mm]'}`} style={{ pageBreakAfter: pageIndex < pages.length - 1 ? 'always' : 'auto' }}>
+        <div key={pageIndex} className={`relative z-10 bg-white/84 backdrop-blur-[1px] p-[10mm] mb-8 shadow-md print:bg-white print:shadow-none print:m-0 ${orientation === 'portrait' ? 'w-[210mm] min-h-[297mm]' : 'w-[297mm] min-h-[210mm]'}`} style={{ pageBreakAfter: pageIndex < pages.length - 1 ? 'always' : 'auto' }}>
           
           {/* Header */}
           <div className="text-center mb-4">
