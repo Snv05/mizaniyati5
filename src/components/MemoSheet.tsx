@@ -121,7 +121,7 @@ export const MemoSheet: React.FC<MemoSheetProps> = ({
   return (
     <div
       id="memo-paper"
-      className="bg-white text-gray-900 shadow-xl rounded-sm mx-auto p-7 md:p-9 max-w-[960px] border border-gray-300 font-sans leading-relaxed text-[13.5px] print:shadow-none print:border-none print:p-0 print:m-0 print:max-w-none print:w-full"
+      className="bg-white/95 backdrop-blur-[2px] text-gray-900 shadow-xl rounded-sm mx-auto p-7 md:p-9 max-w-[960px] border border-gray-300 font-sans leading-relaxed text-[13.5px] print:shadow-none print:border-none print:p-0 print:m-0 print:max-w-none print:w-full"
       style={{ minHeight: '1120px' }}
       dir="rtl"
     >
