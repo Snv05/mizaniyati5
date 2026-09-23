@@ -617,7 +617,7 @@ export const App: React.FC = () => {
         <div
           className="flex-1 flex flex-col lg:flex-row relative overflow-hidden"
           style={{
-            backgroundImage: `linear-gradient(rgba(248,250,252,0.38), rgba(248,250,252,0.50)), url(${curriculumBackground})`,
+            backgroundImage: `linear-gradient(rgba(255,255,255,0.08), rgba(255,255,255,0.16)), url(${curriculumBackground})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundAttachment: 'scroll',
@@ -625,7 +625,19 @@ export const App: React.FC = () => {
             backgroundColor: '#dbeafe',
           }}
         >
-          <div className="absolute inset-0 pointer-events-none bg-white/0" aria-hidden="true" />
+          <div
+            key={curriculumBackground}
+            className="absolute inset-0 pointer-events-none z-0"
+            aria-hidden="true"
+            style={{
+              backgroundImage: "url(" + curriculumBackground + ")",
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              opacity: 0.14,
+              mixBlendMode: 'multiply',
+            }}
+          />
           {/* Sidebar Controls for Memos */}
           <SidebarControls
             selectedLevel={selectedLevel}
@@ -697,13 +709,26 @@ export const App: React.FC = () => {
         <div
           className="flex-1 flex flex-col relative overflow-hidden"
           style={{
-            backgroundImage: `linear-gradient(rgba(248,250,252,0.40), rgba(248,250,252,0.52)), url(${curriculumBackground})`,
+            backgroundImage: `linear-gradient(rgba(255,255,255,0.08), rgba(255,255,255,0.16)), url(${curriculumBackground})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            backgroundAttachment: 'fixed',
+            backgroundAttachment: 'scroll',
+            backgroundRepeat: 'no-repeat',
           }}
         >
-          <div className="absolute inset-0 pointer-events-none bg-white/5" aria-hidden="true" />
+          <div
+            key={curriculumBackground}
+            className="absolute inset-0 pointer-events-none z-0"
+            aria-hidden="true"
+            style={{
+              backgroundImage: "url(" + curriculumBackground + ")",
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+              opacity: 0.14,
+              mixBlendMode: 'multiply',
+            }}
+          />
           <AnnualDistribution
             selectedLevel={selectedLevel}
             setSelectedLevel={(lvl) => setActiveSection(lvl)}
