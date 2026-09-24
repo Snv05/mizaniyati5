@@ -1,13 +1,30 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
+import { getAuth, Auth } from 'firebase/auth';
+import { getFirestore, Firestore, doc, getDocFromServer } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
-const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
-export const auth = getAuth();
+export const isFirebaseConfigValid = Boolean(firebaseConfig.projectId && firebaseConfig.apiKey);
+
+let appInstance: FirebaseApp | null = null;
+let dbInstance: Firestore | null = null;
+let authInstance: Auth | null = null;
+
+if (isFirebaseConfigValid) {
+  try {
+    appInstance = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
+    dbInstance = getFirestore(appInstance, firebaseConfig.firestoreDatabaseId || undefined);
+    authInstance = getAuth(appInstance);
+  } catch (error) {
+    console.warn("Firebase initialization warning:", error);
+  }
+}
+
+export const app = appInstance;
+export const db = dbInstance as unknown as Firestore;
+export const auth = authInstance as unknown as Auth;
 
 async function testConnection() {
+  if (!db) return;
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
   } catch (error) {
@@ -16,7 +33,10 @@ async function testConnection() {
     }
   }
 }
-testConnection();
+
+if (isFirebaseConfigValid && db) {
+  testConnection();
+}
 
 export enum OperationType {
   CREATE = 'create',

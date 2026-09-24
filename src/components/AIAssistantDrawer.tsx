@@ -1,67 +1,273 @@
-import React, { useMemo, useRef, useState } from 'react';\nimport { LessonMemo } from '../types';\nimport { askSmartAi, SmartAiMode } from '../services/smartAi';\nimport { addSmartDocument, loadSmartDocuments, removeSmartDocument, SmartDocumentSource } from '../services/smartDocuments';\nimport { Bot, Send, User, Lightbulb, FileText, Upload, X, Globe, ClipboardCheck, GraduationCap, Wrench, BookOpen, Loader2, Download, Printer, Settings2 } from 'lucide-react';
-import { exportExamToDocx, exportExamElementToPdf, printExamElement } from '../utils/examExport';\n\ninterface Message { id: string; sender: 'ai' | 'user'; text: string; timestamp: string; }\n\nconst MODES: Array<{ id: SmartAiMode; label: string; icon: React.ReactNode }> = [\n  { id: 'chat', label: 'مساعد', icon: <Bot className='w-3.5 h-3.5' /> },\n  { id: 'solve', label: 'حل نشاط', icon: <Wrench className='w-3.5 h-3.5' /> },\n  { id: 'assessment', label: 'تقويم', icon: <ClipboardCheck className='w-3.5 h-3.5' /> },\n  { id: 'exam', label: 'فرض/اختبار', icon: <GraduationCap className='w-3.5 h-3.5' /> },\n  { id: 'lesson', label: 'بناء حصة', icon: <BookOpen className='w-3.5 h-3.5' /> },\n  { id: 'web', label: 'بحث ويب', icon: <Globe className='w-3.5 h-3.5' /> },\n];\n\nexport const AIAssistantDrawer: React.FC<{\n  isOpen: boolean; onClose: () => void; selectedLevel?: string; currentLesson?: LessonMemo | null; curriculumLessons?: LessonMemo[];\n}> = ({ isOpen, onClose, selectedLevel, currentLesson, curriculumLessons = [] }) => {\n  const [messages, setMessages] = useState<Message[]>([{ id: 'welcome', sender: 'ai', text: 'مرحباً بك في المساعد البيداغوجي الذكي.\n\nتم ربطه بقاعدة المنهاج والأنشطة والمذكرات، ويمكنه أيضاً قراءة ملفات المنهاج/الوثيقة المرافقة التي ترفعها والبحث في الإنترنت عند الحاجة.\n\nاختر نوع المهمة ثم اكتب طلبك.', timestamp: 'الآن' }]);\n  const [inputText, setInputText] = useState('');\n  const [isTyping, setIsTyping] = useState(false);\n  const [mode, setMode] = useState<SmartAiMode>('chat');\n  const [useWebSearch, setUseWebSearch] = useState(true);\n  const [documents, setDocuments] = useState<SmartDocumentSource[]>(() => loadSmartDocuments());\n  const [uploading, setUploading] = useState(false);
-  const [examText, setExamText] = useState('');
-  const [examTitle, setExamTitle] = useState('فرض في علوم الطبيعة والحياة');
-  const [examPoints, setExamPoints] = useState(20);
-  const [examQuestions, setExamQuestions] = useState(4);
-  const [examDifficulty, setExamDifficulty] = useState('متوسط');
-  const [examType, setExamType] = useState<'فرض' | 'اختبار'>('فرض');
-  const [showExamPreview, setShowExamPreview] = useState(false);
-  const [exporting, setExporting] = useState(false);
-  const examPreviewRef = useRef<HTMLDivElement>(null);\n  const fileRef = useRef<HTMLInputElement>(null);\n\n  const smartContext = useMemo(() => currentLesson ? [\n    'المستوى: ' + (selectedLevel || currentLesson.level),\n    'الميدان: ' + currentLesson.midan,\n    'المقطع: ' + currentLesson.maqta,\n    'المورد: ' + currentLesson.mawrid,\n    'تعلم المورد: ' + currentLesson.ta3alom,\n    'الأنشطة: ' + currentLesson.anshita.map(a => a.title).join(' / '),\n  ].join(' • ') : 'لا يوجد مورد تعلم محدد حالياً.', [currentLesson, selectedLevel]);\n\n  if (!isOpen) return null;\n\n  const now = () => new Date().toLocaleTimeString('ar-DZ', { hour: '2-digit', minute: '2-digit' });\n\n  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {\n    const file = event.target.files?.[0];\n    event.target.value = '';\n    if (!file) return;\n    setUploading(true);\n    try {\n      const source = await addSmartDocument(file);\n      setDocuments(loadSmartDocuments());\n      setMessages(prev => [...prev, { id: Date.now().toString(), sender: 'ai', text: 'تم ربط الملف بالمساعد بنجاح: ' + source.name + '\nسيُستخدم كمصدر محلي عند الإجابة.', timestamp: now() }]);\n    } catch (error) {\n      setMessages(prev => [...prev, { id: Date.now().toString(), sender: 'ai', text: 'تعذر قراءة الملف. استخدم PDF أو Word أو TXT/MD/JSON قابل للقراءة.', timestamp: now() }]);\n    } finally { setUploading(false); }\n  };\n\n  const handleSend = async (textToSend?: string) => {\n    const query = (textToSend || inputText).trim();\n    if (!query || isTyping) return;\n    setMessages(prev => [...prev, { id: Date.now().toString(), sender: 'user', text: query, timestamp: now() }]);\n    setInputText(''); setIsTyping(true);\n    try {\n      const result = await askSmartAi({ question: query, lesson: currentLesson, curriculum: curriculumLessons, documents, mode, useWebSearch });\n      const reply = result?.text || 'لم يتم تشغيل محرك الذكاء الاصطناعي. تحقق من إعداد GEMINI_API_KEY في بيئة التشغيل.';\n      setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), sender: 'ai', text: reply, timestamp: now() }]);\n    } catch (error) {\n      setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), sender: 'ai', text: 'حدث خطأ أثناء تحليل الطلب. تحقق من إعدادات الذكاء الاصطناعي ثم أعد المحاولة.', timestamp: now() }]);\n    } finally { setIsTyping(false); }\n  };\n\n  const generateExam = async () => {
-    const request = `${examType === 'فرض' ? 'أنشئ فرضاً' : 'أنشئ اختباراً'} مدرسياً جاهزاً للطباعة من المورد والأنشطة الحالية. عدد التمارين/المحاور: ${examQuestions}. العلامة النهائية الإلزامية: ${examPoints}/20. مستوى الصعوبة: ${examDifficulty}.
-قواعد صارمة: يجب أن يساوي مجموع نقاط جميع الأسئلة بالضبط ${examPoints} نقطة. اكتب النقطة بجانب كل سؤال أو تمرين. لا تضف محتوى رسمياً غير موجود في المورد أو الأنشطة إلا إذا وسمته صراحة «اقتراح تربوي».\nاكتب الناتج بهذه البنية الثابتة: [ورقة التلميذ] ثم العنوان ومعلومات التلميذ والتعليمات والتمارين والأسئلة والنقاط، ثم [نهاية ورقة التلميذ] ثم [التصحيح النموذجي وسلم التنقيط] مع تصحيح كل تمرين ومجموع نهائي يساوي بالضبط ${examPoints}/20. اذكر عنوان النشاط أو معرفه لكل تمرين عندما يكون متاحاً. لا تستخدم Markdown معقداً لأن النص سيُطبع. اربط الأسئلة بالأنشطة الموجودة ولا تخترع محتوى رسمياً غير موجود. لا تضع Markdown معقداً لأن النص سيُطبع. ${inputText.trim() ? 'ملاحظة الأستاذ: ' + inputText.trim() : ''}`;
+import React, { useMemo, useState } from 'react';
+import { LessonMemo } from '../types';
+import { askSmartAi } from '../services/smartAi';
+import {
+  Sparkles,
+  Send,
+  Bot,
+  User,
+  Lightbulb,
+  BookOpen,
+  FlaskConical,
+  HelpCircle,
+  CheckCircle2,
+  Trash2,
+} from 'lucide-react';
+
+interface Message {
+  id: string;
+  sender: 'ai' | 'user';
+  text: string;
+  timestamp: string;
+  category?: string;
+}
+
+const QUICK_PROMPTS = [
+  'كيف أصيغ وضعية مشكلة انطلاقية في مقطع التغذية؟',
+  'ما هو الفرق بين الحركة الإرادية واللاإرادية في 4AM؟',
+  'اقتراح تجارب علمية بسيطة للكشف عن النشا والغلوكوز',
+  'كيف أوزع التوقيت البيداغوجي لدرس مدته ساعتان؟',
+  'معايير ومؤشرات تقويم كفاءة ختامية في علوم الطبيعة',
+];
+
+export const AIAssistantDrawer: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  selectedLevel?: string;
+  currentLesson?: LessonMemo | null;
+  curriculumLessons?: LessonMemo[];
+}> = ({ isOpen, onClose, selectedLevel, currentLesson, curriculumLessons = [] }) => {
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: 'welcome',
+      sender: 'ai',
+      text: `مرحباً بك زميلي الأستاذ(ة)! 🌿\nأنا **المساعد البيداغوجي الذكي** لأساتذة مادة علوم الطبيعة والحياة للتعليم المتوسط.\n\nيمكنني مساعدتك في:\n• صياغة المشكلات العلمية والفرضيات التعليمية.\n• اقتراح خطوات التجارب المخبرية وبدائل الوسائل المتاحة.\n• ضبط صياغة معايير ومؤشرات التقويم والكفاءات الختامية.\n• تكييف الأنشطة البيداغوجية حسب المنهاج الجزائري المعتمد.\n\nكيف يمكنني دعمك اليوم في تحضير حصتك؟`,
+      timestamp: 'الآن',
+    },
+  ]);
+  const [inputText, setInputText] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+
+  const smartContext = useMemo(() => currentLesson ? [
+    'المستوى: ' + (selectedLevel || currentLesson.level),
+    'الميدان: ' + currentLesson.midan,
+    'المقطع: ' + currentLesson.maqta,
+    'المورد: ' + currentLesson.mawrid,
+    'تعلم المورد: ' + currentLesson.ta3alom,
+    'عدد الأنشطة: ' + currentLesson.anshita.length,
+    'حالة المصدر: ' + (currentLesson.sourceOfficial ? 'رسمي' : 'عمل')
+  ].join(' • ') : 'لا يوجد مورد تعلم محدد حالياً.', [currentLesson, selectedLevel]);
+
+  if (!isOpen) return null;
+
+  const handleSend = (textToSend?: string) => {
+    const query = textToSend || inputText.trim();
+    const activeContext = smartContext;
+    if (!query) return;
+    const q = query.toLowerCase();
+
+    const userMsg: Message = {
+      id: Date.now().toString(),
+      sender: 'user',
+      text: query,
+      timestamp: new Date().toLocaleTimeString('ar-DZ', { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    setMessages((prev) => [...prev, userMsg]);
+    if (!textToSend) setInputText('');
     setIsTyping(true);
-    try {
-      const result = await askSmartAi({ question: request, lesson: currentLesson, curriculum: curriculumLessons, documents, mode: 'exam', useWebSearch });
-      if (result?.text) { setExamText(result.text); setShowExamPreview(true); }
-      else setMessages(prev => [...prev, { id: Date.now().toString(), sender: 'ai', text: 'تعذر إنشاء الفرض. تحقق من إعدادات الذكاء الاصطناعي.', timestamp: now() }]);
-    } finally { setIsTyping(false); }
+
+    setTimeout(async () => {
+      let reply = '';
+      try {
+        const liveReply = await askSmartAi({ question: query, lesson: currentLesson, curriculum: curriculumLessons });
+        if (liveReply) {
+          reply = liveReply;
+        }
+      } catch (error) {
+        console.error('[smart-ai]', error);
+      }
+      if (reply) {
+        const aiMsg: Message = { id: (Date.now() + 1).toString(), sender: 'ai', text: reply, timestamp: new Date().toLocaleTimeString('ar-DZ', { hour: '2-digit', minute: '2-digit' }) };
+        setMessages((prev) => [...prev, aiMsg]);
+        setIsTyping(false);
+        return;
+      }
+      if ((q.includes('المورد الحالي') || q.includes('السياق الحالي')) && currentLesson) {
+        reply = 'السياق الذكي للمورد الحالي:\n' + activeContext + '\n\nالمركبة: ' + (currentLesson.markaba || 'غير محددة') + '\nالمعرفة: ' + (currentLesson.marifa || 'غير محددة') + '\nالمنهجية: ' + (currentLesson.manhaji || 'غير محددة') + '\nالوضعية: ' + (currentLesson.wadiya || 'غير محددة') + '\nالمشكلة: ' + (currentLesson.moshkila || 'غير محددة') + '\nالفرضيات: ' + (currentLesson.faradiyat || 'غير محددة');
+      } else if (q.includes('كم نشاط') && currentLesson) {
+        reply = 'وفق قاعدة البيانات الحالية، هذا المورد يحتوي على ' + currentLesson.anshita.length + ' نشاط/أنشطة.';
+      }
+      if (q.includes('وضعية') || q.includes('مشكلة') || q.includes('انطلاق')) {
+        reply = `**إرشادات لصياغة وضعية انطلاق فعالة:**\n1. **السياق**: الانطلاق من واقع المتعلم المعيش أو حدث صحي/بيئي ملموس (مثال: وجبة عائلية، ممارسة رياضة، حادث منزلي).\n2. **السندات**: صورة معبرة، نتائج تحاليل دم، أو وثيقة جدولية بسيطة تثير تساؤلاً.\n3. **المشكل العلمي**: صياغة سؤال دقيق يبدأ بـ (كيف..؟ / ما هو دور..؟ / فسر..؟) يحمل تناقضاً ظاهرياً يدفع المتعلم لبناء فرضيات.\n4. **التعليمات**: توجيه المتعلم لاقتراح فرضيات تفسيرية قابلة للتحقق تجريبياً أو وثائقياً.`;
+      } else if (q.includes('تجربة') || q.includes('مخبر') || q.includes('نشا') || q.includes('كشف')) {
+        reply = `**البروتوكول التجريبي المقترح:**\n• **الكشف عن النشا**: إضافة قطرات من ماء اليود (Lugol) ➔ ظهور لون أزرق بنفسجي دلالة وجود النشا.\n• **الكشف عن السكريات المرجعة**: إضافة محلول فهلنك (A+B) مع التسخين المعتدل ➔ ظهور راسب أحمر آجوري.\n• **الكشف عن البروتينات**: تفاعل حمض الآزوت أو تفاعل البيوري (NaOH + CuSO4) ➔ ظهور لون أصفر أو بنفسجي.\n• **بدائل مدرسية**: استخدام قطع الخبز، زلال البيض المخفف، عصير العنب الطازج.`;
+      } else if (q.includes('إرادية') || q.includes('لاإرادية') || q.includes('عصبي')) {
+        reply = `**مقارنة بيداغوجية لمستوى 4 متوسط:**\n• **الحركة الإرادية**: مركزها العصبي هو **القشرة المخية** (السطح الحركي)، الرسالة نابذة، الهدف منها تحقيق رغبة شعورية.\n• **الفعل اللاإرادي (المنعكس الفطري)**: مركزه العصبي هو **النخاع الشوكي**، استجابة متماثلة وسريعة لحماية العضوية من الأخطار.\n• **عناصر القوس الانعكاسي**: مستقبل حسي ➔ ناقل حسي (عصب جابذ) ➔ مركز عصبي (نخاع شوكي) ➔ ناقل حركي (عصب نابذ) ➔ عضو منفذ (عضلة).`;
+      } else if (q.includes('توقيت') || q.includes('زمن') || q.includes('ساعة')) {
+        reply = `**التوزيع الزمني النموذجي لحصة (60 دقيقة):**\n• **وضعية الانطلاق والمشكل العلمي**: 5 إلى 10 دقائق.\n• **مرحلة البحث وتقصي الأنشطة (العمل الميداني/الفوجي)**: 30 إلى 35 دقيقة.\n• **إرساء الموارد وصياغة الخلاصة المعرفية**: 10 إلى 15 دقيقة.\n• **تقويم الموارد والتمرين التطبيقي**: 5 دقائق.`;
+      } else {
+        const levelCount = curriculumLessons.filter(l => l.level === currentLesson?.level).length;
+        reply = `شكراً لسؤالك البيداغوجي القيم! بخصوص **"${query}"**:\n\nبناءً على التدرج البيداغوجي لوزارة التربية الوطنية لمادة علوم الطبيعة والحياة:\n• يُنصح دائماً بربط التعلمات بمؤشرات الكفاءة الختامية وتفعيل أسلوب التقصي وحل المشكلات.\n• يمكنك تضمين هذه الملاحظات في خانة الملاحظات بالدفتر اليومي أو في المذكرة البيداغوجية مباشرة.\n• النظام الذكي مرتبط حالياً بـ ${levelCount} سجل في مستوى المورد الحالي.\n• هل ترغب في اقتراح نشاط صفي مدعم أو وضعية تقويمية محددة لهذا المورد؟`;
+      }
+
+      const aiMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        sender: 'ai',
+        text: reply,
+        timestamp: new Date().toLocaleTimeString('ar-DZ', { hour: '2-digit', minute: '2-digit' }),
+      };
+
+      setMessages((prev) => [...prev, aiMsg]);
+      setIsTyping(false);
+    }, 600);
   };
 
-  const exportCurrentExam = async (kind: 'docx' | 'pdf') => {
-    if (!examText) return;
-    setExporting(true);
-    try {
-      if (kind === 'docx') await exportExamToDocx(examTitle, examText);
-      else if (examPreviewRef.current) await exportExamElementToPdf(examPreviewRef.current, examTitle);
-    } finally { setExporting(false); }
-  };
-
-  const quick = mode === 'exam' ? 'أنشئ فرضاً من الأنشطة الحالية مع سلم تنقيط وتصحيح نموذجي' : mode === 'assessment' ? 'أنشئ تقويماً تكوينياً للمورد الحالي مع معايير ومؤشرات وتصحيح' : mode === 'solve' ? 'حل النشاط الحالي خطوة بخطوة مع تفسير الإجابات' : 'اقترح طريقة بيداغوجية لاستثمار الأنشطة الحالية';\n\n  return <div className='fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-xs' onClick={onClose}>\n    <div className='w-full max-w-xl bg-white h-full shadow-2xl flex flex-col' onClick={e => e.stopPropagation()}>\n      <div className='p-4 border-b bg-gradient-to-l from-teal-700/10 to-white'>\n        <div className='flex items-center justify-between'>\n          <div className='flex items-center gap-3'><div className='w-10 h-10 rounded-xl bg-teal-700 text-white flex items-center justify-center'><Bot className='w-5 h-5' /></div><div><h3 className='font-black text-gray-900'>المساعد البيداغوجي الذكي <span className='text-[10px] bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full'>AI</span></h3><p className='text-[10.5px] text-gray-500'>المنهاج + الوثيقة المرافقة + المذكرات + الويب</p></div></div>\n          <button onClick={onClose} className='p-2 rounded-lg hover:bg-gray-100'><X className='w-5 h-5' /></button>\n        </div>\n        <div className='mt-3 text-[10px] text-emerald-700 font-bold truncate'>السياق: {smartContext}</div>\n      </div>\n\n      <div className='p-3 border-b bg-white space-y-2'>\n        <div className='flex gap-1.5 overflow-x-auto pb-1'>{MODES.map(item => <button key={item.id} onClick={() => setMode(item.id)} className={'shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-bold border ' + (mode === item.id ? 'bg-teal-700 text-white border-teal-700' : 'bg-gray-50 text-gray-700 border-gray-200')}>{item.icon}{item.label}</button>)}</div>\n        {mode === 'exam' && <div className='rounded-xl border border-teal-200 bg-teal-50/60 p-3 space-y-2'>
-          <div className='flex items-center gap-2 text-xs font-black text-teal-900'><Settings2 className='w-4 h-4' /> إعداد ورقة الفرض/الاختبار</div>
-          <div className='grid grid-cols-2 gap-2'>
-            <select value={examType} onChange={e => setExamType(e.target.value as 'فرض' | 'اختبار')} className='border rounded-lg px-2 py-1.5 text-[11px]'><option>فرض</option><option>اختبار</option></select>
-            <select value={examDifficulty} onChange={e => setExamDifficulty(e.target.value)} className='border rounded-lg px-2 py-1.5 text-[11px]'><option>سهل</option><option>متوسط</option><option>متقدم</option></select>
-            <input type='number' min={1} max={10} value={examQuestions} onChange={e => setExamQuestions(Number(e.target.value))} className='border rounded-lg px-2 py-1.5 text-[11px]' placeholder='عدد الأسئلة' />
-            <input type='number' min={1} max={20} value={examPoints} onChange={e => setExamPoints(Number(e.target.value))} className='border rounded-lg px-2 py-1.5 text-[11px]' placeholder='العلامة /20' />
-          </div>
-          <input value={examTitle} onChange={e => setExamTitle(e.target.value)} className='w-full border rounded-lg px-2 py-1.5 text-[11px]' placeholder='عنوان الفرض/الاختبار' />
-          <button onClick={() => void generateExam()} disabled={isTyping} className='w-full py-2 rounded-lg bg-teal-700 text-white text-[11px] font-black disabled:opacity-50'>{isTyping ? 'جاري الإنشاء...' : 'إنشاء ورقة جاهزة للطباعة'}</button>
-        </div>}
-        <div className='flex items-center justify-between gap-2'>\n          <button type='button' onClick={() => fileRef.current?.click()} className='flex items-center gap-1.5 text-[11px] font-bold text-teal-800 bg-teal-50 border border-teal-200 px-2.5 py-1.5 rounded-lg'><Upload className='w-3.5 h-3.5' /> {uploading ? 'جاري القراءة...' : 'إضافة ملف مرجعي'}</button>\n          <input ref={fileRef} type='file' accept='.pdf,.docx,.txt,.md,.json' className='hidden' onChange={handleUpload} />\n          <label className='flex items-center gap-1.5 text-[11px] font-bold text-gray-600'><input type='checkbox' checked={useWebSearch} onChange={e => setUseWebSearch(e.target.checked)} /> البحث في الإنترنت</label>\n        </div>\n        {documents.length > 0 && <div className='flex flex-wrap gap-1.5'>{documents.map(doc => <span key={doc.id} className='flex items-center gap-1 bg-gray-100 border rounded-full px-2 py-1 text-[10px] font-bold text-gray-700'><FileText className='w-3 h-3' />{doc.name.slice(0, 24)}<button onClick={() => { removeSmartDocument(doc.id); setDocuments(loadSmartDocuments()); }}><X className='w-3 h-3 text-gray-400' /></button></span>)}</div>}\n      </div>\n\n      <div className='flex-1 p-4 overflow-y-auto space-y-4 bg-gray-50/60'>\n        {messages.map(m => <div key={m.id} className={'flex gap-2.5 ' + (m.sender === 'user' ? 'flex-row-reverse' : '')}><div className={'w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-white ' + (m.sender === 'user' ? 'bg-gray-800' : 'bg-teal-700')}>{m.sender === 'user' ? <User className='w-4 h-4' /> : <Bot className='w-4 h-4' />}</div><div className={'max-w-[90%] rounded-2xl p-3.5 text-[13px] leading-relaxed whitespace-pre-line shadow-sm ' + (m.sender === 'user' ? 'bg-gray-900 text-white rounded-tl-none' : 'bg-white border text-gray-800 rounded-tr-none')}>{m.text}<div className='text-[9px] mt-1.5 text-gray-400'>{m.timestamp}</div></div></div>)}\n        {examText && <div className='flex justify-end'><button onClick={() => setShowExamPreview(true)} className='text-[11px] font-black text-teal-800 bg-white border border-teal-200 rounded-lg px-3 py-2'>فتح ورقة الفرض/الاختبار</button></div>}
-        {isTyping && <div className='flex items-center gap-2 text-gray-500 text-xs font-bold'><Loader2 className='w-4 h-4 animate-spin text-teal-700' /> المساعد يحلل المنهاج والمصادر...</div>}\n      </div>\n\n      <div className='p-3 border-t bg-white space-y-2'>\n        <button onClick={() => handleSend(quick)} className='w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-teal-50 border border-teal-200 text-teal-900 text-[11px] font-bold'><Lightbulb className='w-3.5 h-3.5' />{quick}</button>\n        <form onSubmit={e => { e.preventDefault(); void handleSend(); }} className='flex gap-2'><input value={inputText} onChange={e => setInputText(e.target.value)} placeholder='اكتب طلبك: حل نشاط، تقويم، فرض، اختبار، شرح أو بحث...' className='flex-1 bg-gray-50 border rounded-xl px-3.5 py-2.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-teal-600' /><button disabled={!inputText.trim() || isTyping} className='p-2.5 bg-teal-700 text-white rounded-xl disabled:opacity-40'><Send className='w-4 h-4 rotate-180' /></button></form>\n      </div>\n    </div>\n\n      {showExamPreview && examText && <div className='fixed inset-0 z-[70] bg-black/60 flex items-center justify-center p-3' onClick={() => setShowExamPreview(false)}>
-        <div className='bg-slate-100 rounded-2xl w-full max-w-5xl h-[94vh] flex flex-col shadow-2xl' onClick={e => e.stopPropagation()}>
-          <div className='p-3 bg-white border-b flex flex-wrap items-center justify-between gap-2'>
-            <div><div className='font-black text-gray-900'>{examTitle}</div><div className='text-[10px] text-gray-500'>معاينة A4 — جاهزة للطباعة والتصدير</div></div>
-            <div className='flex gap-2'>
-              <button onClick={() => examPreviewRef.current && printExamElement(examPreviewRef.current, examTitle)} className='px-3 py-2 rounded-lg bg-gray-100 text-xs font-bold'><Printer className='inline w-4 h-4 ml-1'/>طباعة</button>
-              <button disabled={exporting} onClick={() => void exportCurrentExam('docx')} className='px-3 py-2 rounded-lg bg-teal-700 text-white text-xs font-bold'><Download className='inline w-4 h-4 ml-1'/>Word قابل للتعديل</button>
-              <button disabled={exporting} onClick={() => void exportCurrentExam('pdf')} className='px-3 py-2 rounded-lg bg-gray-900 text-white text-xs font-bold'><Download className='inline w-4 h-4 ml-1'/>PDF</button>
-              <button onClick={() => setShowExamPreview(false)} className='p-2 rounded-lg hover:bg-gray-100'><X className='w-5 h-5'/></button>
+  return (
+    <div
+      id="ai-assistant-drawer"
+      className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-xs flex justify-end animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-lg bg-white h-full shadow-2xl flex flex-col justify-between"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="p-4 border-b border-gray-200 bg-gradient-to-l from-[#0f766e]/10 to-teal-50/40 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-teal-700 text-white flex items-center justify-center shadow-xs">
+              <Bot className="w-5 h-5" />
             </div>
-          </div>
-          <div className='flex-1 overflow-auto p-5'>
-            <div ref={examPreviewRef} className='bg-white mx-auto p-[16mm] shadow-sm max-w-[210mm] min-h-[297mm] text-gray-900' dir='rtl' style={{fontFamily:'Cairo, Tajawal, Arial, sans-serif'}}>
-              <div className='text-center border-b-2 border-teal-800 pb-4 mb-5'>
-                <div className='font-black text-xl'>الجمهورية الجزائرية الديمقراطية الشعبية</div>
-                <div className='font-bold text-sm'>وزارة التربية الوطنية</div>
-                <div className='font-black text-2xl text-teal-800 mt-3'>{examTitle}</div>
-                <div className='flex justify-between text-sm mt-4 border p-2 rounded'>الاسم واللقب: ........................................ <span>القسم: ................</span> <span>العلامة: ....... / {examPoints}</span></div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <h3 className="font-black text-gray-900 text-[15px]">المساعد البيداغوجي الذكي</h3>
+                <span className="bg-teal-100 text-teal-800 text-[10.5px] font-black px-2 py-0.5 rounded-full">
+                  AI
+                </span>
               </div>
-              <div className='whitespace-pre-wrap text-[14px] leading-[2] font-medium'>{examText}</div>
-              <div className='mt-8 pt-3 border-t text-xs text-gray-500 text-center'>وثيقة مولدة بمساعدة المساعد البيداغوجي الذكي — تُراجع من طرف الأستاذ قبل التوزيع.</div>
+              <p className="text-[11.5px] text-gray-500 font-medium">
+                استشارات المنهاج، صياغة المشكلات العلمية والتجارب المخبرية
+              </p>
+              <div className="mt-1 text-[10px] text-emerald-700 font-bold truncate max-w-[340px]">
+                السياق الذكي: {currentLesson?.ta3alom || 'لا يوجد مورد محدد'}
+              </div>
             </div>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() =>
+                setMessages([
+                  {
+                    id: 'welcome',
+                    sender: 'ai',
+                    text: 'تمت إعادة تهيئة المحادثة. كيف يمكنني مساعدتك في تحضير حصص علوم الطبيعة والحياة؟',
+                    timestamp: 'الآن',
+                  },
+                ])
+              }
+              title="مسح المحادثة"
+              className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition cursor-pointer"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 text-gray-500 hover:text-gray-900 rounded-lg hover:bg-gray-100 font-black text-lg transition cursor-pointer"
+            >
+              ✕
+            </button>
           </div>
         </div>
-      </div>}  </div>;\n};
+
+        {/* Message Thread */}
+        <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-gray-50/50">
+          {messages.map((m) => (
+            <div
+              key={m.id}
+              className={`flex gap-2.5 ${m.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
+            >
+              <div
+                className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-white font-bold text-xs ${
+                  m.sender === 'user' ? 'bg-gray-800' : 'bg-teal-700'
+                }`}
+              >
+                {m.sender === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+              </div>
+
+              <div
+                className={`max-w-[85%] rounded-2xl p-3.5 text-[13px] leading-relaxed font-medium shadow-2xs whitespace-pre-line ${
+                  m.sender === 'user'
+                    ? 'bg-gray-900 text-white rounded-tl-none'
+                    : 'bg-white border border-gray-200 text-gray-800 rounded-tr-none'
+                }`}
+              >
+                {m.text}
+                <div
+                  className={`text-[10px] mt-1.5 text-left ${
+                    m.sender === 'user' ? 'text-gray-400' : 'text-gray-400'
+                  }`}
+                >
+                  {m.timestamp}
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {isTyping && (
+            <div className="flex items-center gap-2 text-gray-500 text-xs font-bold p-2">
+              <Bot className="w-4 h-4 text-teal-700 animate-spin" />
+              <span>المساعد يحلل طلبك ويكتب الإجابة...</span>
+            </div>
+          )}
+        </div>
+
+        {/* Quick Prompts */}
+        <div className="p-3 border-t border-gray-200 bg-white space-y-2">
+          <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-500">
+            <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
+            <span>أسئلة ومقترحات سريعة:</span>
+          </div>
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px]">
+            {QUICK_PROMPTS.map((prompt, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => handleSend(prompt)}
+                className="whitespace-nowrap px-2.5 py-1 rounded-full bg-gray-100 hover:bg-teal-50 hover:text-teal-900 border border-gray-200 text-gray-700 font-medium transition cursor-pointer"
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
+
+          {/* Input Box */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSend();
+            }}
+            className="flex items-center gap-2 pt-1"
+          >
+            <input
+              type="text"
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              placeholder="اكتب استفسارك البيداغوجي أو المنهجي هنا..."
+              className="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2 text-[13px] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:bg-white"
+            />
+            <button
+              type="submit"
+              disabled={!inputText.trim() || isTyping}
+              className="p-2 bg-teal-700 text-white rounded-xl hover:bg-teal-800 disabled:opacity-40 transition shadow-xs cursor-pointer flex items-center justify-center"
+            >
+              <Send className="w-4 h-4 rotate-180" />
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};
