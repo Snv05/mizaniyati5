@@ -389,9 +389,18 @@ function buildHierarchicalContent(
     return row.content || '';
   }
 
-  const activities = Array.from(new Set((row.activitiesList || []).map((x) => String(x || '').trim()).filter(Boolean))).slice(0, 2);
-  const previousActivities = Array.from(new Set((previous?.activitiesList || []).map((x) => String(x || '').trim()).filter(Boolean))).slice(0, 2);
-  const sameSection = !!previous && previous.level === row.level && previous.section === row.section;
+  const cleanUnique = (values: string[] = []) =>
+    Array.from(new Set(values.map((x) => String(x || '').trim()).filter(Boolean))).slice(0, 2);
+
+  const activities = cleanUnique(row.activitiesList);
+  const previousActivities = cleanUnique(previous?.activitiesList);
+  const sameSection =
+    !!previous &&
+    previous.level === row.level &&
+    previous.section === row.section;
+
+  // نكرر عناصر المنهاج فقط عند الانتقال إلى مورد/تعلم مورد مختلف.
+  // إذا استمرت الحصة لنفس تعلم المورد، تظهر العناوين مرة واحدة فقط.
   const sameHierarchy =
     sameSection &&
     previous?.sourceSequenceId === row.sourceSequenceId &&
@@ -401,6 +410,7 @@ function buildHierarchicalContent(
     previous?.maqta === row.maqta &&
     previous?.mawrid === row.mawrid &&
     previous?.ta3alom === row.ta3alom;
+
   const sameActivities =
     sameSection &&
     previous?.sourceActivityId === row.sourceActivityId &&
@@ -527,7 +537,19 @@ const auditGeneratedDailyLogbook = (
         : undefined) ||
       (row.sourceActivityId2
         ? bank.find((r) => r.sourceActivityIds?.includes(row.sourceActivityId2))
-        : undefined);
+        : undefined) ||
+      bank.find((r) =>
+        r.midan === row.midan &&
+        r.maqta === row.maqta &&
+        r.mawrid === row.mawrid &&
+        r.ta3alom === row.ta3alom
+      ) ||
+      (() => {
+        const matches = bank.filter((r) =>
+          (row.activitiesList || []).some((title) => r.activities.includes(title))
+        );
+        return matches.length === 1 ? matches[0] : undefined;
+      })();
 
     if (!resource) {
       missingSource.push(row.dateStr + ' ' + row.time + ' ' + row.section);
@@ -939,7 +961,17 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           maqta: res.maqta,
           mawrid: res.mawrid,
           ta3alom: res.ta3alom,
-          activitiesList: res.activities.slice(0, 2),
+          activitiesList: (() => {
+            if (currentLessonType !== 'curriculum') return [];
+            const unique = Array.from(new Set((res.activities || []).map((x) => String(x || '').trim()).filter(Boolean)));
+            if (!annual) return unique.slice(0, 2);
+            const scheduledActivityId = ordinal === 0 ? linkedSourceActivityId : linkedSourceActivityId2;
+            if (scheduledActivityId) {
+              const activityIndex = (res.sourceActivityIds || []).indexOf(scheduledActivityId);
+              if (activityIndex >= 0 && res.activities[activityIndex]) return [res.activities[activityIndex]];
+            }
+            return ordinal === 0 ? unique.slice(0, 1) : unique.slice(1, 2);
+          })(),
           taqwim: res.taqwim || '',
           sourceSequenceId: linkedSourceSequenceId,
           sourceResourceId: linkedSourceResourceId,
