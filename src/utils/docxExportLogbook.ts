@@ -72,9 +72,11 @@ const getExportLessonContent = (log: LogEntry, previous?: LogEntry): string => {
 
   const activities = (log.activitiesList || []).filter(Boolean).slice(0, 2);
   const previousActivities = (previous?.activitiesList || []).filter(Boolean);
-  const sameMaqta = !!previous && previous.level === log.level && previous.maqta === log.maqta;
+  const sameSection = !!previous && previous.level === log.level && previous.section === log.section;
+  const sameMaqta = sameSection && previous?.maqta === log.maqta;
   const sameMawrid = sameMaqta && previous?.mawrid === log.mawrid;
   const sameActivities =
+    sameSection &&
     previous?.sourceActivityId === log.sourceActivityId &&
     previous?.sourceActivityId2 === log.sourceActivityId2 &&
     previousActivities.join('|') === activities.join('|');
