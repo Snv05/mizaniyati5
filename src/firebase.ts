@@ -1,9 +1,19 @@
-import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth } from 'firebase/auth';
-import { getFirestore, Firestore, doc, getDocFromServer } from 'firebase/firestore';
-import firebaseConfig from '../firebase-applet-config.json';
+import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
+import { getAuth, type Auth } from 'firebase/auth';
+import { getFirestore, doc, getDocFromServer, type Firestore } from 'firebase/firestore';
 
-export const isFirebaseConfigValid = Boolean(firebaseConfig.projectId && firebaseConfig.apiKey);
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+};
+
+export const isFirebaseConfigValid = Boolean(
+  firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId,
+);
 
 let appInstance: FirebaseApp | null = null;
 let dbInstance: Firestore | null = null;
@@ -11,32 +21,31 @@ let authInstance: Auth | null = null;
 
 if (isFirebaseConfigValid) {
   try {
-    appInstance = getApps().length > 0 ? getApps()[0] : initializeApp(firebaseConfig);
-    dbInstance = getFirestore(appInstance, firebaseConfig.firestoreDatabaseId || undefined);
+    appInstance = getApps()[0] ?? initializeApp(firebaseConfig);
+    const databaseId = import.meta.env.VITE_FIREBASE_DATABASE_ID;
+    dbInstance = databaseId ? getFirestore(appInstance, databaseId) : getFirestore(appInstance);
     authInstance = getAuth(appInstance);
   } catch (error) {
-    console.warn("Firebase initialization warning:", error);
+    console.warn('Firebase initialization warning:', error);
   }
+} else {
+  console.warn('Firebase is disabled: complete the VITE_FIREBASE_* variables in .env.local.');
 }
 
 export const app = appInstance;
-export const db = dbInstance as unknown as Firestore;
-export const auth = authInstance as unknown as Auth;
+export const db = dbInstance;
+export const auth = authInstance;
 
 async function testConnection() {
   if (!db) return;
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
   } catch (error) {
-    if(error instanceof Error && error.message.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration.");
-    }
+    console.warn('Firebase connection check:', error instanceof Error ? error.message : String(error));
   }
 }
 
-if (isFirebaseConfigValid && db) {
-  testConnection();
-}
+if (db) void testConnection();
 
 export enum OperationType {
   CREATE = 'create',
@@ -57,30 +66,29 @@ export interface FirestoreErrorInfo {
     emailVerified?: boolean | null;
     isAnonymous?: boolean | null;
     tenantId?: string | null;
-    providerInfo?: {
-      providerId?: string | null;
-      email?: string | null;
-    }[];
-  }
+    providerInfo?: { providerId?: string | null; email?: string | null }[];
+  };
 }
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const currentUser = auth?.currentUser;
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-      isAnonymous: auth.currentUser?.isAnonymous,
-      tenantId: auth.currentUser?.tenantId,
-      providerInfo: auth.currentUser?.providerData?.map(provider => ({
+      userId: currentUser?.uid,
+      email: currentUser?.email,
+      emailVerified: currentUser?.emailVerified,
+      isAnonymous: currentUser?.isAnonymous,
+      tenantId: currentUser?.tenantId,
+      providerInfo: currentUser?.providerData?.map((provider) => ({
         providerId: provider.providerId,
         email: provider.email,
-      })) || []
+      })) || [],
     },
     operationType,
-    path
+    path,
   };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
+
+  console.error('Firestore Error:', JSON.stringify(errInfo));
   throw new Error(JSON.stringify(errInfo));
 }
