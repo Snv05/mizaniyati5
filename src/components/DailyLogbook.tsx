@@ -138,8 +138,10 @@ const normalizeCurriculumResources = (resources: CurriculumResourceItem[]): Curr
 
 const buildCurriculumDatabase = (lessons?: LessonMemo[]): Record<'1م' | '2م' | '3م' | '4م', CurriculumResourceItem[]> => {
   const sourceFor = (level: LessonMemo['level'], official: LessonMemo[]) => {
+    // الدفتر اليومي يعتمد قاعدة المنهاج المحلية المراجعة كمصدر أساسي.
+    // لا نستبدلها بقائمة جزئية قد تصل من واجهة أخرى.
     const provided = lessons?.filter((lesson) => lesson.level === level) || [];
-    return provided.length > 0 ? provided : official;
+    return provided.length >= official.length ? provided : official;
   };
 
   return {
@@ -340,7 +342,7 @@ const AUTO_FILLED_TIMETABLE_ROWS: TimetableGridRow[] = EMPTY_TIMETABLE_ROWS.map(
   cells: createEmptyDayCells(),
 }));
 
-const LOGBOOK_DATA_VERSION = '2026-09-24-v9';
+const LOGBOOK_DATA_VERSION = '2026-09-24-v10';
 const ROWS_PER_PAGE = 12;
 const getPageDimensions = (orientation: 'portrait' | 'landscape') => orientation === 'landscape' ? { w: 297, h: 210 } : { w: 210, h: 297 };
 const PRINT_MARGIN = '14mm';
@@ -425,6 +427,93 @@ const findPreviousComparableCurriculumRow = (allRows: LogEntry[], currentIndex: 
   return undefined;
 };
 
+const normalizeDailyLogbookRows = (
+  savedRows: LogEntry[],
+  db: Record<'1م' | '2م' | '3م' | '4م', CurriculumResourceItem[]>
+): LogEntry[] => {
+  const levelMap: Record<string, '1م' | '2م' | '3م' | '4م'> = {
+    '1م': '1م', '2م': '2م', '3م': '3م', '4م': '4م',
+  };
+
+  return savedRows.map((row) => {
+    if (row.lessonType && row.lessonType !== 'curriculum') return row;
+
+    const level = levelMap[row.level];
+    const bank = level ? db[level] : [];
+    const clean = (v?: string) => String(v || '').trim();
+
+    const resource =
+      (row.sourceLearningUnitId ? bank.find((r) => r.sourceLearningUnitId === row.sourceLearningUnitId) : undefined) ||
+      (row.sourceActivityId ? bank.find((r) => r.sourceActivityIds?.includes(row.sourceActivityId!)) : undefined) ||
+      (row.sourceActivityId2 ? bank.find((r) => r.sourceActivityIds?.includes(row.sourceActivityId2!)) : undefined) ||
+      (row.activitiesList?.length
+        ? (() => {
+            const matches = bank.filter((r) => row.activitiesList!.some((a) => r.activities.includes(a)));
+            return matches.length === 1 ? matches[0] : undefined;
+          })()
+        : undefined);
+
+    const activities = Array.from(new Set((resource?.activities || row.activitiesList || []).map(clean).filter(Boolean))).slice(0, 2);
+
+    if (!resource) {
+      return { ...row, activitiesList: activities, midan: clean(row.midan), maqta: clean(row.maqta), mawrid: clean(row.mawrid), ta3alom: clean(row.ta3alom) };
+    }
+
+    return {
+      ...row,
+      midan: clean(resource.midan),
+      maqta: clean(resource.maqta),
+      mawrid: clean(resource.mawrid),
+      ta3alom: clean(resource.ta3alom),
+      activitiesList: activities,
+      sourceSequenceId: resource.sourceSequenceId || row.sourceSequenceId,
+      sourceResourceId: resource.sourceResourceId || row.sourceResourceId,
+      sourceLearningUnitId: resource.sourceLearningUnitId || row.sourceLearningUnitId,
+      sourceActivityId: resource.sourceActivityIds?.[0] || row.sourceActivityId,
+      sourceActivityId2: resource.sourceActivityIds?.[1] || row.sourceActivityId2,
+    };
+  });
+};
+
+interface DailyLogbookAudit {
+  duplicateRows: string[];
+  missingHierarchy: string[];
+  missingSource: string[];
+}
+
+const auditGeneratedDailyLogbook = (
+  generatedRows: LogEntry[],
+  db: Record<'1م' | '2م' | '3م' | '4م', CurriculumResourceItem[]>
+): DailyLogbookAudit => {
+  const duplicateRows: string[] = [];
+  const missingHierarchy: string[] = [];
+  const missingSource: string[] = [];
+  const seenRows = new Set<string>();
+
+  for (const row of generatedRows) {
+    const rowKey = row.dateStr + '|' + row.time + '|' + row.section;
+    if (seenRows.has(rowKey)) duplicateRows.push(rowKey);
+    seenRows.add(rowKey);
+
+    if (row.lessonType && row.lessonType !== 'curriculum') continue;
+    if (!row.midan || !row.maqta || !row.mawrid || !row.ta3alom) {
+      missingHierarchy.push(row.dateStr + ' ' + row.time + ' ' + row.section);
+    }
+
+    const bank = db[row.level as '1م' | '2م' | '3م' | '4م'] || [];
+    const resource = row.sourceLearningUnitId
+      ? bank.find((r) => r.sourceLearningUnitId === row.sourceLearningUnitId)
+      : row.sourceActivityId
+        ? bank.find((r) => r.sourceActivityIds?.includes(row.sourceActivityId!))
+        : row.sourceActivityId2
+          ? bank.find((r) => r.sourceActivityIds?.includes(row.sourceActivityId2!))
+          : undefined;
+    if (!resource) missingSource.push(row.dateStr + ' ' + row.time + ' ' + row.section);
+  }
+
+  return { duplicateRows, missingHierarchy, missingSource };
+};
+
 
 export const DailyLogbook: React.FC<DailyLogbookProps> = ({
   config,
@@ -504,7 +593,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           })).filter((h: HolidayEntry) => !!h.startDate);
           if (normalized.length > 0) setHolidays(normalized);
         }
-        if (parsed.logbookDataVersion === LOGBOOK_DATA_VERSION && parsed.rows && Array.isArray(parsed.rows)) setRows(parsed.rows);
+        if (parsed.logbookDataVersion === LOGBOOK_DATA_VERSION && parsed.rows && Array.isArray(parsed.rows)) setRows(normalizeDailyLogbookRows(parsed.rows, CURRICULUM_DATABASE));
         if (parsed.startDate) setStartDate(parsed.startDate);
         if (parsed.period) setPeriod(parsed.period);
         if (parsed.orientation === 'portrait' || parsed.orientation === 'landscape') setOrientation(parsed.orientation);
@@ -850,9 +939,25 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
       }
     }
 
-    setRows(generated);
+    const normalizedGenerated = normalizeDailyLogbookRows(generated, CURRICULUM_DATABASE);
+    const logbookAudit = auditGeneratedDailyLogbook(normalizedGenerated, CURRICULUM_DATABASE);
+
+    if (logbookAudit.duplicateRows.length || logbookAudit.missingHierarchy.length || logbookAudit.missingSource.length) {
+      console.error('[DailyLogbook integrity]', logbookAudit);
+      displayUserAlert(
+        'تم اكتشاف مشكلة في سلامة الدفتر: تكرار ' + logbookAudit.duplicateRows.length +
+        '، بيانات ناقصة ' + logbookAudit.missingHierarchy.length +
+        '، وربط مصدر مفقود ' + logbookAudit.missingSource.length + '.'
+      );
+    }
+
+    setRows(normalizedGenerated);
     const assignedStr = assignedLevels.join(' و ');
-    showToast(`تم توليد ${generated.length} حصة للسنوات المسندة (${assignedStr}) بنجاح`);
+    showToast(
+      logbookAudit.duplicateRows.length || logbookAudit.missingHierarchy.length || logbookAudit.missingSource.length
+        ? 'تم توليد الدفتر مع تنبيه سلامة البيانات'
+        : 'تم توليد ' + normalizedGenerated.length + ' حصة للسنوات المسندة (' + assignedStr + ') بنجاح'
+    );
     setTimeout(() => {
       document.getElementById('pages-start')?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
