@@ -114,17 +114,38 @@ const getExportLessonContent = (log: LogEntry, previous?: LogEntry): string => {
     previousActivities.join('|') === activities.join('|');
 
   const lines: string[] = [];
+  const seenHierarchyValues = new Set<string>();
+  const addHierarchyLine = (label: string, value?: string) => {
+    const cleanValue = String(value || '').trim();
+    if (!cleanValue || seenHierarchyValues.has(cleanValue)) return;
+    seenHierarchyValues.add(cleanValue);
+    lines.push(`${label}: ${cleanValue}`);
+  };
+
   if (!sameHierarchy) {
-    if (log.midan) lines.push(`الميدان: ${log.midan}`);
-    if (log.maqta) lines.push(`المقطع: ${log.maqta}`);
-    if (log.mawrid) lines.push(`المورد التعلمي: ${log.mawrid}`);
-    if (log.ta3alom) lines.push(`تعلم المورد: ${log.ta3alom}`);
+    addHierarchyLine('الميدان', log.midan);
+    addHierarchyLine('المقطع', log.maqta);
+    addHierarchyLine('المورد التعلمي', log.mawrid);
+    addHierarchyLine('تعلم المورد', log.ta3alom);
   }
+
+  const seenLines = new Set(lines);
   if (!sameActivities) {
-    lines.push(...activities);
+    for (const activity of activities) {
+      if (!seenLines.has(activity)) {
+        seenLines.add(activity);
+        lines.push(activity);
+      }
+    }
   }
-  if ((log as any).taqwim) {
-    lines.push(`تقويم: ${(log as any).taqwim}`);
+
+  const assessment = String((log as any).taqwim || '').trim();
+  if (assessment) {
+    const assessmentLine = `تقويم: ${assessment}`;
+    if (!seenLines.has(assessmentLine)) {
+      seenLines.add(assessmentLine);
+      lines.push(assessmentLine);
+    }
   }
 
   return lines.join('\n');
