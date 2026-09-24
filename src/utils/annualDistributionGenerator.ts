@@ -1,5 +1,12 @@
 import { LessonMemo } from '../types';
 
+export interface AnnualCalendarEvent {
+  startDate: string;
+  endDate?: string;
+  label: string;
+  type: 'holiday' | 'exam' | 'test' | 'assessment';
+}
+
 export interface GeneratedSession {
   id?: string;
   level?: LessonMemo['level'];
@@ -26,7 +33,8 @@ export interface GeneratedSession {
 export function generateAnnualDistribution(
   lessons: LessonMemo[],
   startDateStr: string,
-  holidays: { startDate: string; endDate: string; label: string }[] = []
+  holidays: { startDate: string; endDate?: string; label: string }[] = [],
+  calendarEvents: AnnualCalendarEvent[] = []
 ): GeneratedSession[] {
   // For 1AM, keep every learning unit intact: activities from one learning unit
   // must never be paired with activities from another resource.
@@ -65,18 +73,39 @@ export function generateAnnualDistribution(
   const getFormattedDateRange = (date: Date) => {
     const thu = new Date(date);
     thu.setDate(thu.getDate() + 4);
-    const d1 = date.getDate().toString().padStart(2, '0');
-    const d2 = thu.getDate().toString().padStart(2, '0');
-    return `${d1}-${d2}`;
+    const format = (d: Date) => {
+      const day = d.getDate().toString().padStart(2, '0');
+      const month = ARABIC_MONTHS[d.getMonth()];
+      return `${day} ${month} ${d.getFullYear()}`;
+    };
+    return `${format(date)} - ${format(thu)}`;
   };
 
-  const isDateInHolidays = (d: Date) => {
-    for (const h of holidays) {
-      if (!h.startDate || !h.endDate) continue;
-      const start = new Date(h.startDate);
-      const end = new Date(h.endDate);
-      if (d >= start && d <= end) return h.label;
-    }
+  const parseLocalDate = (value: string) => {
+    const d = new Date(`${value}T00:00:00`);
+    return Number.isNaN(d.getTime()) ? null : d;
+  };
+
+  const weekEnd = (d: Date) => {
+    const end = new Date(d);
+    end.setDate(end.getDate() + 4);
+    return end;
+  };
+
+  const overlapsWeek = (startDate: string, endDate?: string, weekStart?: Date) => {
+    if (!weekStart || !startDate) return false;
+    const start = parseLocalDate(startDate);
+    const end = parseLocalDate(endDate || startDate);
+    if (!start || !end) return false;
+    const currentEnd = weekEnd(weekStart);
+    return start <= currentEnd && end >= weekStart;
+  };
+
+  const findCalendarEvent = (weekStart: Date) => {
+    const holiday = holidays.find(h => overlapsWeek(h.startDate, h.endDate, weekStart));
+    if (holiday) return { type: 'holiday' as const, label: holiday.label };
+    const event = calendarEvents.find(e => overlapsWeek(e.startDate, e.endDate, weekStart));
+    if (event) return { type: event.type, label: event.label };
     return null;
   };
 
@@ -182,31 +211,25 @@ export function generateAnnualDistribution(
       continue;
     }
 
-    // Standard exam placeholders are kept for the generic 2AM/3AM/4AM model.
-    // 1AM must remain source-driven and must not receive invented exam rows.
-    if (!is1AM && (weekNum === 9 || weekNum === 21 || weekNum === 32)) {
+    // العطل والاختبارات والفروض لا تُخترع بتثبيت أرقام أسابيع.
+    // تُقرأ من الرزنامة المحفوظة/المعتمدة، حتى لا نضع تاريخاً غير صحيح.
+    const calendarEvent = findCalendarEvent(currentDate);
+    if (calendarEvent) {
+      const isHolidayEvent = calendarEvent.type === 'holiday';
+      const isAssessmentEvent =
+        calendarEvent.type === 'exam' ||
+        calendarEvent.type === 'test' ||
+        calendarEvent.type === 'assessment';
+
       generated.push({
         midan: lastMidan,
         maqta: lastMaqta,
         mawrid: lastMawrid,
-        session1: `فرض الثلاثي ${weekNum === 9 ? 'الأول' : weekNum === 21 ? 'الثاني' : 'الثالث'}`,
-        session2: 'تصحيح الفرض',
-        isExam: true,
-        month,
-        dates
-      });
-      weekNum++;
-      currentDate.setDate(currentDate.getDate() + 7);
-      continue;
-    }
-    if (!is1AM && (weekNum === 13 || weekNum === 25 || weekNum === 35)) {
-      generated.push({
-        midan: lastMidan,
-        maqta: lastMaqta,
-        mawrid: lastMawrid,
-        session1: `اختبار الثلاثي ${weekNum === 13 ? 'الأول' : weekNum === 25 ? 'الثاني' : 'الثالث'}`,
-        session2: 'تصحيح الاختبار',
-        isExam: true,
+        session1: isHolidayEvent ? '' : calendarEvent.label,
+        session2: isHolidayEvent ? '' : 'تصحيح ' + calendarEvent.label,
+        isExam: isAssessmentEvent,
+        isHoliday: isHolidayEvent,
+        holidayLabel: isHolidayEvent ? calendarEvent.label : undefined,
         month,
         dates
       });
