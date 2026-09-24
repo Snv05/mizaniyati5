@@ -138,10 +138,13 @@ const normalizeCurriculumResources = (resources: CurriculumResourceItem[]): Curr
 
 const buildCurriculumDatabase = (lessons?: LessonMemo[]): Record<'1م' | '2م' | '3م' | '4م', CurriculumResourceItem[]> => {
   const sourceFor = (level: LessonMemo['level'], official: LessonMemo[]) => {
-    // الدفتر اليومي يعتمد قاعدة المنهاج المحلية المراجعة كمصدر أساسي.
-    // لا نستبدلها بقائمة جزئية قد تصل من واجهة أخرى.
-    const provided = lessons?.filter((lesson) => lesson.level === level) || [];
-    return provided.length >= official.length ? provided : official;
+    // قاعدة الدفتر اليومي تعتمد المصدر المنهجي المحلي المراجع كمرجع وحيد.
+    // لا نسمح لبيانات واجهة أخرى باستبدال السجل الرسمي أو تغيير الميدان/المقطع/
+    // المورد/تعلم المورد، لأن ذلك قد يسبب تكراراً أو ربطاً بمصدر غير صحيح.
+    // تبقى قيمة lessons ضمن الواجهة للتوافق البرمجي فقط ولا تستخدم لبناء البنك الرسمي.
+    void lessons;
+    void level;
+    return official;
   };
 
   return {
