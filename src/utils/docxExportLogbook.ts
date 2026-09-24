@@ -71,10 +71,8 @@ const getExportLessonContent = (log: LogEntry, previous?: LogEntry): string => {
   }
 
   const activities = (log.activitiesList || []).filter(Boolean).slice(0, 2);
-  const previousActivities = (previous?.activitiesList || []).filter(Boolean);
+  const previousActivities = (previous?.activitiesList || []).filter(Boolean).slice(0, 2);
   const sameSection = !!previous && previous.level === log.level && previous.section === log.section;
-  const sameMaqta = sameSection && previous?.maqta === log.maqta;
-  const sameMawrid = sameMaqta && previous?.mawrid === log.mawrid;
   const sameActivities =
     sameSection &&
     previous?.sourceActivityId === log.sourceActivityId &&
@@ -82,15 +80,15 @@ const getExportLessonContent = (log: LogEntry, previous?: LogEntry): string => {
     previousActivities.join('|') === activities.join('|');
 
   const lines: string[] = [];
-  if (!sameMaqta && log.maqta) lines.push(`المقطع البيداغوجي: ${log.maqta}`);
-  if (!sameMawrid && log.mawrid) lines.push(`المورد التعلمي: ${log.mawrid}`);
   if (!sameActivities) {
-    activities.forEach((activity, index) => lines.push(`النشاط ${index + 1}: ${activity}`));
+    lines.push(...activities);
   }
-  if ((log as any).taqwim) lines.push(`استنتاج / تقويم: ${(log as any).taqwim}`);
+  if ((log as any).taqwim) {
+    lines.push(`تقويم: ${(log as any).taqwim}`);
+  }
 
-  return lines.join('\n') || log.content || '';
-};
+  return lines.join('\\n') || log.content || '';
+}
 
 const base64ToUint8Array = (base64: string): Uint8Array => {
   const binary = window.atob(base64);
