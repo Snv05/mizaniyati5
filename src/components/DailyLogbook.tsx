@@ -96,31 +96,40 @@ const transformLessonMemoToLogbook = (lessons: LessonMemo[], levelLabel: '1م' |
 
 // ربط مباشر مع قاعدة بيانات التدرج الرسمي (Master Curriculum DB)
 const normalizeCurriculumResources = (resources: CurriculumResourceItem[]): CurriculumResourceItem[] => {
-  const seen = new Set<string>();
+  const seenUnits = new Set<string>();
   const normalized: CurriculumResourceItem[] = [];
 
   for (const resource of resources) {
+    const clean = (value?: string) => String(value || '').trim();
     const key = resource.sourceLearningUnitId
-      ? `id:${resource.sourceLearningUnitId}`
-      : `fallback:${resource.level}|${resource.memoNumber}|${resource.midan}|${resource.maqta}|${resource.mawrid}|${resource.ta3alom}`;
+      ? `id:${clean(resource.sourceLearningUnitId)}`
+      : `fallback:${resource.level}|${clean(resource.memoNumber)}|${clean(resource.midan)}|${clean(resource.maqta)}|${clean(resource.mawrid)}|${clean(resource.ta3alom)}`;
 
-    if (seen.has(key)) continue;
-    seen.add(key);
+    if (seenUnits.has(key)) continue;
+    seenUnits.add(key);
 
-    const activitySeen = new Set<string>();
-    const activities = resource.activities.filter((title) => {
-      const clean = String(title || '').trim();
-      if (!clean) return false;
-      const activityKey = clean;
-      if (activitySeen.has(activityKey)) return false;
-      activitySeen.add(activityKey);
-      return true;
+    const seenActivities = new Set<string>();
+    const uniqueActivities: string[] = [];
+    const uniqueActivityIds: string[] = [];
+    resource.activities.forEach((title, index) => {
+      const cleanTitle = clean(title);
+      if (!cleanTitle) return;
+      const sourceId = clean(resource.sourceActivityIds?.[index]);
+      const activityKey = sourceId ? `id:${sourceId}` : `title:${cleanTitle}`;
+      if (seenActivities.has(activityKey)) return;
+      seenActivities.add(activityKey);
+      uniqueActivities.push(cleanTitle);
+      if (sourceId) uniqueActivityIds.push(sourceId);
     });
 
     normalized.push({
       ...resource,
-      activities,
-      sourceActivityIds: Array.from(new Set(resource.sourceActivityIds || [])),
+      midan: clean(resource.midan),
+      maqta: clean(resource.maqta),
+      mawrid: clean(resource.mawrid),
+      ta3alom: clean(resource.ta3alom),
+      activities: uniqueActivities,
+      sourceActivityIds: uniqueActivityIds,
     });
   }
 
@@ -139,6 +148,54 @@ const buildCurriculumDatabase = (lessons?: LessonMemo[]): Record<'1م' | '2م' |
     '3م': normalizeCurriculumResources(transformLessonMemoToLogbook(sourceFor('3am', LESSONS_3AM), '3م')),
     '4م': normalizeCurriculumResources(transformLessonMemoToLogbook(sourceFor('4am', LESSONS_4AM), '4م')),
   };
+};
+
+interface CurriculumDatabaseAudit {
+  byLevel: Record<'1م' | '2م' | '3م' | '4م', { resources: number; activities: number }>;
+  errors: string[];
+}
+
+const auditCurriculumDatabase = (
+  db: Record<'1م' | '2م' | '3م' | '4م', CurriculumResourceItem[]>
+): CurriculumDatabaseAudit => {
+  const levels = ['1م', '2م', '3م', '4م'] as const;
+  const byLevel = {} as CurriculumDatabaseAudit['byLevel'];
+  const errors: string[] = [];
+
+  for (const level of levels) {
+    const resources = db[level];
+    byLevel[level] = {
+      resources: resources.length,
+      activities: resources.reduce((sum, item) => sum + item.activities.length, 0),
+    };
+
+    const unitKeys = new Set<string>();
+    const activityIds = new Set<string>();
+    resources.forEach((item) => {
+      const fallbackKey = `${item.level}|${item.memoNumber}|${item.midan}|${item.maqta}|${item.mawrid}|${item.ta3alom}`;
+      const unitKey = item.sourceLearningUnitId ? `id:${item.sourceLearningUnitId}` : `fallback:${fallbackKey}`;
+      if (unitKeys.has(unitKey)) errors.push(`${level}: تكرار تعلم المورد ${item.ta3alom || '(بدون عنوان)'}.`);
+      unitKeys.add(unitKey);
+
+      if (!item.midan || !item.maqta || !item.mawrid || !item.ta3alom) {
+        errors.push(`${level}: بيانات التسلسل ناقصة في ${item.ta3alom || item.mawrid || item.maqta || 'مورد غير محدد'}.`);
+      }
+      if (item.activities.length === 0) {
+        errors.push(`${level}: لا يوجد نشاط مرتبط بـ ${item.ta3alom || item.mawrid || 'المورد'}.`);
+      }
+      if (level !== '4م' && !item.sourceLearningUnitId) {
+        errors.push(`${level}: معرف تعلم المورد الرسمي مفقود في ${item.ta3alom || '(بدون عنوان)'}.`);
+      }
+      if (level !== '4م') {
+        for (const id of item.sourceActivityIds || []) {
+          if (activityIds.has(id)) errors.push(`${level}: تكرار معرف النشاط الرسمي ${id}.`);
+          activityIds.add(id);
+        }
+      }
+    });
+  }
+
+  return { byLevel, errors };
 };
 
 type AnnualStoredItem = { id?: string; level?: string; lessonType?: string; midan?: string; maqta?: string; mawrid?: string; session1?: string; session2?: string; sourceSequenceId?: string; sourceResourceId?: string; sourceLearningUnitId?: string; sourceActivityId?: string; sourceActivityId2?: string; isHoliday?: boolean; isExam?: boolean; month?: string; dates?: string; taqwim?: string };
@@ -283,7 +340,7 @@ const AUTO_FILLED_TIMETABLE_ROWS: TimetableGridRow[] = EMPTY_TIMETABLE_ROWS.map(
   cells: createEmptyDayCells(),
 }));
 
-const LOGBOOK_DATA_VERSION = '2026-09-24-v8';
+const LOGBOOK_DATA_VERSION = '2026-09-24-v9';
 const ROWS_PER_PAGE = 12;
 const getPageDimensions = (orientation: 'portrait' | 'landscape') => orientation === 'landscape' ? { w: 297, h: 210 } : { w: 210, h: 297 };
 const PRINT_MARGIN = '14mm';
@@ -324,15 +381,12 @@ function buildHierarchicalContent(
   row: LogEntry,
   previous?: LogEntry
 ): string {
-  // قاعدة الدفتر اليومية: نعرض التسلسل البيداغوجي مرة واحدة عند تغيّره،
-  // ثم نعرض عنواني النشاط والتقويم فقط. لا نكرر الميدان/المقطع/المورد/تعلم المورد
-  // في كل حصة لنفس المورد.
   if (row.lessonType && row.lessonType !== 'curriculum') {
     return row.content || '';
   }
 
-  const activities = (row.activitiesList || []).filter(Boolean).slice(0, 2);
-  const previousActivities = (previous?.activitiesList || []).filter(Boolean).slice(0, 2);
+  const activities = Array.from(new Set((row.activitiesList || []).map((x) => String(x || '').trim()).filter(Boolean))).slice(0, 2);
+  const previousActivities = Array.from(new Set((previous?.activitiesList || []).map((x) => String(x || '').trim()).filter(Boolean))).slice(0, 2);
   const sameSection = !!previous && previous.level === row.level && previous.section === row.section;
   const sameHierarchy =
     sameSection &&
@@ -350,24 +404,26 @@ function buildHierarchicalContent(
     previousActivities.join('|') === activities.join('|');
 
   const parts: string[] = [];
-
   if (!sameHierarchy) {
     if (row.midan) parts.push(`الميدان: ${row.midan}`);
     if (row.maqta) parts.push(`المقطع: ${row.maqta}`);
     if (row.mawrid) parts.push(`المورد التعلمي: ${row.mawrid}`);
     if (row.ta3alom) parts.push(`تعلم المورد: ${row.ta3alom}`);
   }
-
-  if (!sameActivities) {
-    parts.push(...activities);
-  }
-
-  if (row.taqwim) {
-    parts.push(`تقويم: ${row.taqwim}`);
-  }
-
+  if (!sameActivities) parts.push(...activities);
+  if (row.taqwim) parts.push(`تقويم: ${row.taqwim}`);
   return parts.join('\\n');
 }
+
+const findPreviousComparableCurriculumRow = (allRows: LogEntry[], currentIndex: number, row: LogEntry): LogEntry | undefined => {
+  for (let i = currentIndex - 1; i >= 0; i--) {
+    const candidate = allRows[i];
+    if (candidate.level === row.level && candidate.section === row.section && (!candidate.lessonType || candidate.lessonType === 'curriculum')) {
+      return candidate;
+    }
+  }
+  return undefined;
+};
 
 
 export const DailyLogbook: React.FC<DailyLogbookProps> = ({
@@ -377,6 +433,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
 }) => {
   // State for Header Info (synced with config initially)
   const CURRICULUM_DATABASE = useMemo(() => buildCurriculumDatabase(curriculumLessons), [curriculumLessons]);
+  const curriculumAudit = useMemo(() => auditCurriculumDatabase(CURRICULUM_DATABASE), [CURRICULUM_DATABASE]);
 
   const [wilaya, setWilaya] = useState<string>(config.directorate || '');
   const [school, setSchool] = useState<string>(config.schoolName || '');
@@ -2179,6 +2236,24 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
             )}
           </div>
 
+          {/* فحص قاعدة بيانات الدفتر اليومي */}
+          <div className={`rounded-xl border p-3 mb-4 text-[11px] ${curriculumAudit.errors.length === 0 ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}`}>
+            <div className="font-extrabold text-zinc-800 mb-1">سلامة قاعدة بيانات الدفتر اليومي</div>
+            <div className="flex flex-wrap gap-2 text-zinc-700">
+              {(['1م', '2م', '3م', '4م'] as const).map((lvl) => (
+                <span key={lvl} className="bg-white border border-zinc-200 rounded-full px-2 py-0.5 font-bold">
+                  {lvl}: {curriculumAudit.byLevel[lvl].resources} مورد / {curriculumAudit.byLevel[lvl].activities} نشاط
+                </span>
+              ))}
+            </div>
+            <div className={`mt-1 font-bold ${curriculumAudit.errors.length === 0 ? 'text-emerald-800' : 'text-amber-800'}`}>
+              {curriculumAudit.errors.length === 0 ? '✓ لا يوجد تكرار في تعلم المورد أو معرفات الأنشطة، والحقول الأربعة مكتملة.' : `⚠️ توجد ${curriculumAudit.errors.length} ملاحظة تحتاج مراجعة.`}
+            </div>
+            {curriculumAudit.errors.length > 0 && (
+              <div className="mt-1 text-[10px] leading-5 max-h-20 overflow-auto">{curriculumAudit.errors.slice(0, 8).join(' • ')}</div>
+            )}
+          </div>
+
           {/* Empty State Card */}
           {paginatedPages.length === 0 && (
             <div
@@ -2247,7 +2322,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
 
               pageRows.forEach((r, rowIdx) => {
                 const globalRowIndex = rows.findIndex((item) => item.id === r.id);
-                const previousRow = globalRowIndex > 0 ? rows[globalRowIndex - 1] : undefined;
+                const previousRow = findPreviousComparableCurriculumRow(rows, globalRowIndex, r);
                 const displayContent = buildHierarchicalContent(r, previousRow);
                 const weekChanged =
                   rowIdx > 0 &&
