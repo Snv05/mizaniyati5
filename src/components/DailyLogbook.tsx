@@ -344,7 +344,7 @@ const AUTO_FILLED_TIMETABLE_ROWS: TimetableGridRow[] = EMPTY_TIMETABLE_ROWS.map(
   cells: createEmptyDayCells(),
 }));
 
-const LOGBOOK_DATA_VERSION = '2026-09-24-v13';
+const LOGBOOK_DATA_VERSION = '2026-09-24-v14';
 const ROWS_PER_PAGE = 12;
 const getPageDimensions = (orientation: 'portrait' | 'landscape') => orientation === 'landscape' ? { w: 297, h: 210 } : { w: 210, h: 297 };
 const PRINT_MARGIN = '14mm';
@@ -418,14 +418,39 @@ function buildHierarchicalContent(
     previousActivities.join('|') === activities.join('|');
 
   const parts: string[] = [];
+  const seenHierarchyValues = new Set<string>();
+  const addHierarchyLine = (label: string, value?: string) => {
+    const cleanValue = String(value || '').trim();
+    if (!cleanValue || seenHierarchyValues.has(cleanValue)) return;
+    seenHierarchyValues.add(cleanValue);
+    parts.push(`${label}: ${cleanValue}`);
+  };
+
   if (!sameHierarchy) {
-    if (row.midan) parts.push(`الميدان: ${row.midan}`);
-    if (row.maqta) parts.push(`المقطع: ${row.maqta}`);
-    if (row.mawrid) parts.push(`المورد التعلمي: ${row.mawrid}`);
-    if (row.ta3alom) parts.push(`تعلم المورد: ${row.ta3alom}`);
+    addHierarchyLine('الميدان', row.midan);
+    addHierarchyLine('المقطع', row.maqta);
+    addHierarchyLine('المورد التعلمي', row.mawrid);
+    addHierarchyLine('تعلم المورد', row.ta3alom);
   }
-  if (!sameActivities) parts.push(...activities);
-  if (row.taqwim) parts.push(`تقويم: ${row.taqwim}`);
+
+  const seenLines = new Set(parts);
+  if (!sameActivities) {
+    for (const activity of activities) {
+      if (!seenLines.has(activity)) {
+        seenLines.add(activity);
+        parts.push(activity);
+      }
+    }
+  }
+
+  if (row.taqwim) {
+    const assessmentLine = `تقويم: ${String(row.taqwim).trim()}`;
+    if (String(row.taqwim).trim() && !seenLines.has(assessmentLine)) {
+      seenLines.add(assessmentLine);
+      parts.push(assessmentLine);
+    }
+  }
+
   return parts.join('\n');
 }
 
