@@ -65,13 +65,23 @@ const createCell = (text: string, bold = false, bgColor?: string, columnSpan?: n
 
 const WEEK_DAYS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
 
+const findPreviousComparableCurriculumLog = (logs: LogEntry[], currentIndex: number, log: LogEntry): LogEntry | undefined => {
+  for (let i = currentIndex - 1; i >= 0; i--) {
+    const candidate = logs[i];
+    if (candidate.level === log.level && candidate.section === log.section && (!candidate.lessonType || candidate.lessonType === 'curriculum')) {
+      return candidate;
+    }
+  }
+  return undefined;
+};
+
 const getExportLessonContent = (log: LogEntry, previous?: LogEntry): string => {
   if (log.lessonType && log.lessonType !== 'curriculum') {
     return log.content || '';
   }
 
-  const activities = (log.activitiesList || []).filter(Boolean).slice(0, 2);
-  const previousActivities = (previous?.activitiesList || []).filter(Boolean).slice(0, 2);
+  const activities = Array.from(new Set((log.activitiesList || []).map((x) => String(x || '').trim()).filter(Boolean))).slice(0, 2);
+  const previousActivities = Array.from(new Set((previous?.activitiesList || []).map((x) => String(x || '').trim()).filter(Boolean))).slice(0, 2);
   const sameSection = !!previous && previous.level === log.level && previous.section === log.section;
   const sameHierarchy =
     sameSection &&
@@ -222,7 +232,7 @@ export const generateLogbookDocx = async (
         createCell(log.dateStr, false, bgColor, 1, 1, 18, AlignmentType.CENTER, 14),
         createCell(log.time, false, bgColor, 1, 1, 18, AlignmentType.CENTER, 13),
         createCell(log.section, true, bgColor, 1, 1, 20, AlignmentType.CENTER, 13),
-        createCell(getExportLessonContent(log, logs[index - 1]), false, bgColor, 1, 1, 20, AlignmentType.RIGHT, 45),
+        createCell(getExportLessonContent(log, findPreviousComparableCurriculumLog(logs, index, log)), false, bgColor, 1, 1, 20, AlignmentType.RIGHT, 45),
         createCell(log.note || '', false, bgColor, 1, 1, 18, AlignmentType.RIGHT, 15),
       ]
     }));
