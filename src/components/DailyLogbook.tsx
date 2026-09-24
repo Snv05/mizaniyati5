@@ -95,11 +95,43 @@ const transformLessonMemoToLogbook = (lessons: LessonMemo[], levelLabel: '1م' |
 };
 
 // ربط مباشر مع قاعدة بيانات التدرج الرسمي (Master Curriculum DB)
+const normalizeCurriculumResources = (resources: CurriculumResourceItem[]): CurriculumResourceItem[] => {
+  const seen = new Set<string>();
+  const normalized: CurriculumResourceItem[] = [];
+
+  for (const resource of resources) {
+    const key = resource.sourceLearningUnitId
+      ? `id:${resource.sourceLearningUnitId}`
+      : `fallback:${resource.level}|${resource.memoNumber}|${resource.midan}|${resource.maqta}|${resource.mawrid}|${resource.ta3alom}`;
+
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    const activitySeen = new Set<string>();
+    const activities = resource.activities.filter((title) => {
+      const clean = String(title || '').trim();
+      if (!clean) return false;
+      const activityKey = clean;
+      if (activitySeen.has(activityKey)) return false;
+      activitySeen.add(activityKey);
+      return true;
+    });
+
+    normalized.push({
+      ...resource,
+      activities,
+      sourceActivityIds: Array.from(new Set(resource.sourceActivityIds || [])),
+    });
+  }
+
+  return normalized;
+};
+
 const buildCurriculumDatabase = (lessons?: LessonMemo[]): Record<'1م' | '2م' | '3م' | '4م', CurriculumResourceItem[]> => ({
-  '1م': transformLessonMemoToLogbook((lessons || LESSONS_1AM).filter(l => l.level === '1am'), '1م'),
-  '2م': transformLessonMemoToLogbook((lessons || LESSONS_2AM).filter(l => l.level === '2am'), '2م'),
-  '3م': transformLessonMemoToLogbook((lessons || LESSONS_3AM).filter(l => l.level === '3am'), '3م'),
-  '4م': transformLessonMemoToLogbook((lessons || LESSONS_4AM).filter(l => l.level === '4am'), '4م'),
+  '1م': normalizeCurriculumResources(transformLessonMemoToLogbook((lessons || LESSONS_1AM).filter(l => l.level === '1am'), '1م')),
+  '2م': normalizeCurriculumResources(transformLessonMemoToLogbook((lessons || LESSONS_2AM).filter(l => l.level === '2am'), '2م')),
+  '3م': normalizeCurriculumResources(transformLessonMemoToLogbook((lessons || LESSONS_3AM).filter(l => l.level === '3am'), '3م')),
+  '4م': normalizeCurriculumResources(transformLessonMemoToLogbook((lessons || LESSONS_4AM).filter(l => l.level === '4am'), '4م')),
 });
 
 type AnnualStoredItem = { id?: string; level?: string; lessonType?: string; midan?: string; maqta?: string; mawrid?: string; session1?: string; session2?: string; sourceSequenceId?: string; sourceResourceId?: string; sourceLearningUnitId?: string; sourceActivityId?: string; sourceActivityId2?: string; isHoliday?: boolean; isExam?: boolean; month?: string; dates?: string; taqwim?: string };
@@ -244,7 +276,7 @@ const AUTO_FILLED_TIMETABLE_ROWS: TimetableGridRow[] = EMPTY_TIMETABLE_ROWS.map(
   cells: createEmptyDayCells(),
 }));
 
-const LOGBOOK_DATA_VERSION = '2026-09-24-v7';
+const LOGBOOK_DATA_VERSION = '2026-09-24-v8';
 const ROWS_PER_PAGE = 12;
 const getPageDimensions = (orientation: 'portrait' | 'landscape') => orientation === 'landscape' ? { w: 297, h: 210 } : { w: 210, h: 297 };
 const PRINT_MARGIN = '14mm';
@@ -285,9 +317,9 @@ function buildHierarchicalContent(
   row: LogEntry,
   previous?: LogEntry
 ): string {
-  // نموذج الدفتر الورقي: التاريخ | الوقت | القسم | سير الحصة | الملاحظات.
-  // في "سير الحصة" نكتب آلياً فقط عنواني النشاط الأول والثاني والتقويم.
-  // لا نكتب الميدان/المقطع/المورد/تعلم المورد، ولا نكتب "استنتاج".
+  // قاعدة الدفتر اليومية: نعرض التسلسل البيداغوجي مرة واحدة عند تغيّره،
+  // ثم نعرض عنواني النشاط والتقويم فقط. لا نكرر الميدان/المقطع/المورد/تعلم المورد
+  // في كل حصة لنفس المورد.
   if (row.lessonType && row.lessonType !== 'curriculum') {
     return row.content || '';
   }
@@ -295,6 +327,15 @@ function buildHierarchicalContent(
   const activities = (row.activitiesList || []).filter(Boolean).slice(0, 2);
   const previousActivities = (previous?.activitiesList || []).filter(Boolean).slice(0, 2);
   const sameSection = !!previous && previous.level === row.level && previous.section === row.section;
+  const sameHierarchy =
+    sameSection &&
+    previous?.sourceSequenceId === row.sourceSequenceId &&
+    previous?.sourceResourceId === row.sourceResourceId &&
+    previous?.sourceLearningUnitId === row.sourceLearningUnitId &&
+    previous?.midan === row.midan &&
+    previous?.maqta === row.maqta &&
+    previous?.mawrid === row.mawrid &&
+    previous?.ta3alom === row.ta3alom;
   const sameActivities =
     sameSection &&
     previous?.sourceActivityId === row.sourceActivityId &&
@@ -302,6 +343,13 @@ function buildHierarchicalContent(
     previousActivities.join('|') === activities.join('|');
 
   const parts: string[] = [];
+
+  if (!sameHierarchy) {
+    if (row.midan) parts.push(`الميدان: ${row.midan}`);
+    if (row.maqta) parts.push(`المقطع: ${row.maqta}`);
+    if (row.mawrid) parts.push(`المورد التعلمي: ${row.mawrid}`);
+    if (row.ta3alom) parts.push(`تعلم المورد: ${row.ta3alom}`);
+  }
 
   if (!sameActivities) {
     parts.push(...activities);
@@ -2191,7 +2239,8 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
               let prevWeekKey = '';
 
               pageRows.forEach((r, rowIdx) => {
-                const previousRow = rowIdx > 0 ? pageRows[rowIdx - 1] : undefined;
+                const globalRowIndex = rows.findIndex((item) => item.id === r.id);
+                const previousRow = globalRowIndex > 0 ? rows[globalRowIndex - 1] : undefined;
                 const displayContent = buildHierarchicalContent(r, previousRow);
                 const weekChanged =
                   rowIdx > 0 &&
@@ -2395,7 +2444,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
               </div>
 
               <div className="text-[11px] text-zinc-600 font-medium">
-                إجمالي موارد المناهج: <b>87 مورد رسمي</b>
+                إجمالي وحدات التعلم: <b>{(['1م', '2م', '3م', '4م'] as const).reduce((sum, lvl) => sum + CURRICULUM_DATABASE[lvl].length, 0)} وحدة</b>
               </div>
             </div>
 
@@ -2443,12 +2492,13 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                             </span>
                             <div className="flex-1 space-y-0.5">
                               <div className="font-bold text-zinc-900">{res.mawrid}</div>
-                              <div className="text-[10px] text-zinc-500">
-                                {res.midan} • {res.maqta}
-                              </div>
+                              <div className="text-[10px] text-zinc-600">الميدان: {res.midan}</div>
+                              <div className="text-[10px] text-zinc-600">المقطع: {res.maqta}</div>
+                              <div className="text-[10px] text-zinc-600">المورد التعلمي: {res.mawrid}</div>
+                              <div className="text-[10px] text-zinc-600">تعلم المورد: {res.ta3alom}</div>
                               {res.activities.length > 0 && (
                                 <div className="text-[10px] text-[#064e3b] font-medium">
-                                  النشاطات: {res.activities.join(' + ')}
+                                  الأنشطة: {res.activities.slice(0, 2).join(' + ')}
                                 </div>
                               )}
                             </div>
