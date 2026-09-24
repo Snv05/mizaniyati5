@@ -414,7 +414,7 @@ function buildHierarchicalContent(
   }
   if (!sameActivities) parts.push(...activities);
   if (row.taqwim) parts.push(`تقويم: ${row.taqwim}`);
-  return parts.join('\\n');
+  return parts.join('\n');
 }
 
 const findPreviousComparableCurriculumRow = (allRows: LogEntry[], currentIndex: number, row: LogEntry): LogEntry | undefined => {
