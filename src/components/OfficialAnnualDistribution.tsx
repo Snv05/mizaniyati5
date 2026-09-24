@@ -31,11 +31,14 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
     return `${year}-09-01`;
   };
   const [startDate] = useState(() => {
+    // التدرج يُفتح بالتاريخ الرسمي تلقائياً، ولا يعتمد على تاريخ قديم محفوظ.
+    const automaticDate = deriveStartDate(config.schoolYear);
+    if (automaticDate) return automaticDate;
     try {
       const saved = JSON.parse(localStorage.getItem('algeria_sciences_annual_dist_v5') || '{}');
-      return saved[level]?.startDate || deriveStartDate(config.schoolYear);
+      return saved[level]?.startDate || '';
     } catch {
-      return deriveStartDate(config.schoolYear);
+      return '';
     }
   });
 
