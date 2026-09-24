@@ -127,12 +127,19 @@ const normalizeCurriculumResources = (resources: CurriculumResourceItem[]): Curr
   return normalized;
 };
 
-const buildCurriculumDatabase = (lessons?: LessonMemo[]): Record<'1م' | '2م' | '3م' | '4م', CurriculumResourceItem[]> => ({
-  '1م': normalizeCurriculumResources(transformLessonMemoToLogbook((lessons || LESSONS_1AM).filter(l => l.level === '1am'), '1م')),
-  '2م': normalizeCurriculumResources(transformLessonMemoToLogbook((lessons || LESSONS_2AM).filter(l => l.level === '2am'), '2م')),
-  '3م': normalizeCurriculumResources(transformLessonMemoToLogbook((lessons || LESSONS_3AM).filter(l => l.level === '3am'), '3م')),
-  '4م': normalizeCurriculumResources(transformLessonMemoToLogbook((lessons || LESSONS_4AM).filter(l => l.level === '4am'), '4م')),
-});
+const buildCurriculumDatabase = (lessons?: LessonMemo[]): Record<'1م' | '2م' | '3م' | '4م', CurriculumResourceItem[]> => {
+  const sourceFor = (level: LessonMemo['level'], official: LessonMemo[]) => {
+    const provided = lessons?.filter((lesson) => lesson.level === level) || [];
+    return provided.length > 0 ? provided : official;
+  };
+
+  return {
+    '1م': normalizeCurriculumResources(transformLessonMemoToLogbook(sourceFor('1am', LESSONS_1AM), '1م')),
+    '2م': normalizeCurriculumResources(transformLessonMemoToLogbook(sourceFor('2am', LESSONS_2AM), '2م')),
+    '3م': normalizeCurriculumResources(transformLessonMemoToLogbook(sourceFor('3am', LESSONS_3AM), '3م')),
+    '4م': normalizeCurriculumResources(transformLessonMemoToLogbook(sourceFor('4am', LESSONS_4AM), '4م')),
+  };
+};
 
 type AnnualStoredItem = { id?: string; level?: string; lessonType?: string; midan?: string; maqta?: string; mawrid?: string; session1?: string; session2?: string; sourceSequenceId?: string; sourceResourceId?: string; sourceLearningUnitId?: string; sourceActivityId?: string; sourceActivityId2?: string; isHoliday?: boolean; isExam?: boolean; month?: string; dates?: string; taqwim?: string };
 
