@@ -244,7 +244,7 @@ const AUTO_FILLED_TIMETABLE_ROWS: TimetableGridRow[] = EMPTY_TIMETABLE_ROWS.map(
   cells: createEmptyDayCells(),
 }));
 
-const LOGBOOK_DATA_VERSION = '2026-09-20-v5';
+const LOGBOOK_DATA_VERSION = '2026-09-24-v6';
 const ROWS_PER_PAGE = 12;
 const getPageDimensions = (orientation: 'portrait' | 'landscape') => orientation === 'landscape' ? { w: 297, h: 210 } : { w: 210, h: 297 };
 const PRINT_MARGIN = '14mm';
@@ -285,29 +285,41 @@ function buildHierarchicalContent(
   row: LogEntry,
   previous?: LogEntry
 ): string {
+  // نموذج الدفتر الورقي: التاريخ | الوقت | القسم | سير الحصة | الملاحظات.
+  // ما يُملأ آلياً من قاعدة البيانات يوضع فقط في "سير الحصة".
   if (row.lessonType && row.lessonType !== 'curriculum') {
     return row.content || '';
   }
 
   const parts: string[] = [];
   const sameLevel = !!previous && previous.level === row.level;
-  const sameMidan = sameLevel && previous?.midan === row.midan;
-  const sameMaqta = sameMidan && previous?.maqta === row.maqta;
+  const sameMaqta = sameLevel && previous?.maqta === row.maqta;
   const sameMawrid = sameMaqta && previous?.mawrid === row.mawrid;
-  const sameTa3alom = sameMawrid && previous?.ta3alom === row.ta3alom;
-
-  if (!sameLevel && row.level) parts.push(`<u>المستوى:</u> ${row.level}`);
-  if (!sameMidan && row.midan) parts.push(`<u>الميدان:</u> ${row.midan}`);
-  if (!sameMaqta && row.maqta) parts.push(`<u>المقطع:</u> ${row.maqta}`);
-  if (!sameMawrid && row.mawrid) parts.push(`<u>المورد:</u> ${row.mawrid}`);
-  if (!sameTa3alom && row.ta3alom) parts.push(`<u>تعلم المورد:</u> ${row.ta3alom}`);
-
+  const previousActivities = (previous?.activitiesList || []).filter(Boolean);
   const activities = (row.activitiesList || []).filter(Boolean).slice(0, 2);
-  if (activities.length > 0) {
-    parts.push(`<u>الأنشطة:</u> ${activities.join(' / ')}`);
+  const sameActivities =
+    previous?.sourceActivityId === row.sourceActivityId &&
+    previous?.sourceActivityId2 === row.sourceActivityId2 &&
+    previousActivities.join('|') === activities.join('|');
+
+  if (!sameMaqta && row.maqta) {
+    parts.push(`<u>المقطع البيداغوجي:</u> ${row.maqta}`);
+  }
+  if (!sameMawrid && row.mawrid) {
+    parts.push(`<u>المورد التعلمي:</u> ${row.mawrid}`);
   }
 
-  return parts.join('\n') || row.content || '';
+  if (!sameActivities && activities.length > 0) {
+    activities.forEach((activity, index) => {
+      parts.push(`<u>النشاط ${index + 1}:</u> ${activity}`);
+    });
+  }
+
+  if (row.taqwim) {
+    parts.push(`<u>استنتاج / تقويم:</u> ${row.taqwim}`);
+  }
+
+  return parts.join('\\n') || row.content || '';
 }
 
 
@@ -564,20 +576,21 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
   const handleGenerateSmartLogbook = () => {
     if (!startDate) return;
 
-    if (assignedLevels.length === 0 || gridRows.every(r => Object.values(r.cells).every((c: any) => !c || !c.trim()))) {
+    if (assignedLevels.length === 0 || gridRows.every(r => Object.values(r.cells).every((cell: any) => !cell || !cell.trim()))) {
       displayUserAlert('يرجى تعبئة حصة واحدة على الأقل في جدول استعمال الزمن لتوليد الحصص');
       return;
     }
 
     const getBaseSection = (sec: string) => {
       if (!sec) return 'قسم غير محدد';
-      return sec.replace(/\s*\(?(?:فوج|ف|فـ|g|grp|group)\s*\d+\)?\s*/gi, '').trim();
+      return sec
+        .replace(/\\s*\\(?(?:فوج|ف|فـ|g|grp|group)\\s*\\d+\\)?\\s*/gi, '')
+        .trim();
     };
 
     const sectionCounters: Record<string, number> = {};
-    // عداد مستقل داخل كل أسبوع: الحصة الأولى ← session1، الثانية ← session2.
-    // لا نستخدم ترتيب عناصر اليوم، لأن ذلك كان يجعل session2 لا تُختار فعلياً.
     const weeklySessionCounters: Record<string, number> = {};
+    const generatedKeys = new Set<string>();
     const generated: LogEntry[] = [];
     const baseDate = new Date(startDate);
     const currDate = new Date(baseDate);
@@ -590,24 +603,20 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
       const daySessions = timetableSchedule[dayName];
       if (!daySessions || daySessions.length === 0) return false;
 
-      const groupedSessions: Record<string, typeof daySessions> = {};
       for (const sess of daySessions) {
-        const base = getBaseSection(sess.section);
-        if (!groupedSessions[base]) groupedSessions[base] = [];
-        groupedSessions[base].push(sess);
-      }
-
-      for (const [baseSection, sessions] of Object.entries(groupedSessions)) {
-        const firstSess = sessions[0];
-        const lvl = firstSess.level || detectLevelFromSection(baseSection) || assignedLevels[0] || '1م';
+        const baseSection = getBaseSection(sess.section);
+        const lvl = sess.level || detectLevelFromSection(baseSection) || assignedLevels[0] || '1م';
         const bank = CURRICULUM_DATABASE[lvl] || CURRICULUM_DATABASE['1م'];
+        if (!bank.length) continue;
+
+        const generatedKey = `${dateStr}|${sess.time}|${baseSection}`;
+        if (generatedKeys.has(generatedKey)) continue;
+        generatedKeys.add(generatedKey);
 
         if (sectionCounters[baseSection] === undefined) sectionCounters[baseSection] = 0;
         const currentResIdx = sectionCounters[baseSection] % bank.length;
         sectionCounters[baseSection] += 1;
 
-        // Smart linkage: match the exact annual-distribution week, then consume
-        // session1 and session2 in occurrence order for this section in that week.
         const storedAnnual = getStoredAnnualSchedule(lvl);
         const annual = storedAnnual || (() => {
           const sourceLessons =
@@ -615,17 +624,18 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
             lvl === '2م' ? LESSONS_2AM :
             lvl === '3م' ? LESSONS_3AM :
             LESSONS_4AM;
-          const generated = generateAnnualDistribution(sourceLessons, startDate, holidays);
-          return generated.length > 0 ? { startDate, items: generated } : null;
+          const generatedAnnual = generateAnnualDistribution(sourceLessons, startDate, holidays);
+          return generatedAnnual.length > 0 ? { startDate, items: generatedAnnual } : null;
         })();
+
         let res = bank[currentResIdx];
         let currentLessonType: LogEntry['lessonType'] = 'curriculum';
-        let matchedAnnual = false;
         let linkedSourceSequenceId = res.sourceSequenceId;
         let linkedSourceResourceId = res.sourceResourceId;
         let linkedSourceLearningUnitId = res.sourceLearningUnitId;
         let linkedSourceActivityId = res.sourceActivityIds?.[0];
         let linkedSourceActivityId2 = res.sourceActivityIds?.[1];
+
         if (annual) {
           const start = new Date(annual.startDate);
           while (start.getDay() !== 0) start.setDate(start.getDate() + 1);
@@ -638,11 +648,10 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
             const weekKey = baseSection + "::" + weekIndex;
             const ordinal = weeklySessionCounters[weekKey] || 0;
             weeklySessionCounters[weekKey] = ordinal + 1;
+
             const scheduledTitle = ordinal === 0
               ? annualItem.session1
-              : ordinal === 1
-                ? annualItem.session2
-                : annualItem.session2;
+              : annualItem.session2;
 
             const hasCurriculumSourceForSession =
               ordinal === 0 ? !!annualItem.sourceActivityId : !!annualItem.sourceActivityId2;
@@ -653,8 +662,9 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
               (!!annualItem.taqwim || String(scheduledTitle || '').trim().startsWith('تقويم'));
 
             if (isAssessmentSession || (annualItem.lessonType && annualItem.lessonType !== 'curriculum' && !hasCurriculumSourceForSession)) {
-              currentLessonType = isAssessmentSession ? 'assessment' : annualItem.lessonType as LogEntry['lessonType'];
-              matchedAnnual = true;
+              currentLessonType = isAssessmentSession
+                ? 'assessment'
+                : annualItem.lessonType as LogEntry['lessonType'];
               const specialTitle = scheduledTitle || (annualItem.taqwim ? `تقويم: ${annualItem.taqwim}` : 'تقويم');
               res = {
                 level: lvl,
@@ -670,36 +680,23 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
             } else {
               const scheduled = findLessonForScheduledSource(bank, annualItem, ordinal);
               if (scheduled) {
-                currentLessonType = 'curriculum';
                 res = scheduled;
                 linkedSourceSequenceId = annualItem.sourceSequenceId || scheduled.sourceSequenceId;
                 linkedSourceResourceId = annualItem.sourceResourceId || scheduled.sourceResourceId;
                 linkedSourceLearningUnitId = annualItem.sourceLearningUnitId || scheduled.sourceLearningUnitId;
                 linkedSourceActivityId = annualItem.sourceActivityId || scheduled.sourceActivityIds?.[0];
                 linkedSourceActivityId2 = annualItem.sourceActivityId2 || scheduled.sourceActivityIds?.[1];
-                matchedAnnual = true;
               }
             }
           }
         }
 
-        // If the annual distribution does not contain an exact curriculum title,
-        // keep the master-bank fallback instead of inventing or silently altering content.
-        if (!matchedAnnual && annual) {
-          // Intentionally preserve the master curriculum fallback.
-        }
-
-        const uniqueSections = Array.from(new Set(sessions.map((s) => s.section || 'قسم غير محدد')));
-        const combinedSections = uniqueSections.join(' و ');
-
-        const combinedTimes = sessions.map((s) => s.time).join(' / ');
-
         generated.push({
-          id: `${dateStr}-${baseSection}-${generated.length}`,
+          id: `${dateStr}-${baseSection}-${sess.time}-${generated.length}`,
           dayName,
           dateStr,
-          time: combinedTimes,
-          section: combinedSections,
+          time: sess.time,
+          section: sess.section || 'قسم غير محدد',
           level: lvl,
           content: res.formattedText,
           midan: res.midan,
@@ -718,7 +715,8 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           resourceIndex: currentResIdx,
         });
       }
-      return true;
+
+      return daySessions.length > 0;
     };
 
     if (period === 'سنة') {
@@ -729,8 +727,8 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
         const isHoliday = isDateInHoliday(dateStr);
 
         if (!isWeekend && !isHoliday) {
-           const hasSessions = processDaySessions(dayName, dateStr);
-           if (hasSessions) schoolDaysCounted++;
+          const hasSessions = processDaySessions(dayName, dateStr);
+          if (hasSessions) schoolDaysCounted++;
         }
         currDate.setDate(currDate.getDate() + 1);
         iterationGuard++;
@@ -2105,7 +2103,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                 {rows.length > 0 && (
                   <div className="text-[11px] text-center bg-white border border-emerald-200 rounded-lg py-2 font-bold text-[#064e3b] space-y-1">
                     <div>
-                      {rows.length} حصة • {paginatedPages.length} صفحة • A4 / 18 صفاً • {orientation === 'landscape' ? 'أفقي' : 'عمودي'}
+                      {rows.length} حصة • {paginatedPages.length} صفحة • A4 / 12 صفاً • {orientation === 'landscape' ? 'أفقي' : 'عمودي'}
                     </div>
                     <div className="text-[10px] text-zinc-600 font-medium">
                       المستويات المسندة في الدفتر: {levelDistributionSummary}
@@ -2124,7 +2122,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
             <div className="flex items-center gap-2">
               <FileStack className="w-4 h-4 text-[#064e3b]" />
               <span>
-                معاينة الدفتر اليومي ({paginatedPages.length} صفحة) — A4 • 18 صفاً • {orientation === 'landscape' ? 'أفقي' : 'عمودي'} •{' '}
+                معاينة الدفتر اليومي ({paginatedPages.length} صفحة) — A4 • 12 صفاً • {orientation === 'landscape' ? 'أفقي' : 'عمودي'} •{' '}
                 {paginatedPages.length > 0 ? formatPageNumberLabel(0, paginatedPages.length) : 'جاهز للتوليد'}
               </span>
             </div>
@@ -2155,7 +2153,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
 
               <div className="mt-3 flex flex-wrap gap-2 justify-center">
                 <span className="bg-zinc-900 text-white px-3 py-1 rounded-full text-[11px] font-bold">
-                  A4 • 18 صفاً لكل صفحة
+                  A4 • 12 صفاً لكل صفحة
                 </span>
                 <span className="bg-white border border-zinc-300 px-3 py-1 rounded-full text-[11px] font-bold text-zinc-700">
                   ربط بقاعدة بيانات المناهج الوزارية
@@ -2202,90 +2200,38 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
               let prevWeekKey = '';
 
               pageRows.forEach((r, rowIdx) => {
-                const isNewDate = r.dateStr !== prevDateStr;
-                const weekKey = getSchoolWeekKey(r.dateStr);
-                const isNewWeek = !!prevWeekKey && weekKey !== prevWeekKey;
                 const previousRow = rowIdx > 0 ? pageRows[rowIdx - 1] : undefined;
                 const displayContent = buildHierarchicalContent(r, previousRow);
-                const isMorning = isMorningTime(r.time);
-                const isAfternoon = isAfternoonTime(r.time);
-                const morningToAfternoonBreak =
-                  !isNewDate && prevWasMorning && isAfternoon;
-                
-                if (isNewWeek) {
-                  for (let weekSpaceIdx = 0; weekSpaceIdx < 2; weekSpaceIdx++) {
-                    tableBodyRows.push(
-                      <tr key={`week-space-${r.id}-${weekSpaceIdx}`} className="bg-white">
-                        {Array.from({ length: 8 }).map((_, cellIdx) => (
-                          <td
-                            key={cellIdx}
-                            contentEditable
-                            suppressContentEditableWarning
-                            className="writing-grid-cell border border-slate-400 h-[34px] outline-none"
-                            title="خانة كتابة إضافية بين الأسابيع"
-                          />
-                        ))}
-                      </tr>
-                    );
-                  }
-                } else if (isNewDate && rowIdx > 0) {
+                const weekChanged =
+                  rowIdx > 0 &&
+                  getSchoolWeekKey(r.dateStr) !== getSchoolWeekKey(pageRows[rowIdx - 1].dateStr);
+
+                if (weekChanged) {
                   tableBodyRows.push(
-                    <tr key={`divider-${r.id}-day`} className="bg-[#f0f9ff]">
-                      <td colSpan={8} className="border-t border-b border-[#bae6fd] h-1.5" />
-                    </tr>
-                  );
-                } else if (morningToAfternoonBreak) {
-                  tableBodyRows.push(
-                    <tr key={`divider-${r.id}-time`} className="bg-[#fefce8]">
-                      <td colSpan={8} className="border-t border-b border-[#fef08a] h-1" />
+                    <tr key={`week-divider-${r.id}`} className="bg-white">
+                      <td colSpan={5} className="border-0 h-[8px]" />
                     </tr>
                   );
                 }
 
-                prevDateStr = r.dateStr;
-                prevWeekKey = weekKey;
-                if (isMorning) prevWasMorning = true;
-                if (isAfternoon) prevWasMorning = false;
-
                 tableBodyRows.push(
-                  <tr key={r.id} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-[#f9faf6]'}>
-                    <td className="border border-zinc-200 px-2 py-2 font-bold text-center whitespace-nowrap text-zinc-900 w-[62px]">
-                      {r.dayName}
-                    </td>
-                    <td className="border border-zinc-200 px-1 py-2 text-center font-mono text-[10px] text-zinc-700 w-[84px]">
+                  <tr key={r.id} className="bg-white">
+                    <td className="border border-zinc-300 px-2 py-2 text-center font-mono text-[10px] text-zinc-800 w-[92px]" dir="ltr">
                       {r.dateStr}
                     </td>
-                    <td className="border border-zinc-200 px-2 py-2 text-center font-mono text-[10px] w-[84px]">
+                    <td className="border border-zinc-300 px-2 py-2 text-center font-mono text-[10px] text-zinc-800 w-[88px]" dir="ltr">
                       {r.time}
                     </td>
-                    <td className="border border-zinc-200 px-2 py-2 text-center font-bold w-[62px]">
-                      <span
-                        className={`inline-block px-1.5 py-0.5 rounded text-[10px] border ${
-                          r.level === '4م'
-                            ? 'bg-red-50 text-red-800 border-red-200'
-                            : r.level === '3م'
-                            ? 'bg-amber-50 text-amber-800 border-amber-200'
-                            : r.level === '2م'
-                            ? 'bg-blue-50 text-blue-800 border-blue-200'
-                            : 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                        }`}
-                      >
-                        {r.section}
-                      </span>
+                    <td className="border border-zinc-300 px-2 py-2 text-center font-bold text-zinc-900 w-[78px]">
+                      {r.section}
                     </td>
                     <td
-                      className="border border-zinc-200 px-3 py-2 text-zinc-900 leading-relaxed text-right whitespace-pre-line align-top"
+                      className="border border-zinc-300 px-3 py-2 text-zinc-900 leading-relaxed text-right whitespace-pre-line align-top"
                       style={{ minHeight: NOTEBOOK_CONTENT_MIN_HEIGHT, height: NOTEBOOK_CONTENT_MIN_HEIGHT }}
                       dangerouslySetInnerHTML={{ __html: displayContent }}
                     />
-                    <td className="border border-zinc-200 px-2 py-2 text-zinc-600 text-[10px] w-[50px] text-center">
-                      {r.attendance || '—'}
-                    </td>
-                    <td className="border border-zinc-200 px-2 py-2 text-zinc-600 text-[10px] w-[50px] text-center">
-                      {r.wasail || '—'}
-                    </td>
-                    <td className="border border-zinc-200 px-2 py-2 text-zinc-600 text-[10px] w-[72px] text-center">
-                      {r.note || '—'}
+                    <td className="border border-zinc-300 px-2 py-2 text-zinc-900 align-top min-h-[58px]">
+                      {r.note || ''}
                     </td>
                   </tr>
                 );
@@ -2295,14 +2241,11 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
               for (let emptyIdx = 0; emptyIdx < emptyRowsCount; emptyIdx++) {
                 tableBodyRows.push(
                   <tr key={`empty-p-${emptyIdx}`} className="bg-white">
-                    <td className="border border-zinc-200 h-[36px]" />
-                    <td className="logbook-grid-cell border border-zinc-200" />
-                    <td className="logbook-grid-cell border border-zinc-200" />
-                    <td className="logbook-grid-cell border border-zinc-200" />
-                    <td className="logbook-grid-cell border border-zinc-200" />
-                    <td className="logbook-grid-cell border border-zinc-200" />
-                    <td className="logbook-grid-cell border border-zinc-200" />
-                    <td className="logbook-grid-cell border border-zinc-200" />
+                    <td className="border border-zinc-300 h-[36px]" />
+                    <td className="border border-zinc-300" />
+                    <td className="border border-zinc-300" />
+                    <td className="border border-zinc-300" />
+                    <td className="border border-zinc-300" />
                   </tr>
                 );
               }
@@ -2310,7 +2253,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
               return (
                 <div
                   key={pageIdx}
-                  className="print-page grid-paper-bg shadow-[0_20px_60px_rgba(0,0,0,0.12)] rounded-[2px] border border-zinc-200 overflow-hidden mx-auto mb-8"
+                  className="print-page shadow-[0_20px_60px_rgba(0,0,0,0.12)] rounded-[2px] border border-zinc-200 overflow-hidden mx-auto mb-8 bg-white"
                   style={{
                     width: `${pageDimensions.w}mm`,
                     height: `${pageDimensions.h}mm`,
@@ -2361,14 +2304,11 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                         <table className="logbook-table w-full border-collapse text-[11px] leading-5 table-fixed">
                           <thead>
                             <tr className="bg-[#064e3b] text-white">
-                              <th className="border border-[#0a3d2e] px-2 py-2 font-bold w-[62px]">اليوم</th>
-                              <th className="border border-[#0a3d2e] px-2 py-2 font-bold w-[84px]">التاريخ</th>
-                              <th className="border border-[#0a3d2e] px-2 py-2 font-bold w-[84px]">التوقيت</th>
-                              <th className="border border-[#0a3d2e] px-2 py-2 font-bold w-[62px]">القسم</th>
-                              <th className="border border-[#0a3d2e] px-3 py-2 font-bold text-right">محتوى الحصة</th>
-                              <th className="border border-[#0a3d2e] px-2 py-2 font-bold w-[50px]">الحضور</th>
-                              <th className="border border-[#0a3d2e] px-2 py-2 font-bold w-[50px]">الوسائل</th>
-                              <th className="border border-[#0a3d2e] px-2 py-2 font-bold w-[72px]">ملاحظة</th>
+                              <th className="border border-[#0a3d2e] px-2 py-2 font-bold w-[92px]">التاريخ</th>
+                              <th className="border border-[#0a3d2e] px-2 py-2 font-bold w-[88px]">الوقت</th>
+                              <th className="border border-[#0a3d2e] px-2 py-2 font-bold w-[78px]">القسم</th>
+                              <th className="border border-[#0a3d2e] px-3 py-2 font-bold text-right">سير الحصة</th>
+                              <th className="border border-[#0a3d2e] px-2 py-2 font-bold">الملاحظات</th>
                             </tr>
                           </thead>
                           <tbody>{tableBodyRows}</tbody>
@@ -2657,7 +2597,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                 {previewPagesToDisplay.map((pageRows, pageIdx) => (
                   <div
                     key={pageIdx}
-                    data-preview-export-page="true" className="print-page grid-paper-bg shadow-[0_25px_80px_rgba(0,0,0,0.5),0_0_0_1px_rgba(0,0,0,0.1)] rounded-[2px] overflow-hidden shrink-0"
+                    data-preview-export-page="true" className="print-page shadow-[0_25px_80px_rgba(0,0,0,0.5),0_0_0_1px_rgba(0,0,0,0.1)] rounded-[2px] overflow-hidden shrink-0 bg-white"
                     style={{ width: `${pageDimensions.w}mm`, height: `${pageDimensions.h}mm`, minHeight: `${pageDimensions.h}mm`, maxWidth: "none" }}
                   >
                     <div style={{ padding: PAGE_INNER_PADDING }} className="h-full flex flex-col justify-between">
@@ -2709,87 +2649,48 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                           <table className="w-full border-collapse text-[11px] leading-5 table-fixed">
                             <thead>
                               <tr className="bg-[#064e3b] text-white">
-                                <th className="border border-[#0a3d2e] px-2 py-2 font-bold w-[62px]">اليوم</th>
-                                <th className="border border-[#0a3d2e] px-2 py-2 font-bold w-[84px]">التاريخ</th>
-                                <th className="border border-[#0a3d2e] px-2 py-2 font-bold w-[84px]">التوقيت</th>
-                                <th className="border border-[#0a3d2e] px-2 py-2 font-bold w-[62px]">القسم/الفوج</th>
-                                <th className="border border-[#0a3d2e] px-3 py-2 font-bold text-right">محتوى الحصة</th>
-                                <th className="border border-[#0a3d2e] px-2 py-2 font-bold w-[50px]">الحضور</th>
-                                <th className="border border-[#0a3d2e] px-2 py-2 font-bold w-[50px]">الوسائل</th>
-                                <th className="border border-[#0a3d2e] px-2 py-2 font-bold w-[72px]">ملاحظة</th>
+                                <th className="border border-[#0a3d2e] px-2 py-2 font-bold w-[92px]">التاريخ</th>
+                                <th className="border border-[#0a3d2e] px-2 py-2 font-bold w-[88px]">الوقت</th>
+                                <th className="border border-[#0a3d2e] px-2 py-2 font-bold w-[78px]">القسم</th>
+                                <th className="border border-[#0a3d2e] px-3 py-2 font-bold text-right">سير الحصة</th>
+                                <th className="border border-[#0a3d2e] px-2 py-2 font-bold">الملاحظات</th>
                               </tr>
                             </thead>
                             <tbody>
                               {pageRows.map((r, rowIdx) => {
                                 const previousRow = rowIdx > 0 ? pageRows[rowIdx - 1] : undefined;
-                                const isNewWeek = rowIdx > 0 && getSchoolWeekKey(r.dateStr) !== getSchoolWeekKey(pageRows[rowIdx - 1].dateStr);
                                 const previewContent = buildHierarchicalContent(r, previousRow);
+                                const isNewWeek =
+                                  rowIdx > 0 &&
+                                  getSchoolWeekKey(r.dateStr) !== getSchoolWeekKey(pageRows[rowIdx - 1].dateStr);
                                 return (
                                   <React.Fragment key={r.id}>
                                     {isNewWeek && (
-                                      <>
-                                        {[0, 1].map((weekSpaceIdx) => (
-                                          <tr key={`preview-week-space-${r.id}-${weekSpaceIdx}`} className="bg-white">
-                                            {Array.from({ length: 8 }).map((_, cellIdx) => (
-                                              <td
-                                                key={cellIdx}
-                                                contentEditable
-                                                suppressContentEditableWarning
-                                                className="logbook-grid-cell border border-slate-400 h-[34px] outline-none"
-                                                title="خانة كتابة إضافية بين الأسابيع"
-                                              />
-                                            ))}
-                                          </tr>
-                                        ))}
-                                      </>
+                                      <tr className="bg-white">
+                                        <td colSpan={5} className="border-0 h-[8px]" />
+                                      </tr>
                                     )}
-                                    <tr key={r.id} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-[#f9faf6]'}>
-                                  <td className="logbook-grid-cell border border-zinc-200 px-2 py-2 font-bold text-center whitespace-nowrap text-zinc-900">
-                                    {r.dayName}
-                                  </td>
-                                  <td className="writing-grid-cell border border-zinc-200 px-1 py-2 text-center font-mono text-[10px] text-zinc-700">
-                                    {r.dateStr}
-                                  </td>
-                                  <td className="logbook-grid-cell border border-zinc-200 px-2 py-2 text-center font-mono text-[10px]">
-                                    {r.time}
-                                  </td>
-                                  <td className="logbook-grid-cell border border-zinc-200 px-2 py-2 text-center font-bold">
-                                    <span
-                                      className={`inline-block px-1.5 py-0.5 rounded text-[10px] border ${
-                                        r.level === '4م'
-                                          ? 'bg-red-50 text-red-800 border-red-200'
-                                          : r.level === '3م'
-                                          ? 'bg-amber-50 text-amber-800 border-amber-200'
-                                          : r.level === '2م'
-                                          ? 'bg-blue-50 text-blue-800 border-blue-200'
-                                          : 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                                      }`}
-                                    >
-                                      {r.section}
-                                    </span>
-                                  </td>
-                                  <td
-                                    className="writing-grid-cell border border-zinc-200 px-3 py-2 text-zinc-900 leading-relaxed whitespace-pre-line text-right align-top"
-                                    style={{ minHeight: NOTEBOOK_CONTENT_MIN_HEIGHT, height: NOTEBOOK_CONTENT_MIN_HEIGHT }}
-                                    dangerouslySetInnerHTML={{ __html: previewContent }}
-                                  />
-                                  <td className="logbook-grid-cell border border-zinc-200" />
-                                  <td className="logbook-grid-cell border border-zinc-200" />
-                                  <td className="writing-grid-cell border border-zinc-200 px-2 py-2 text-zinc-600 min-h-[72px]">{r.note}</td>
-                                </tr>
+                                    <tr className="bg-white">
+                                      <td className="border border-zinc-300 px-2 py-2 text-center font-mono text-[10px] text-zinc-900" dir="ltr">{r.dateStr}</td>
+                                      <td className="border border-zinc-300 px-2 py-2 text-center font-mono text-[10px] text-zinc-900" dir="ltr">{r.time}</td>
+                                      <td className="border border-zinc-300 px-2 py-2 text-center font-bold text-zinc-900">{r.section}</td>
+                                      <td
+                                        className="border border-zinc-300 px-3 py-2 text-zinc-900 leading-relaxed whitespace-pre-line text-right align-top"
+                                        style={{ minHeight: NOTEBOOK_CONTENT_MIN_HEIGHT, height: NOTEBOOK_CONTENT_MIN_HEIGHT }}
+                                        dangerouslySetInnerHTML={{ __html: previewContent }}
+                                      />
+                                      <td className="border border-zinc-300 px-2 py-2 text-zinc-900 align-top">{r.note || ''}</td>
+                                    </tr>
                                   </React.Fragment>
                                 );
                               })}
                               {Array.from({ length: Math.max(0, ROWS_PER_PAGE - pageRows.length) }).map((_, emptyIdx) => (
                                 <tr key={`empty-p-${emptyIdx}`} className="bg-white">
-                                  <td className="logbook-grid-cell border border-zinc-200 h-[32px]" />
-                                  <td className="logbook-grid-cell border border-zinc-200" />
-                                  <td className="logbook-grid-cell border border-zinc-200" />
-                                  <td className="logbook-grid-cell border border-zinc-200" />
-                                  <td className="logbook-grid-cell border border-zinc-200" />
-                                  <td className="logbook-grid-cell border border-zinc-200" />
-                                  <td className="logbook-grid-cell border border-zinc-200" />
-                                  <td className="logbook-grid-cell border border-zinc-200" />
+                                  <td className="border border-zinc-300 h-[32px]" />
+                                  <td className="border border-zinc-300" />
+                                  <td className="border border-zinc-300" />
+                                  <td className="border border-zinc-300" />
+                                  <td className="border border-zinc-300" />
                                 </tr>
                               ))}
                             </tbody>
