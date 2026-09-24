@@ -137,21 +137,20 @@ const normalizeCurriculumResources = (resources: CurriculumResourceItem[]): Curr
 };
 
 const buildCurriculumDatabase = (lessons?: LessonMemo[]): Record<'1م' | '2م' | '3م' | '4م', CurriculumResourceItem[]> => {
-  const sourceFor = (level: LessonMemo['level'], official: LessonMemo[]) => {
+  const sourceFor = (official: LessonMemo[]) => {
     // قاعدة الدفتر اليومي تعتمد المصدر المنهجي المحلي المراجع كمرجع وحيد.
     // لا نسمح لبيانات واجهة أخرى باستبدال السجل الرسمي أو تغيير الميدان/المقطع/
     // المورد/تعلم المورد، لأن ذلك قد يسبب تكراراً أو ربطاً بمصدر غير صحيح.
     // تبقى قيمة lessons ضمن الواجهة للتوافق البرمجي فقط ولا تستخدم لبناء البنك الرسمي.
     void lessons;
-    void level;
     return official;
   };
 
   return {
-    '1م': normalizeCurriculumResources(transformLessonMemoToLogbook(sourceFor('1am', LESSONS_1AM), '1م')),
-    '2م': normalizeCurriculumResources(transformLessonMemoToLogbook(sourceFor('2am', LESSONS_2AM), '2م')),
-    '3م': normalizeCurriculumResources(transformLessonMemoToLogbook(sourceFor('3am', LESSONS_3AM), '3م')),
-    '4م': normalizeCurriculumResources(transformLessonMemoToLogbook(sourceFor('4am', LESSONS_4AM), '4م')),
+    '1م': normalizeCurriculumResources(transformLessonMemoToLogbook(sourceFor(LESSONS_1AM), '1م')),
+    '2م': normalizeCurriculumResources(transformLessonMemoToLogbook(sourceFor(LESSONS_2AM), '2م')),
+    '3م': normalizeCurriculumResources(transformLessonMemoToLogbook(sourceFor(LESSONS_3AM), '3م')),
+    '4م': normalizeCurriculumResources(transformLessonMemoToLogbook(sourceFor(LESSONS_4AM), '4م')),
   };
 };
 
