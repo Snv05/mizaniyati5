@@ -342,7 +342,7 @@ const AUTO_FILLED_TIMETABLE_ROWS: TimetableGridRow[] = EMPTY_TIMETABLE_ROWS.map(
   cells: createEmptyDayCells(),
 }));
 
-const LOGBOOK_DATA_VERSION = '2026-09-24-v10';
+const LOGBOOK_DATA_VERSION = '2026-09-24-v11';
 const ROWS_PER_PAGE = 12;
 const getPageDimensions = (orientation: 'portrait' | 'landscape') => orientation === 'landscape' ? { w: 297, h: 210 } : { w: 210, h: 297 };
 const PRINT_MARGIN = '14mm';
@@ -479,6 +479,8 @@ interface DailyLogbookAudit {
   duplicateRows: string[];
   missingHierarchy: string[];
   missingSource: string[];
+  sourceMismatches: string[];
+  duplicateActivities: string[];
 }
 
 const auditGeneratedDailyLogbook = (
@@ -488,6 +490,8 @@ const auditGeneratedDailyLogbook = (
   const duplicateRows: string[] = [];
   const missingHierarchy: string[] = [];
   const missingSource: string[] = [];
+  const sourceMismatches: string[] = [];
+  const duplicateActivities: string[] = [];
   const seenRows = new Set<string>();
 
   for (const row of generatedRows) {
@@ -496,22 +500,60 @@ const auditGeneratedDailyLogbook = (
     seenRows.add(rowKey);
 
     if (row.lessonType && row.lessonType !== 'curriculum') continue;
+
     if (!row.midan || !row.maqta || !row.mawrid || !row.ta3alom) {
       missingHierarchy.push(row.dateStr + ' ' + row.time + ' ' + row.section);
     }
 
+    const activityTitles = Array.from(
+      new Set((row.activitiesList || []).map((x) => String(x || '').trim()).filter(Boolean))
+    ).slice(0, 2);
+    if (activityTitles.length !== (row.activitiesList || []).filter(Boolean).slice(0, 2).length) {
+      duplicateActivities.push(row.dateStr + ' ' + row.time + ' ' + row.section);
+    }
+    if (row.sourceActivityId && row.sourceActivityId2 && row.sourceActivityId === row.sourceActivityId2) {
+      sourceMismatches.push(row.dateStr + ' ' + row.time + ' ' + row.section + ': معرف النشاط الأول والثاني متطابقان.');
+    }
+
     const bank = db[row.level as '1م' | '2م' | '3م' | '4م'] || [];
-    const resource = row.sourceLearningUnitId
-      ? bank.find((r) => r.sourceLearningUnitId === row.sourceLearningUnitId)
-      : row.sourceActivityId
-        ? bank.find((r) => r.sourceActivityIds?.includes(row.sourceActivityId!))
-        : row.sourceActivityId2
-          ? bank.find((r) => r.sourceActivityIds?.includes(row.sourceActivityId2!))
-          : undefined;
-    if (!resource) missingSource.push(row.dateStr + ' ' + row.time + ' ' + row.section);
+    const resource =
+      (row.sourceLearningUnitId
+        ? bank.find((r) => r.sourceLearningUnitId === row.sourceLearningUnitId)
+        : undefined) ||
+      (row.sourceActivityId
+        ? bank.find((r) => r.sourceActivityIds?.includes(row.sourceActivityId))
+        : undefined) ||
+      (row.sourceActivityId2
+        ? bank.find((r) => r.sourceActivityIds?.includes(row.sourceActivityId2))
+        : undefined);
+
+    if (!resource) {
+      missingSource.push(row.dateStr + ' ' + row.time + ' ' + row.section);
+      continue;
+    }
+
+    const hierarchyMatches =
+      row.midan === resource.midan &&
+      row.maqta === resource.maqta &&
+      row.mawrid === resource.mawrid &&
+      row.ta3alom === resource.ta3alom;
+
+    if (!hierarchyMatches) {
+      sourceMismatches.push(
+        row.dateStr + ' ' + row.time + ' ' + row.section + ': بيانات الميدان/المقطع/المورد/تعلم المورد لا تطابق المصدر.'
+      );
+    }
+
+    for (const title of activityTitles) {
+      if (!resource.activities.includes(title)) {
+        sourceMismatches.push(
+          row.dateStr + ' ' + row.time + ' ' + row.section + ': نشاط غير موجود داخل تعلم المورد المرتبط.'
+        );
+      }
+    }
   }
 
-  return { duplicateRows, missingHierarchy, missingSource };
+  return { duplicateRows, missingHierarchy, missingSource, sourceMismatches, duplicateActivities };
 };
 
 
@@ -942,19 +984,31 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
     const normalizedGenerated = normalizeDailyLogbookRows(generated, CURRICULUM_DATABASE);
     const logbookAudit = auditGeneratedDailyLogbook(normalizedGenerated, CURRICULUM_DATABASE);
 
-    if (logbookAudit.duplicateRows.length || logbookAudit.missingHierarchy.length || logbookAudit.missingSource.length) {
+    if (
+      logbookAudit.duplicateRows.length ||
+      logbookAudit.missingHierarchy.length ||
+      logbookAudit.missingSource.length ||
+      logbookAudit.sourceMismatches.length ||
+      logbookAudit.duplicateActivities.length
+    ) {
       console.error('[DailyLogbook integrity]', logbookAudit);
       displayUserAlert(
-        'تم اكتشاف مشكلة في سلامة الدفتر: تكرار ' + logbookAudit.duplicateRows.length +
+        'تم اكتشاف مشكلة في سلامة الدفتر: تكرار الصفوف ' + logbookAudit.duplicateRows.length +
         '، بيانات ناقصة ' + logbookAudit.missingHierarchy.length +
-        '، وربط مصدر مفقود ' + logbookAudit.missingSource.length + '.'
+        '، ربط مصدر مفقود ' + logbookAudit.missingSource.length +
+        '، عدم تطابق مع المصدر ' + logbookAudit.sourceMismatches.length +
+        '، وتكرار أنشطة ' + logbookAudit.duplicateActivities.length + '.'
       );
     }
 
     setRows(normalizedGenerated);
     const assignedStr = assignedLevels.join(' و ');
     showToast(
-      logbookAudit.duplicateRows.length || logbookAudit.missingHierarchy.length || logbookAudit.missingSource.length
+      logbookAudit.duplicateRows.length ||
+      logbookAudit.missingHierarchy.length ||
+      logbookAudit.missingSource.length ||
+      logbookAudit.sourceMismatches.length ||
+      logbookAudit.duplicateActivities.length
         ? 'تم توليد الدفتر مع تنبيه سلامة البيانات'
         : 'تم توليد ' + normalizedGenerated.length + ' حصة للسنوات المسندة (' + assignedStr + ') بنجاح'
     );
@@ -2886,7 +2940,8 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                             </thead>
                             <tbody>
                               {pageRows.map((r, rowIdx) => {
-                                const previousRow = rowIdx > 0 ? pageRows[rowIdx - 1] : undefined;
+                                const globalRowIndex = rows.findIndex((item) => item.id === r.id);
+                                const previousRow = findPreviousComparableCurriculumRow(rows, globalRowIndex, r);
                                 const previewContent = buildHierarchicalContent(r, previousRow);
                                 const isNewWeek =
                                   rowIdx > 0 &&
