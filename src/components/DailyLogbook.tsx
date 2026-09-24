@@ -244,7 +244,7 @@ const AUTO_FILLED_TIMETABLE_ROWS: TimetableGridRow[] = EMPTY_TIMETABLE_ROWS.map(
   cells: createEmptyDayCells(),
 }));
 
-const LOGBOOK_DATA_VERSION = '2026-09-24-v6';
+const LOGBOOK_DATA_VERSION = '2026-09-24-v7';
 const ROWS_PER_PAGE = 12;
 const getPageDimensions = (orientation: 'portrait' | 'landscape') => orientation === 'landscape' ? { w: 297, h: 210 } : { w: 210, h: 297 };
 const PRINT_MARGIN = '14mm';
@@ -286,43 +286,33 @@ function buildHierarchicalContent(
   previous?: LogEntry
 ): string {
   // نموذج الدفتر الورقي: التاريخ | الوقت | القسم | سير الحصة | الملاحظات.
-  // ما يُملأ آلياً من قاعدة البيانات يوضع فقط في "سير الحصة".
+  // في "سير الحصة" نكتب آلياً فقط عنواني النشاط الأول والثاني والتقويم.
+  // لا نكتب الميدان/المقطع/المورد/تعلم المورد، ولا نكتب "استنتاج".
   if (row.lessonType && row.lessonType !== 'curriculum') {
     return row.content || '';
   }
 
-  const parts: string[] = [];
-  const sameSection = !!previous && previous.level === row.level && previous.section === row.section;
-  const sameMaqta = sameSection && previous?.maqta === row.maqta;
-  const sameMawrid = sameMaqta && previous?.mawrid === row.mawrid;
-  const previousActivities = (previous?.activitiesList || []).filter(Boolean);
   const activities = (row.activitiesList || []).filter(Boolean).slice(0, 2);
+  const previousActivities = (previous?.activitiesList || []).filter(Boolean).slice(0, 2);
+  const sameSection = !!previous && previous.level === row.level && previous.section === row.section;
   const sameActivities =
     sameSection &&
     previous?.sourceActivityId === row.sourceActivityId &&
     previous?.sourceActivityId2 === row.sourceActivityId2 &&
     previousActivities.join('|') === activities.join('|');
 
-  if (!sameMaqta && row.maqta) {
-    parts.push(`<u>المقطع البيداغوجي:</u> ${row.maqta}`);
-  }
-  if (!sameMawrid && row.mawrid) {
-    parts.push(`<u>المورد التعلمي:</u> ${row.mawrid}`);
-  }
+  const parts: string[] = [];
 
-  if (!sameActivities && activities.length > 0) {
-    activities.forEach((activity, index) => {
-      parts.push(`<u>النشاط ${index + 1}:</u> ${activity}`);
-    });
+  if (!sameActivities) {
+    parts.push(...activities);
   }
 
   if (row.taqwim) {
-    parts.push(`<u>استنتاج / تقويم:</u> ${row.taqwim}`);
+    parts.push(`تقويم: ${row.taqwim}`);
   }
 
   return parts.join('\\n') || row.content || '';
 }
-
 
 
 export const DailyLogbook: React.FC<DailyLogbookProps> = ({
@@ -2227,7 +2217,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                       {r.section}
                     </td>
                     <td
-                      className="border border-zinc-300 px-3 py-2 text-zinc-900 leading-relaxed text-right whitespace-pre-line align-top"
+                      className="logbook-grid-cell border border-zinc-300 px-3 py-2 text-zinc-900 leading-relaxed text-right whitespace-pre-line align-top"
                       style={{ minHeight: NOTEBOOK_CONTENT_MIN_HEIGHT, height: NOTEBOOK_CONTENT_MIN_HEIGHT }}
                       dangerouslySetInnerHTML={{ __html: displayContent }}
                     />
@@ -2254,7 +2244,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
               return (
                 <div
                   key={pageIdx}
-                  className="print-page shadow-[0_20px_60px_rgba(0,0,0,0.12)] rounded-[2px] border border-zinc-200 overflow-hidden mx-auto mb-8 bg-white"
+                  className="print-page grid-paper-bg shadow-[0_20px_60px_rgba(0,0,0,0.12)] rounded-[2px] border border-zinc-200 overflow-hidden mx-auto mb-8 bg-white"
                   style={{
                     width: `${pageDimensions.w}mm`,
                     height: `${pageDimensions.h}mm`,
