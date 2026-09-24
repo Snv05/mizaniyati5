@@ -2506,7 +2506,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                   )}
                 </div>
                 <div className="text-zinc-400 text-[10px] mt-1 hidden md:block">
-                  A4 • ${ROWS_PER_PAGE} سطر • المستويات المسندة: {assignedLevels.join('، ') || '—'}
+                  A4 • {ROWS_PER_PAGE} سطر • المستويات المسندة: {assignedLevels.join('، ') || '—'}
                 </div>
               </div>
             </div>
