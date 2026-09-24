@@ -6,7 +6,7 @@ import { LESSONS_1AM } from '../data/lessons1am';
 import { LESSONS_2AM } from '../data/lessons2am';
 import { LESSONS_3AM } from '../data/lessons3am';
 import { LESSONS_4AM } from '../data/lessons4am';
-import { generateAnnualDistribution } from '../utils/annualDistributionGenerator';
+import { generateAnnualDistribution, AnnualCalendarEvent } from '../utils/annualDistributionGenerator';
 
 import { Printer, FileDown, Eye, X } from 'lucide-react';
 
@@ -23,9 +23,14 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
   const deriveStartDate = (schoolYear: string): string => {
     const match = schoolYear?.match(/(20\d{2})/);
-    return match ? `${match[1]}-09-01` : '';
+    if (!match) return '';
+    const year = Number(match[1]);
+    // تاريخ دخول التلاميذ للموسم 2026-2027: الأحد 06 سبتمبر 2026.
+    if (year === 2026) return '2026-09-06';
+    // لباقي المواسم نبدأ من أول سبتمبر ثم يضبط المولد بداية الأسبوع.
+    return `${year}-09-01`;
   };
-  const [startDate, setStartDate] = useState(() => {
+  const [startDate] = useState(() => {
     try {
       const saved = JSON.parse(localStorage.getItem('algeria_sciences_annual_dist_v5') || '{}');
       return saved[level]?.startDate || deriveStartDate(config.schoolYear);
@@ -33,6 +38,47 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
       return deriveStartDate(config.schoolYear);
     }
   });
+
+  const [calendarHolidays, setCalendarHolidays] = useState<{ startDate: string; endDate?: string; label: string }[]>([]);
+  const [calendarEvents, setCalendarEvents] = useState<AnnualCalendarEvent[]>([]);
+
+  // التدرج يقرأ رزنامة العطل والفروض والاختبارات المحفوظة في الدفتر.
+  // لا نضع تواريخ غير مؤكدة من عندنا؛ عند إدخال/تحديث الرزنامة تُستخدم مباشرة.
+  useEffect(() => {
+    try {
+      const logbook = JSON.parse(localStorage.getItem('daftar_table_v2027') || '{}');
+      if (Array.isArray(logbook.holidays)) {
+        setCalendarHolidays(
+          logbook.holidays
+            .map((h: any) => ({
+              startDate: h.startDate || h.date || '',
+              endDate: h.endDate || h.startDate || h.date || '',
+              label: h.label || 'عطلة',
+            }))
+            .filter((h: any) => h.startDate)
+        );
+      }
+
+      const rawEvents = JSON.parse(localStorage.getItem('algeria_sciences_annual_calendar_v1') || '[]');
+      if (Array.isArray(rawEvents)) {
+        setCalendarEvents(
+          rawEvents
+            .filter((e: any) => e?.startDate && e?.label)
+            .map((e: any) => ({
+              startDate: e.startDate,
+              endDate: e.endDate || e.startDate,
+              label: e.label,
+              type: e.type === 'holiday' || e.type === 'exam' || e.type === 'test' || e.type === 'assessment'
+                ? e.type
+                : 'assessment',
+            }))
+        );
+      }
+    } catch {
+      setCalendarHolidays([]);
+      setCalendarEvents([]);
+    }
+  }, [level, config.schoolYear]);
 
   // Group by pages based on the midan (Page 1: الإنسان والصحة, Page 2: التنسيق الوظيفي, Page 3: انتقال الصفات)
   
@@ -47,7 +93,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
     }
 
     const effectiveStartDate = startDate || deriveStartDate(config.schoolYear);
-    const dynamicCurriculum = generateAnnualDistribution(baseLessons, effectiveStartDate, []);
+    const dynamicCurriculum = generateAnnualDistribution(baseLessons, effectiveStartDate, calendarHolidays, calendarEvents);
 
     if (level === '4am') {
       const maqta1 = 'المقطع الأول: التغذية عند الإنسان';
@@ -92,7 +138,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
     }
     
     return [dynamicCurriculum];
-  }, [startDate, level, curriculumLessons, config.schoolYear]);
+  }, [startDate, level, curriculumLessons, config.schoolYear, calendarHolidays, calendarEvents]);
 
   // Persist the exact generated distribution so the Daily Logbook can use it as its schedule source.
   useEffect(() => {
