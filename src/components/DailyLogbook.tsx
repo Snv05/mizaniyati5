@@ -88,7 +88,7 @@ const transformLessonMemoToLogbook = (lessons: LessonMemo[], levelLabel: '1م' |
       sourceSequenceId: lesson.sourceSequenceId,
       sourceResourceId: lesson.sourceResourceId,
       sourceLearningUnitId: lesson.sourceLearningUnitId,
-      sourceActivityIds: lesson.anshita.map(a => a.sourceActivityId).filter(Boolean) as string[],
+      sourceActivityIds: lesson.anshita.map(a => a.sourceActivityId || ''),
       taqwim: lesson.taqwim || ''
     };
   });
@@ -119,7 +119,7 @@ const normalizeCurriculumResources = (resources: CurriculumResourceItem[]): Curr
       if (seenActivities.has(activityKey)) return;
       seenActivities.add(activityKey);
       uniqueActivities.push(cleanTitle);
-      if (sourceId) uniqueActivityIds.push(sourceId);
+      uniqueActivityIds.push(sourceId);
     });
 
     normalized.push({
@@ -344,7 +344,7 @@ const AUTO_FILLED_TIMETABLE_ROWS: TimetableGridRow[] = EMPTY_TIMETABLE_ROWS.map(
   cells: createEmptyDayCells(),
 }));
 
-const LOGBOOK_DATA_VERSION = '2026-09-24-v11';
+const LOGBOOK_DATA_VERSION = '2026-09-24-v12';
 const ROWS_PER_PAGE = 12;
 const getPageDimensions = (orientation: 'portrait' | 'landscape') => orientation === 'landscape' ? { w: 297, h: 210 } : { w: 210, h: 297 };
 const PRINT_MARGIN = '14mm';
