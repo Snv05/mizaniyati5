@@ -112,7 +112,7 @@ const getExportLessonContent = (log: LogEntry, previous?: LogEntry): string => {
     lines.push(`تقويم: ${(log as any).taqwim}`);
   }
 
-  return lines.join('\\n');
+  return lines.join('\n');
 }
 
 const base64ToUint8Array = (base64: string): Uint8Array => {
