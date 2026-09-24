@@ -491,6 +491,42 @@ export const generateLogbookDocx = async (
 };
 
 
+
+const preparePageForExport = (source: HTMLElement): { page: HTMLElement; cleanup: () => void } => {
+  const page = source.cloneNode(true) as HTMLElement;
+  page.classList.add("export-clean-page");
+  page.style.boxShadow = "none";
+  page.style.borderRadius = "0";
+  page.style.margin = "0";
+  page.style.transform = "none";
+  page.style.backgroundColor = "#ffffff";
+  page.style.setProperty("-webkit-print-color-adjust", "exact");
+  page.style.setProperty("print-color-adjust", "exact");
+
+  page.querySelectorAll<HTMLElement>(".grid-paper-bg, .writing-grid-cell, .logbook-grid-cell").forEach((cell) => {
+    cell.style.backgroundImage = "none";
+    cell.style.backgroundColor = "#ffffff";
+  });
+
+  const host = document.createElement("div");
+  host.style.position = "fixed";
+  host.style.left = "-100000px";
+  host.style.top = "0";
+  host.style.width = source.getBoundingClientRect().width + "px";
+  host.style.height = source.getBoundingClientRect().height + "px";
+  host.style.overflow = "hidden";
+  host.style.background = "#ffffff";
+  host.style.zIndex = "-1";
+  host.setAttribute("aria-hidden", "true");
+  host.appendChild(page);
+  document.body.appendChild(host);
+
+  return {
+    page,
+    cleanup: () => host.remove(),
+  };
+};
+
 /**
  * Creates a DOCX whose pages are exact raster captures of the on-screen
  * print preview. This intentionally preserves the visual layout, colors,
@@ -510,19 +546,26 @@ export const generatePreviewMatchDocx = async (
   const pageImages: Uint8Array[] = [];
 
   for (const element of pageElements) {
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: false,
-      backgroundColor: "#ffffff",
-      logging: false,
-      width: element.scrollWidth,
-      height: element.scrollHeight,
-      windowWidth: Math.max(document.documentElement.clientWidth, element.scrollWidth),
-      windowHeight: Math.max(document.documentElement.clientHeight, element.scrollHeight),
-    });
-    const data = canvas.toDataURL("image/png");
-    pageImages.push(base64ToUint8Array(data.split(",")[1]));
+    const prepared = preparePageForExport(element);
+    try {
+      if (document.fonts?.ready) await document.fonts.ready;
+      const canvas = await html2canvas(prepared.page, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: "#ffffff",
+        logging: false,
+        imageTimeout: 15000,
+        width: prepared.page.scrollWidth,
+        height: prepared.page.scrollHeight,
+        windowWidth: Math.max(document.documentElement.clientWidth, prepared.page.scrollWidth),
+        windowHeight: Math.max(document.documentElement.clientHeight, prepared.page.scrollHeight),
+      });
+      const data = canvas.toDataURL("image/png");
+      pageImages.push(base64ToUint8Array(data.split(",")[1]));
+    } finally {
+      prepared.cleanup();
+    }
   }
 
   const doc = new Document({
