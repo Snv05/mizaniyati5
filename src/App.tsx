@@ -12,6 +12,7 @@ import {
   Database,
   GraduationCap,
   Sparkles,
+  ClipboardCheck,
   School,
   Home,
   ArrowRight,
@@ -32,6 +33,7 @@ import { AccountSettings } from './components/AccountSettings';
 import { LevelsHomePage } from './components/LevelsHomePage';
 import { PlatformNavigationDrawer } from './components/PlatformNavigationDrawer';
 import { AIAssistantDrawer } from './components/AIAssistantDrawer';
+import { CorrectionMemoDrawer } from './components/CorrectionMemoDrawer';
 import { PlatformInfoModal } from './components/PlatformInfoModal';
 import { InteractiveMaqta1 } from './components/InteractiveMaqta1';
 import { UserProfile } from './components/UserProfile';
@@ -51,6 +53,7 @@ export const App: React.FC = () => {
   // Drawers and Modals
   const [isNavDrawerOpen, setIsNavDrawerOpen] = useState<boolean>(false);
   const [isAssistantOpen, setIsAssistantOpen] = useState<boolean>(false);
+  const [isCorrectionMemoOpen, setIsCorrectionMemoOpen] = useState<boolean>(false);
   const [infoModalTab, setInfoModalTab] = useState<'about' | 'contact' | 'guide' | null>(null);
 
   // Is current section a school year?
@@ -552,6 +555,18 @@ export const App: React.FC = () => {
               </div>
             </div>
 
+            {/* Standalone Correction Memo Trigger */}
+            <button
+              type="button"
+              id="header-btn-correction-memo"
+              onClick={() => setIsCorrectionMemoOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-teal-200 text-teal-800 text-[12px] font-black hover:bg-teal-50 shadow-xs transition cursor-pointer"
+              title="إنشاء مذكرة تصحيح مستقلة للفرض أو الاختبار"
+            >
+              <ClipboardCheck className="w-4 h-4" />
+              <span className="hidden md:inline">مذكرة التصحيح</span>
+            </button>
+
             {/* Quick AI Assistant Trigger */}
             <button
               type="button"
@@ -861,6 +876,15 @@ export const App: React.FC = () => {
         }}
         onOpenAssistant={() => setIsAssistantOpen(true)}
         onOpenInfoModal={(tab) => setInfoModalTab(tab)}
+        config={config}
+      />
+
+      {/* Standalone Correction Memo Drawer */}
+      <CorrectionMemoDrawer
+        isOpen={isCorrectionMemoOpen}
+        onClose={() => setIsCorrectionMemoOpen(false)}
+        currentLesson={currentLesson}
+        curriculumLessons={curriculumLessons}
         config={config}
       />
 
