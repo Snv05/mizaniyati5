@@ -333,13 +333,10 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
         
         <div className="flex flex-wrap items-center gap-2 border-r pr-4">
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-bold text-gray-500">تاريخ الدخول</label>
-            <input 
-              type="date" 
-              value={startDate} 
-              onChange={(e) => setStartDate(e.target.value)}
-              className="border border-gray-300 rounded px-2 py-1 text-sm outline-none focus:border-indigo-500"
-            />
+            <label className="text-xs font-bold text-gray-500">بداية السنة الدراسية</label>
+            <div className="border border-emerald-200 bg-emerald-50 rounded px-3 py-1 text-sm font-black text-emerald-800">
+              {startDate ? new Intl.DateTimeFormat('ar-DZ', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(startDate + 'T12:00:00')) : '—'}
+            </div>
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-xs font-bold text-gray-500">اتجاه الورقة</label>
