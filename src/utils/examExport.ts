@@ -100,3 +100,20 @@ export async function exportExamElementToPdf(element: HTMLElement, title: string
 
   pdf.save(safeFileName(title) + '.pdf');
 }
+
+
+export function printExamElement(element: HTMLElement, title: string): void {
+  const printWindow = window.open('', '_blank', 'width=900,height=1200');
+  if (!printWindow) return;
+  const styles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+    .map(node => node.outerHTML).join('\n');
+  printWindow.document.write(`<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>${title}</title>${styles}<style>
+    @page { size: A4 portrait; margin: 0; }
+    body { margin: 0; background: white; }
+    .exam-print { width: 210mm; min-height: 297mm; box-sizing: border-box; margin: 0 auto; padding: 16mm; background: white; }
+    @media print { .exam-print { box-shadow: none !important; margin: 0; } }
+  </style></head><body><div class="exam-print">${element.innerHTML}</div></body></html>`);
+  printWindow.document.close();
+  printWindow.focus();
+  setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
+}
