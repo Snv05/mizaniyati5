@@ -66,9 +66,24 @@ const createCell = (text: string, bold = false, bgColor?: string, columnSpan?: n
 const WEEK_DAYS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
 
 const findPreviousComparableCurriculumLog = (logs: LogEntry[], currentIndex: number, log: LogEntry): LogEntry | undefined => {
+  // نفس قاعدة الدفتر: لا نقارن بداية الأسبوع الجديد بآخر حصة من الأسبوع السابق.
+  const currentDate = new Date(`${log.dateStr}T12:00:00`);
+  if (Number.isNaN(currentDate.getTime())) return undefined;
+  currentDate.setDate(currentDate.getDate() - currentDate.getDay());
+  const currentWeekKey = currentDate.toISOString().split('T')[0];
+
   for (let i = currentIndex - 1; i >= 0; i--) {
     const candidate = logs[i];
-    if (candidate.level === log.level && candidate.section === log.section && (!candidate.lessonType || candidate.lessonType === 'curriculum')) {
+    const candidateDate = new Date(`${candidate.dateStr}T12:00:00`);
+    if (Number.isNaN(candidateDate.getTime())) break;
+    candidateDate.setDate(candidateDate.getDate() - candidateDate.getDay());
+    if (candidateDate.toISOString().split('T')[0] !== currentWeekKey) break;
+
+    if (
+      candidate.level === log.level &&
+      candidate.section === log.section &&
+      (!candidate.lessonType || candidate.lessonType === 'curriculum')
+    ) {
       return candidate;
     }
   }
