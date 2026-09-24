@@ -21,8 +21,8 @@ export const CorrectionMemoDrawer: React.FC<{
     if (!examText.trim()) { setCorrection('ألصق ورقة الفرض أو الاختبار أولاً.'); return; }
     setBusy(true);
     try {
-      const r = await askSmartAi({ question: `أنشئ مذكرة تصحيح مستقلة لـ${examType} علوم الطبيعة والحياة.\nالسياق الرسمي:\n${context}\n\nنص ${examType}:\n${examText}\n\nصحح كل تمرين وسؤال بنفس الترتيب. اكتب الإجابة النموذجية، عناصر الإجابة المنتظرة، سلم التنقيط لكل سؤال، والمجموع النهائي. احترم النقاط الموجودة في الورقة. أضف الأخطاء الشائعة وملاحظات التصحيح ومؤشرات الكفاءة عند توفرها. لا تخترع مرجعاً رسمياً؛ عند غموض سؤال اكتب «يحتاج مراجعة الأستاذ». هذه مذكرة تصحيح فقط وليست ورقة تلميذ، وبدون Markdown معقد.`, lesson: currentLesson, curriculum: curriculumLessons, mode: 'assessment', useWebSearch: false });
-      setCorrection(r.text || r);
+      const r = await askSmartAi({ question: `أنشئ مذكرة تصحيح مستقلة لـ${examType} علوم الطبيعة والحياة.\nالسياق الرسمي:\n${context}\n\nنص ${examType}:\n${examText}\n\nصحح كل تمرين وسؤال بنفس الترتيب. اكتب الإجابة النموذجية، عناصر الإجابة المنتظرة، سلم التنقيط لكل سؤال، والمجموع النهائي. احترم النقاط الموجودة في الورقة. أضف الأخطاء الشائعة وملاحظات التصحيح ومؤشرات الكفاءة عند توفرها. لا تخترع مرجعاً رسمياً؛ عند غموض سؤال اكتب «يحتاج مراجعة الأستاذ». هذه مذكرة تصحيح فقط وليست ورقة تلميذ، وبدون Markdown معقد.`, lesson: currentLesson, curriculum: curriculumLessons });
+      setCorrection(r || 'تعذر إنشاء مذكرة التصحيح.')
     } catch { setCorrection('تعذر إنشاء مذكرة التصحيح. تحقق من إعداد الذكاء الاصطناعي.'); }
     finally { setBusy(false); }
   };
