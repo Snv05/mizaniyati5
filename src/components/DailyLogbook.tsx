@@ -344,7 +344,7 @@ const AUTO_FILLED_TIMETABLE_ROWS: TimetableGridRow[] = EMPTY_TIMETABLE_ROWS.map(
   cells: createEmptyDayCells(),
 }));
 
-const LOGBOOK_DATA_VERSION = '2026-09-24-v12';
+const LOGBOOK_DATA_VERSION = '2026-09-24-v13';
 const ROWS_PER_PAGE = 12;
 const getPageDimensions = (orientation: 'portrait' | 'landscape') => orientation === 'landscape' ? { w: 297, h: 210 } : { w: 210, h: 297 };
 const PRINT_MARGIN = '14mm';
@@ -430,9 +430,20 @@ function buildHierarchicalContent(
 }
 
 const findPreviousComparableCurriculumRow = (allRows: LogEntry[], currentIndex: number, row: LogEntry): LogEntry | undefined => {
+  // المقارنة تكون داخل نفس الأسبوع الدراسي فقط.
+  // لا نسمح لآخر حصة من الأسبوع السابق بأن تمنع إظهار
+  // الميدان/المقطع/المورد/تعلم المورد في بداية الأسبوع الجديد.
+  const currentWeekKey = getSchoolWeekKey(row.dateStr);
+
   for (let i = currentIndex - 1; i >= 0; i--) {
     const candidate = allRows[i];
-    if (candidate.level === row.level && candidate.section === row.section && (!candidate.lessonType || candidate.lessonType === 'curriculum')) {
+    if (getSchoolWeekKey(candidate.dateStr) !== currentWeekKey) break;
+
+    if (
+      candidate.level === row.level &&
+      candidate.section === row.section &&
+      (!candidate.lessonType || candidate.lessonType === 'curriculum')
+    ) {
       return candidate;
     }
   }
@@ -923,6 +934,16 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
               currentLessonType = isAssessmentSession
                 ? 'assessment'
                 : annualItem.lessonType as LogEntry['lessonType'];
+
+              // الأسبوع الافتتاحي/الحصص الخاصة لا ترتبط بأي نشاط منهجي عادي.
+              // نصفر المعرفات هنا حتى لا تتسرب بيانات الأسبوع السابق أو المورد الافتراضي
+              // إلى الحصة الافتتاحية أو الصحة المدرسية أو المعالجة.
+              linkedSourceSequenceId = undefined;
+              linkedSourceResourceId = undefined;
+              linkedSourceLearningUnitId = undefined;
+              linkedSourceActivityId = undefined;
+              linkedSourceActivityId2 = undefined;
+
               const specialTitle = scheduledTitle || (annualItem.taqwim ? `تقويم: ${annualItem.taqwim}` : 'تقويم');
               res = {
                 level: lvl,
