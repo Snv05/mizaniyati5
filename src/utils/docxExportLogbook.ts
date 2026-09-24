@@ -65,11 +65,28 @@ const createCell = (text: string, bold = false, bgColor?: string, columnSpan?: n
 
 const WEEK_DAYS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
 
-const getExportLessonContent = (log: LogEntry): string => {
+const getExportLessonContent = (log: LogEntry, previous?: LogEntry): string => {
+  if (log.lessonType && log.lessonType !== 'curriculum') {
+    return log.content || '';
+  }
+
   const activities = (log.activitiesList || []).filter(Boolean).slice(0, 2);
+  const previousActivities = (previous?.activitiesList || []).filter(Boolean);
+  const sameMaqta = !!previous && previous.level === log.level && previous.maqta === log.maqta;
+  const sameMawrid = sameMaqta && previous?.mawrid === log.mawrid;
+  const sameActivities =
+    previous?.sourceActivityId === log.sourceActivityId &&
+    previous?.sourceActivityId2 === log.sourceActivityId2 &&
+    previousActivities.join('|') === activities.join('|');
+
   const lines: string[] = [];
-  if (activities.length) lines.push(`الأنشطة: ${activities.join(' / ')}`);
-  if ((log as any).taqwim) lines.push(`التقويم: ${(log as any).taqwim}`);
+  if (!sameMaqta && log.maqta) lines.push(`المقطع البيداغوجي: ${log.maqta}`);
+  if (!sameMawrid && log.mawrid) lines.push(`المورد التعلمي: ${log.mawrid}`);
+  if (!sameActivities) {
+    activities.forEach((activity, index) => lines.push(`النشاط ${index + 1}: ${activity}`));
+  }
+  if ((log as any).taqwim) lines.push(`استنتاج / تقويم: ${(log as any).taqwim}`);
+
   return lines.join('\n') || log.content || '';
 };
 
@@ -152,14 +169,11 @@ export const generateLogbookDocx = async (
   rows.push(new TableRow({
     tableHeader: true,
     children: [
-      createCell("اليوم", true, "064E3B", 1, 1, 22, AlignmentType.CENTER, 10),
-      createCell("التاريخ", true, "064E3B", 1, 1, 22, AlignmentType.CENTER, 15),
-      createCell("التوقيت", true, "064E3B", 1, 1, 22, AlignmentType.CENTER, 15),
-      createCell("القسم/الفوج", true, "064E3B", 1, 1, 22, AlignmentType.CENTER, 15),
-      createCell("محتوى الحصة وفق المنهاج", true, "064E3B", 1, 1, 22, AlignmentType.CENTER, 25),
-      createCell("الحضور", true, "064E3B", 1, 1, 22, AlignmentType.CENTER, 5),
-      createCell("الوسائل", true, "064E3B", 1, 1, 22, AlignmentType.CENTER, 5),
-      createCell("ملاحظة", true, "064E3B", 1, 1, 22, AlignmentType.CENTER, 10),
+      createCell("التاريخ", true, "064E3B", 1, 1, 22, AlignmentType.CENTER, 14),
+      createCell("الوقت", true, "064E3B", 1, 1, 22, AlignmentType.CENTER, 13),
+      createCell("القسم", true, "064E3B", 1, 1, 22, AlignmentType.CENTER, 13),
+      createCell("سير الحصة", true, "064E3B", 1, 1, 22, AlignmentType.CENTER, 45),
+      createCell("الملاحظات", true, "064E3B", 1, 1, 22, AlignmentType.CENTER, 15),
     ]
   }));
 
@@ -170,40 +184,35 @@ export const generateLogbookDocx = async (
       d.setDate(d.getDate() - d.getDay());
       return d.toISOString().split('T')[0];
     })();
+
     if (previousWeekKey && currentWeekKey !== previousWeekKey) {
       for (let weekSpaceIdx = 0; weekSpaceIdx < 2; weekSpaceIdx++) {
         rows.push(new TableRow({
           children: [
-            createCell("", false, "FFFFFF", 1, 1, 18, AlignmentType.CENTER, 12),
-            createCell("", false, "FFFFFF", 1, 1, 18, AlignmentType.CENTER, 12),
-            createCell("", false, "FFFFFF", 1, 1, 18, AlignmentType.CENTER, 12),
-            createCell("", false, "FFFFFF", 1, 1, 18, AlignmentType.CENTER, 12),
-            createCell("", false, "FFFFFF", 1, 1, 18, AlignmentType.RIGHT, 38),
-            createCell("", false, "FFFFFF", 1, 1, 18, AlignmentType.CENTER, 6),
-            createCell("", false, "FFFFFF", 1, 1, 18, AlignmentType.CENTER, 6),
-            createCell("", false, "FFFFFF", 1, 1, 18, AlignmentType.CENTER, 10)
+            createCell("", false, "FFFFFF", 1, 1, 18, AlignmentType.CENTER, 14),
+            createCell("", false, "FFFFFF", 1, 1, 18, AlignmentType.CENTER, 13),
+            createCell("", false, "FFFFFF", 1, 1, 18, AlignmentType.CENTER, 13),
+            createCell("", false, "FFFFFF", 1, 1, 18, AlignmentType.RIGHT, 45),
+            createCell("", false, "FFFFFF", 1, 1, 18, AlignmentType.CENTER, 15)
           ]
         }));
       }
     }
+
     previousWeekKey = currentWeekKey;
     const bgColor = index % 2 === 0 ? "FFFFFF" : "F9FAF6";
     rows.push(new TableRow({
       cantSplit: true,
       children: [
-        createCell(log.dayName, true, bgColor, 1, 1, 20),
-        createCell(log.dateStr, false, bgColor, 1, 1, 18),
-        createCell(log.time, false, bgColor, 1, 1, 18),
-        createCell(log.section, true, bgColor, 1, 1, 20),
-        createCell(`${getExportLessonContent(log)}\n\n\n______________________________\n______________________________`, false, bgColor, 1, 1, 20, AlignmentType.RIGHT),
-        createCell(log.attendance || '', false, bgColor, 1, 1, 18),
-        createCell(log.wasail || '', false, bgColor, 1, 1, 18),
-        createCell(`${log.note || ''}\n\n`, false, bgColor, 1, 1, 18),
+        createCell(log.dateStr, false, bgColor, 1, 1, 18, AlignmentType.CENTER, 14),
+        createCell(log.time, false, bgColor, 1, 1, 18, AlignmentType.CENTER, 13),
+        createCell(log.section, true, bgColor, 1, 1, 20, AlignmentType.CENTER, 13),
+        createCell(getExportLessonContent(log, logs[index - 1]), false, bgColor, 1, 1, 20, AlignmentType.RIGHT, 45),
+        createCell(log.note || '', false, bgColor, 1, 1, 18, AlignmentType.RIGHT, 15),
       ]
     }));
   });
 
-  
   // Front Page Content
   const frontPageChildren: any[] = [
     // Same red/green small header
