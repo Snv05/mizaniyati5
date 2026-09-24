@@ -73,6 +73,15 @@ const getExportLessonContent = (log: LogEntry, previous?: LogEntry): string => {
   const activities = (log.activitiesList || []).filter(Boolean).slice(0, 2);
   const previousActivities = (previous?.activitiesList || []).filter(Boolean).slice(0, 2);
   const sameSection = !!previous && previous.level === log.level && previous.section === log.section;
+  const sameHierarchy =
+    sameSection &&
+    previous?.sourceSequenceId === log.sourceSequenceId &&
+    previous?.sourceResourceId === log.sourceResourceId &&
+    previous?.sourceLearningUnitId === log.sourceLearningUnitId &&
+    previous?.midan === log.midan &&
+    previous?.maqta === log.maqta &&
+    previous?.mawrid === log.mawrid &&
+    previous?.ta3alom === log.ta3alom;
   const sameActivities =
     sameSection &&
     previous?.sourceActivityId === log.sourceActivityId &&
@@ -80,6 +89,12 @@ const getExportLessonContent = (log: LogEntry, previous?: LogEntry): string => {
     previousActivities.join('|') === activities.join('|');
 
   const lines: string[] = [];
+  if (!sameHierarchy) {
+    if (log.midan) lines.push(`الميدان: ${log.midan}`);
+    if (log.maqta) lines.push(`المقطع: ${log.maqta}`);
+    if (log.mawrid) lines.push(`المورد التعلمي: ${log.mawrid}`);
+    if (log.ta3alom) lines.push(`تعلم المورد: ${log.ta3alom}`);
+  }
   if (!sameActivities) {
     lines.push(...activities);
   }
