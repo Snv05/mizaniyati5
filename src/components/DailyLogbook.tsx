@@ -311,7 +311,7 @@ function buildHierarchicalContent(
     parts.push(`تقويم: ${row.taqwim}`);
   }
 
-  return parts.join('\\n') || row.content || '';
+  return parts.join('\\n');
 }
 
 
