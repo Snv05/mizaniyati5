@@ -99,7 +99,15 @@ export interface DailyLogEntry {
   midan: string;
   maqta: string;
   mawrid: string;
+  ta3alom: string;
   lessonTitle: string;
+  activitiesList?: string[];
+  taqwim?: string;
+  sourceSequenceId?: string;
+  sourceResourceId?: string;
+  sourceLearningUnitId?: string;
+  sourceActivityId?: string;
+  sourceActivityId2?: string;
   activityType: 'درس نظري' | 'حصة مخبرية / تجريبية' | 'وضعية انطلاق' | 'إدماج وتقويم' | 'فرض محروس' | 'معالجة بيداغوجية';
   homework?: string;
   observations?: string;
