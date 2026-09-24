@@ -292,12 +292,13 @@ function buildHierarchicalContent(
   }
 
   const parts: string[] = [];
-  const sameLevel = !!previous && previous.level === row.level;
-  const sameMaqta = sameLevel && previous?.maqta === row.maqta;
+  const sameSection = !!previous && previous.level === row.level && previous.section === row.section;
+  const sameMaqta = sameSection && previous?.maqta === row.maqta;
   const sameMawrid = sameMaqta && previous?.mawrid === row.mawrid;
   const previousActivities = (previous?.activitiesList || []).filter(Boolean);
   const activities = (row.activitiesList || []).filter(Boolean).slice(0, 2);
   const sameActivities =
+    sameSection &&
     previous?.sourceActivityId === row.sourceActivityId &&
     previous?.sourceActivityId2 === row.sourceActivityId2 &&
     previousActivities.join('|') === activities.join('|');
