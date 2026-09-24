@@ -14,6 +14,42 @@ const waitForImages = async (root: HTMLElement): Promise<void> => {
   }));
 };
 
+
+const preparePageForExport = (source: HTMLElement): { page: HTMLElement; cleanup: () => void } => {
+  const page = source.cloneNode(true) as HTMLElement;
+  page.classList.add("export-clean-page");
+  page.style.boxShadow = "none";
+  page.style.borderRadius = "0";
+  page.style.margin = "0";
+  page.style.transform = "none";
+  page.style.backgroundColor = "#ffffff";
+  page.style.setProperty("-webkit-print-color-adjust", "exact");
+  page.style.setProperty("print-color-adjust", "exact");
+
+  page.querySelectorAll<HTMLElement>(".grid-paper-bg, .writing-grid-cell, .logbook-grid-cell").forEach((cell) => {
+    cell.style.backgroundImage = "none";
+    cell.style.backgroundColor = "#ffffff";
+  });
+
+  const host = document.createElement("div");
+  host.style.position = "fixed";
+  host.style.left = "-100000px";
+  host.style.top = "0";
+  host.style.width = source.getBoundingClientRect().width + "px";
+  host.style.height = source.getBoundingClientRect().height + "px";
+  host.style.overflow = "hidden";
+  host.style.background = "#ffffff";
+  host.style.zIndex = "-1";
+  host.setAttribute("aria-hidden", "true");
+  host.appendChild(page);
+  document.body.appendChild(host);
+
+  return {
+    page,
+    cleanup: () => host.remove(),
+  };
+};
+
 export const generatePreviewMatchPdf = async (
   pageElements: HTMLElement[],
   orientation: LogbookOrientation = "portrait"
@@ -34,42 +70,47 @@ export const generatePreviewMatchPdf = async (
 
   for (let index = 0; index < pageElements.length; index += 1) {
     const element = pageElements[index];
-    await waitForImages(element);
-    await new Promise<void>((resolve) =>
-      requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
-    );
+    const prepared = preparePageForExport(element);
+    try {
+      await waitForImages(prepared.page);
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+      );
 
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: false,
-      backgroundColor: "#ffffff",
-      logging: false,
-      imageTimeout: 15000,
-      scrollX: 0,
-      scrollY: 0,
-      width: element.scrollWidth,
-      height: element.scrollHeight,
-      windowWidth: Math.max(document.documentElement.clientWidth, element.scrollWidth),
-      windowHeight: Math.max(document.documentElement.clientHeight, element.scrollHeight),
-    });
+      const canvas = await html2canvas(prepared.page, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: "#ffffff",
+        logging: false,
+        imageTimeout: 15000,
+        scrollX: 0,
+        scrollY: 0,
+        width: prepared.page.scrollWidth,
+        height: prepared.page.scrollHeight,
+        windowWidth: Math.max(document.documentElement.clientWidth, prepared.page.scrollWidth),
+        windowHeight: Math.max(document.documentElement.clientHeight, prepared.page.scrollHeight),
+      });
 
-    if (index > 0) pdf.addPage();
+      if (index > 0) pdf.addPage();
 
     const imageData = canvas.toDataURL("image/png");
 
     // كل عنصر تصدير هو صفحة A4 فعلية؛ نملأ صفحة PDF كاملة حتى لا تظهر
     // هوامش إضافية أو يتم تصغير الصفحة بسبب فرق بسيط في أبعاد الـcanvas.
-    pdf.addImage(
-      imageData,
-      "PNG",
-      0,
-      0,
-      pageWidth,
-      pageHeight,
-      undefined,
-      "FAST"
-    );
+      pdf.addImage(
+        imageData,
+        "PNG",
+        0,
+        0,
+        pageWidth,
+        pageHeight,
+        undefined,
+        "FAST"
+      );
+    } finally {
+      prepared.cleanup();
+    }
   }
 
   pdf.save(`الدفتر-اليومي-مطابق-للمعاينة-${orientation === "landscape" ? "أفقي" : "عمودي"}.pdf`);
