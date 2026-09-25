@@ -27,21 +27,18 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
     const match = schoolYear?.match(/(20\d{2})/);
     if (!match) return '';
     const year = Number(match[1]);
-    // تاريخ دخول التلاميذ للموسم 2026-2027: الأحد 06 سبتمبر 2026.
-    if (year === 2026) return '2026-09-06';
-    // لباقي المواسم نبدأ من أول سبتمبر ثم يضبط المولد بداية الأسبوع.
+    // التاريخ افتراضي فقط عند غياب إعداد الدفتر، ويظل قابلاً للتغير حسب السنة.
     return `${year}-09-01`;
   };
   const [startDate] = useState(() => {
-    // التدرج يُفتح بالتاريخ الرسمي تلقائياً، ولا يعتمد على تاريخ قديم محفوظ.
-    const automaticDate = deriveStartDate(config.schoolYear);
-    if (automaticDate) return automaticDate;
+    // تاريخ الدخول يؤخذ تلقائياً من إعدادات الدفتر؛ لا حاجة لإدخاله داخل التدرج.
     try {
-      const saved = JSON.parse(localStorage.getItem('algeria_sciences_annual_dist_v5') || '{}');
-      return saved[level]?.startDate || '';
+      const logbook = JSON.parse(localStorage.getItem('daftar_table_v2027') || '{}');
+      if (logbook.startDate) return logbook.startDate;
     } catch {
-      return '';
+      // ننتقل إلى التاريخ المشتق من السنة الدراسية.
     }
+    return deriveStartDate(config.schoolYear);
   });
 
   const [calendarHolidays, setCalendarHolidays] = useState<{ startDate: string; endDate?: string; label: string }[]>([]);
@@ -145,6 +142,24 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
     return [dynamicCurriculum];
   }, [startDate, level, curriculumLessons, config.schoolYear, calendarHolidays, calendarEvents]);
 
+  const distributionStats = useMemo(() => {
+    const rows = pages.flat().filter((row: any) => !row.isHoliday && !row.isExam);
+    const unique = (values: string[]) =>
+      Array.from(new Set(values.map(v => String(v || '').trim()).filter(Boolean)));
+
+    const maqtaCount = unique(rows.map((r: any) => r.maqta)).length;
+    const resourceCount = unique(rows.map((r: any) => r.mawrid)).length;
+    const ta3alomCount = unique(rows.map((r: any) => r.ta3alom)).length;
+
+    // الأنشطة مأخوذة من قاعدة المنهاج المرتبطة بالمستوى، مع منع التكرار.
+    const activityValues = baseLessons.flatMap((lesson: any) =>
+      Array.isArray(lesson.activities) ? lesson.activities : []
+    );
+    const activityCount = unique(activityValues).length;
+
+    return { maqtaCount, resourceCount, ta3alomCount, activityCount };
+  }, [pages, level, curriculumLessons]); 
+
   // Persist the exact generated distribution so the Daily Logbook can use it as its schedule source.
   useEffect(() => {
     if (pages.length === 0) return;
@@ -245,22 +260,15 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
             <thead>
               <tr className="bg-[#f0f0f0]">
                 <th colSpan={6} className="border border-black p-2 text-sm font-black">
-                  الميــــــدان: {
-                    level === '4am' ? (
-                      pageIndex === 0 ? 'الإنســـــــان والصحــــــــــــــة' :
-                      pageIndex === 1 ? 'التنســـــــيق الوظيفـــي في العضويـــة' :
-                      'انتقــــــال الصفــــــات الوراثيــــــة'
-                    ) : level === '2am' ? 'الإنســـــــان والمحيــــــــــــــط' :
-                    level === '1am' ? Array.from(new Set(page.map(row => row.midan).filter(Boolean))).join(' — ') :
-                    Array.from(new Set(page.map(row => row.midan).filter(Boolean))).join(' — ')
+                  Array.from(new Set(page.map(row => [row.midan, row.maqta].filter(Boolean).join(' — ')).filter(Boolean))).join('  |  ')
                   }
                 </th>
               </tr>
               <tr className="bg-[#f8f8f8]">
                 <th className="border border-black p-1 w-[8%]">الأشهر</th>
                 <th className="border border-black p-1 w-[12%]">الأسابيع</th>
-                <th className="border border-black p-1 w-[20%]">المقطع التعلمي</th>
-                <th className="border border-black p-1 w-[20%]">المورد المعرفي</th>
+                <th className="border border-black p-1 w-[25%]">الميدان / المقطع</th>
+                <th className="border border-black p-1 w-[15%]">المورد المعرفي</th>
                 <th className="border border-black p-1 w-[20%]">الحصة الأولى</th>
                 <th className="border border-black p-1 w-[20%]">الحصة الثانية</th>
               </tr>
@@ -285,7 +293,11 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
                       </div>
                     </td>
                     <td contentEditable suppressContentEditableWarning className="border border-black p-1 font-mono text-[10px] font-bold align-middle editable-cell outline-none">{row.dates}</td>
-                    <td contentEditable suppressContentEditableWarning className="border border-black p-1 font-bold align-middle editable-cell outline-none">{row.maqta}</td>
+                    <td contentEditable suppressContentEditableWarning className="border border-black p-1 font-bold align-middle editable-cell outline-none">
+                      {i > 0 && page[i - 1]?.midan === row.midan && page[i - 1]?.maqta === row.maqta
+                        ? ''
+                        : [row.midan, row.maqta].filter(Boolean).join(' — ')}
+                    </td>
                     <td contentEditable suppressContentEditableWarning className="border border-black p-1 font-bold align-middle editable-cell outline-none">{row.mawrid}</td>
                     <td contentEditable suppressContentEditableWarning className="border border-black p-1.5 text-right font-medium align-middle editable-cell outline-none">{(row.session1 || '').trim() || (row.taqwim ? `تقويم: ${row.taqwim}` : '—')}</td>
                     <td contentEditable suppressContentEditableWarning className="border border-black p-1.5 text-right font-medium align-middle editable-cell outline-none">{(row.session2 || '').trim() || (row.taqwim ? `تقويم: ${row.taqwim}` : '—')}</td>
@@ -323,6 +335,21 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
           </div>
         </div>
       ))}
+      {/* إحصائيات التدرج */}
+      <div className="relative z-10 w-full max-w-[1100px] mt-2 mb-6 grid grid-cols-2 md:grid-cols-4 gap-3 print:mt-3 print:mb-3">
+        {[
+          ['عدد المقاطع', distributionStats.maqtaCount],
+          ['عدد موارد التعلم', distributionStats.resourceCount],
+          ['عدد تعلم المورد', distributionStats.ta3alomCount],
+          ['عدد الأنشطة', distributionStats.activityCount],
+        ].map(([label, value]) => (
+          <div key={String(label)} className="rounded-xl border-2 border-emerald-200 bg-emerald-50 px-4 py-3 text-center">
+            <div className="text-[11px] font-bold text-emerald-700">{label}</div>
+            <div className="text-2xl font-black text-emerald-900 mt-1">{value}</div>
+          </div>
+        ))}
+      </div>
+
     </div>
   );
 
