@@ -67,14 +67,17 @@ export interface CurriculumResourceItem {
 const transformLessonMemoToLogbook = (lessons: LessonMemo[], levelLabel: '1م' | '2م' | '3م' | '4م'): CurriculumResourceItem[] => {
   return lessons.map(lesson => {
     let txt = `<u>الميدان:</u> ${lesson.midan || ''}`;
-    if (lesson.maqta) txt += `\\n<u>المقطع:</u> ${lesson.maqta}`;
-    if (lesson.mawrid) txt += `\\n<u>المورد التعلمي:</u> ${lesson.mawrid}`;
-    if (lesson.ta3alom) txt += `\\n<u>تعلم المورد:</u> ${lesson.ta3alom}`;
+    if (lesson.maqta) txt += `\n<u>المقطع:</u> ${lesson.maqta}`;
+    if (lesson.mawrid) txt += `\n<u>المورد التعلمي:</u> ${lesson.mawrid}`;
+    if (lesson.ta3alom) txt += `\n<u>تعلم المورد:</u> ${lesson.ta3alom}`;
 
     // محتوى الدرس في الدفتر يعرض عنواني النشاطين فقط؛ التفاصيل تبقى في المذكرة.
     const activities = lesson.anshita.map(a => a.title).filter(Boolean).slice(0, 2);
     if (activities.length) {
-      txt += `\\n<u>محتوى الدرس:</u> ${activities.join(' / ')}`;
+      txt += `\n<u>محتوى الدرس:</u> ${activities.join(' / ')}`;
+    }
+    if (lesson.taqwim) {
+      txt += `\n<u>التقويم:</u> ${lesson.taqwim}`;
     }
 
     const sourceActivityIds = lesson.anshita.map((a, index) =>
