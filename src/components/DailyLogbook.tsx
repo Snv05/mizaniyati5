@@ -67,15 +67,20 @@ export interface CurriculumResourceItem {
 const transformLessonMemoToLogbook = (lessons: LessonMemo[], levelLabel: '1م' | '2م' | '3م' | '4م'): CurriculumResourceItem[] => {
   return lessons.map(lesson => {
     let txt = `<u>الميدان:</u> ${lesson.midan || ''}`;
-    if (lesson.maqta) txt += `\n<u>المقطع:</u> ${lesson.maqta}`;
-    if (lesson.mawrid) txt += `\n<u>المورد:</u> ${lesson.mawrid}`;
-    if (lesson.ta3alom) txt += `\n<u>تعلم المورد:</u> ${lesson.ta3alom}`;
-    
-    const actText = lesson.anshita.map(a => a.title).join(' / ');
-    if (actText) {
-       txt += `\n<u>الأنشطة:</u> ${actText}`;
+    if (lesson.maqta) txt += `\\n<u>المقطع:</u> ${lesson.maqta}`;
+    if (lesson.mawrid) txt += `\\n<u>المورد التعلمي:</u> ${lesson.mawrid}`;
+    if (lesson.ta3alom) txt += `\\n<u>تعلم المورد:</u> ${lesson.ta3alom}`;
+
+    // محتوى الدرس في الدفتر يعرض عنواني النشاطين فقط؛ التفاصيل تبقى في المذكرة.
+    const activities = lesson.anshita.map(a => a.title).filter(Boolean).slice(0, 2);
+    if (activities.length) {
+      txt += `\\n<u>محتوى الدرس:</u> ${activities.join(' / ')}`;
     }
-    
+
+    const sourceActivityIds = lesson.anshita.map((a, index) =>
+      a.sourceActivityId || `generated:${levelLabel}:${lesson.memoNumber || lesson.sourceLearningUnitId || 'unit'}:activity-${index + 1}`
+    );
+
     return {
       level: levelLabel,
       memoNumber: lesson.memoNumber?.toString() || '',
@@ -83,12 +88,12 @@ const transformLessonMemoToLogbook = (lessons: LessonMemo[], levelLabel: '1م' |
       maqta: lesson.maqta || '',
       mawrid: lesson.mawrid || '',
       ta3alom: lesson.ta3alom || '',
-      activities: lesson.anshita.map(a => a.title),
+      activities,
       formattedText: txt,
       sourceSequenceId: lesson.sourceSequenceId,
       sourceResourceId: lesson.sourceResourceId,
       sourceLearningUnitId: lesson.sourceLearningUnitId,
-      sourceActivityIds: lesson.anshita.map(a => a.sourceActivityId || ''),
+      sourceActivityIds,
       taqwim: lesson.taqwim || ''
     };
   });
@@ -560,11 +565,29 @@ const normalizeDailyLogbookRows = (
           })()
         : undefined);
 
-    const activities = Array.from(new Set((resource?.activities || row.activitiesList || []).map(clean).filter(Boolean))).slice(0, 2);
+    const selectedIds = [row.sourceActivityId, row.sourceActivityId2].map(clean).filter(Boolean);
+    const selectedTitles = (row.activitiesList || []).map(clean).filter(Boolean);
+
+    const selectedIndexes = selectedIds
+      .map(id => resource?.sourceActivityIds?.findIndex(sourceId => clean(sourceId) === id) ?? -1)
+      .filter(index => index >= 0);
+
+    const indexedTitles = selectedIndexes.map(index => resource?.activities[index]).filter(Boolean) as string[];
+    const fallbackTitles = selectedTitles.length ? selectedTitles : (resource?.activities || []);
+    const activities = Array.from(new Set((indexedTitles.length ? indexedTitles : fallbackTitles).map(clean).filter(Boolean))).slice(0, 2);
 
     if (!resource) {
       return { ...row, activitiesList: activities, midan: clean(row.midan), maqta: clean(row.maqta), mawrid: clean(row.mawrid), ta3alom: clean(row.ta3alom) };
     }
+
+    const firstSelectedIndex = selectedIndexes[0];
+    const secondSelectedIndex = selectedIndexes[1];
+    const firstId = firstSelectedIndex !== undefined && firstSelectedIndex >= 0
+      ? clean(resource.sourceActivityIds?.[firstSelectedIndex])
+      : clean(row.sourceActivityId);
+    const secondId = secondSelectedIndex !== undefined && secondSelectedIndex >= 0
+      ? clean(resource.sourceActivityIds?.[secondSelectedIndex])
+      : clean(row.sourceActivityId2);
 
     return {
       ...row,
@@ -576,8 +599,8 @@ const normalizeDailyLogbookRows = (
       sourceSequenceId: resource.sourceSequenceId || row.sourceSequenceId,
       sourceResourceId: resource.sourceResourceId || row.sourceResourceId,
       sourceLearningUnitId: resource.sourceLearningUnitId || row.sourceLearningUnitId,
-      sourceActivityId: resource.sourceActivityIds?.[0] || row.sourceActivityId,
-      sourceActivityId2: resource.sourceActivityIds?.[1] || row.sourceActivityId2,
+      sourceActivityId: firstId || clean(resource.sourceActivityIds?.[0]),
+      sourceActivityId2: secondId || clean(resource.sourceActivityIds?.[1]),
     };
   });
 };
