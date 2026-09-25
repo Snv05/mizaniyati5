@@ -42,7 +42,7 @@ export function generateAnnualDistribution(
   
   // Build sessions only from curriculum activities; never invent curriculum content.
   for (const lesson of lessons) {
-    for (const act of lesson.anshita) {
+    for (const [activityIndex, act] of lesson.anshita.entries()) {
       flatActivities.push({
         midan: lesson.midan,
         maqta: lesson.maqta,
@@ -51,7 +51,7 @@ export function generateAnnualDistribution(
         sourceSequenceId: lesson.sourceSequenceId,
         sourceResourceId: lesson.sourceResourceId,
         sourceLearningUnitId: lesson.sourceLearningUnitId,
-        sourceActivityId: act.sourceActivityId,
+        sourceActivityId: act.sourceActivityId || `generated:${lesson.level || 'level'}:${lesson.memoNumber || lesson.sourceLearningUnitId || 'unit'}:activity-${activityIndex + 1}`,
         learningUnit: lesson.ta3alom,
         taqwim: lesson.taqwim || ''
       });
