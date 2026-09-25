@@ -123,21 +123,22 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
          chunkPages[0] = [...specialRows, ...chunkPages[0]];
        }
        return chunkPages;
-    } else if (level === '2am') {
-       // Page 1: September -> November
-       // Page 2: December -> March
-       // Page 3: March -> May
-       return [
-         dynamicCurriculum.slice(0, 11),
-         dynamicCurriculum.slice(11, 25),
-         dynamicCurriculum.slice(25)
-       ];
-    } else if (level === '3am') {
-       return [
-         dynamicCurriculum.slice(0, 11),
-         dynamicCurriculum.slice(11, 26),
-         dynamicCurriculum.slice(26)
-       ];
+    } else if (level === '2am' || level === '3am') {
+       // تقسيم الصفحات حسب ترتيب المقاطع الرسمي، وليس حسب أرقام أسابيع ثابتة.
+       // هذا مهم لأن تغيير تاريخ الدخول أو إضافة عطلة/اختبار يغيّر عدد الصفوف.
+       const curriculumRows = dynamicCurriculum.filter(item => !!item.maqta);
+       const specialRows = dynamicCurriculum.filter(item => !item.maqta && item.lessonType !== 'holiday');
+       const sequenceNames = Array.from(new Set(curriculumRows.map(item => item.maqta).filter(Boolean)));
+       const pageChunks = level === '2am'
+         ? [sequenceNames.slice(0, 2), sequenceNames.slice(2, 4), sequenceNames.slice(4)]
+         : [sequenceNames.slice(0, 2), sequenceNames.slice(2, 3), sequenceNames.slice(3)];
+       const chunkPages = pageChunks
+         .map(chunk => curriculumRows.filter(item => chunk.includes(item.maqta)))
+         .filter(page => page.length > 0);
+       if (specialRows.length > 0 && chunkPages.length > 0) {
+         chunkPages[0] = [...specialRows, ...chunkPages[0]];
+       }
+       return chunkPages; 
     }
     
     return [dynamicCurriculum];
