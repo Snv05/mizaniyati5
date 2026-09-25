@@ -82,17 +82,18 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
     }
   }, [level, config.schoolYear]);
 
-  // Group by pages based on the midan (Page 1: الإنسان والصحة, Page 2: التنسيق الوظيفي, Page 3: انتقال الصفات)
-  
-  
+  // مصدر موحّد للمنهاج: يُستخدم نفسه في التدرج والإحصائيات حتى لا يحدث اختلاف بينهما.
+  const baseLessons = useMemo<LessonMemo[]>(() => {
+    const fromCurriculum = curriculumLessons?.filter(l => l.level === level) || [];
+    if (fromCurriculum.length > 0) return fromCurriculum;
+    if (level === '1am') return LESSONS_1AM;
+    if (level === '2am') return LESSONS_2AM;
+    if (level === '3am') return LESSONS_3AM;
+    return LESSONS_4AM;
+  }, [curriculumLessons, level]);
+
+  // Group by pages based on the official sequence order.
   const pages = useMemo(() => {
-    let baseLessons: LessonMemo[] = curriculumLessons?.filter(l => l.level === level) || [];
-    if (baseLessons.length === 0) {
-      baseLessons = LESSONS_4AM;
-      if (level === '2am') baseLessons = LESSONS_2AM;
-      if (level === '3am') baseLessons = LESSONS_3AM;
-      if (level === '1am') baseLessons = LESSONS_1AM;
-    }
 
     const effectiveStartDate = startDate || deriveStartDate(config.schoolYear);
     const dynamicCurriculum = generateAnnualDistribution(baseLessons, effectiveStartDate, calendarHolidays, calendarEvents);
@@ -158,7 +159,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
     const activityCount = unique(activityValues).length;
 
     return { maqtaCount, resourceCount, ta3alomCount, activityCount };
-  }, [pages, level, curriculumLessons]); 
+  }, [pages, baseLessons]);
 
   // Persist the exact generated distribution so the Daily Logbook can use it as its schedule source.
   useEffect(() => {
