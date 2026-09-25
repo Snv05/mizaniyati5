@@ -222,11 +222,11 @@ export const generateLogbookDocx = async (
   rows.push(new TableRow({
     tableHeader: true,
     children: [
-      createCell("التاريخ", true, "064E3B", 1, 1, 22, AlignmentType.CENTER, 14),
-      createCell("الوقت", true, "064E3B", 1, 1, 22, AlignmentType.CENTER, 13),
-      createCell("القسم", true, "064E3B", 1, 1, 22, AlignmentType.CENTER, 13),
-      createCell("سير الحصة", true, "064E3B", 1, 1, 22, AlignmentType.CENTER, 45),
-      createCell("الملاحظات", true, "064E3B", 1, 1, 22, AlignmentType.CENTER, 15),
+      createCell("التاريخ", true, "000000", 1, 1, 22, AlignmentType.CENTER, 14),
+      createCell("الوقت", true, "000000", 1, 1, 22, AlignmentType.CENTER, 13),
+      createCell("القسم", true, "000000", 1, 1, 22, AlignmentType.CENTER, 13),
+      createCell("سير الحصة", true, "000000", 1, 1, 22, AlignmentType.CENTER, 45),
+      createCell("الملاحظات", true, "000000", 1, 1, 22, AlignmentType.CENTER, 15),
     ]
   }));
 
