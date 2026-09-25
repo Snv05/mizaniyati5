@@ -1056,10 +1056,16 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
             const hasCurriculumSourceForSession =
               ordinal === 0 ? !!annualItem.sourceActivityId : !!annualItem.sourceActivityId2;
 
+            const isCalendarSpecialSession =
+              !!annualItem.isExam ||
+              !!annualItem.isHoliday;
+
             const isAssessmentSession =
               ordinal === 1 &&
               !annualItem.sourceActivityId2 &&
-              (!!annualItem.taqwim || String(scheduledTitle || '').trim().startsWith('تقويم'));
+              (!!annualItem.taqwim ||
+                String(scheduledTitle || '').trim().startsWith('تقويم') ||
+                isCalendarSpecialSession);
 
             // التدرج السنوي يعرّف حصتين فقط لكل أسبوع.
             // إذا وُجدت حصة ثالثة لن نعيد النشاط الأول ولن نخترع نشاطاً جديداً.
@@ -1083,7 +1089,11 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                 activities: [],
                 taqwim: ''
               };
-            } else if (isAssessmentSession || (annualItem.lessonType && annualItem.lessonType !== 'curriculum' && !hasCurriculumSourceForSession)) {
+            } else if (
+              isAssessmentSession ||
+              annualItem.isHoliday ||
+              (annualItem.lessonType && annualItem.lessonType !== 'curriculum' && !hasCurriculumSourceForSession)
+            ) {
               currentLessonType = isAssessmentSession
                 ? 'assessment'
                 : annualItem.lessonType as LogEntry['lessonType'];
@@ -1097,7 +1107,10 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
               linkedSourceActivityId = undefined;
               linkedSourceActivityId2 = undefined;
 
-              const specialTitle = scheduledTitle || (annualItem.taqwim ? `تقويم: ${annualItem.taqwim}` : 'تقويم');
+              const specialTitle =
+                scheduledTitle ||
+                (annualItem.isHoliday ? (annualItem.holidayLabel || 'عطلة') : '') ||
+                (annualItem.taqwim ? `تقويم: ${annualItem.taqwim}` : 'تقويم');
               res = {
                 level: lvl,
                 memoNumber: '',
