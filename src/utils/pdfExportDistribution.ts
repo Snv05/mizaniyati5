@@ -45,7 +45,7 @@ export const generateDistributionPdf = async (
     page.style.borderRadius = "0";
     page.style.background = "#ffffff";
     page.style.backdropFilter = "none";
-    page.style.webkitBackdropFilter = "none";
+    page.style.setProperty("-webkit-backdrop-filter", "none");
     page.style.setProperty("font-family", "Cairo, Tajawal, 'Noto Sans Arabic', 'Segoe UI', Tahoma, Arial, sans-serif");
     page.style.setProperty("-webkit-print-color-adjust", "exact");
     page.style.setProperty("print-color-adjust", "exact");

@@ -261,7 +261,7 @@ const auditCurriculumDatabase = (
   return { byLevel, errors };
 };
 
-type AnnualStoredItem = { id?: string; level?: string; lessonType?: string; midan?: string; maqta?: string; mawrid?: string; session1?: string; session2?: string; sourceSequenceId?: string; sourceResourceId?: string; sourceLearningUnitId?: string; sourceActivityId?: string; sourceActivityId2?: string; isHoliday?: boolean; isExam?: boolean; month?: string; dates?: string; taqwim?: string };
+type AnnualStoredItem = { id?: string; level?: string; lessonType?: string; midan?: string; maqta?: string; mawrid?: string; session1?: string; session2?: string; sourceSequenceId?: string; sourceResourceId?: string; sourceLearningUnitId?: string; sourceActivityId?: string; sourceActivityId2?: string; isHoliday?: boolean; isExam?: boolean; holidayLabel?: string; month?: string; dates?: string; taqwim?: string };
 
 const getStoredAnnualSchedule = (level: '1م' | '2م' | '3م' | '4م'): { startDate: string; items: AnnualStoredItem[] } | null => {
   try {

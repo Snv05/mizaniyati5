@@ -99,7 +99,7 @@ export interface DailyLogEntry {
   midan: string;
   maqta: string;
   mawrid: string;
-  ta3alom: string;
+  ta3alom?: string;
   lessonTitle: string;
   activitiesList?: string[];
   taqwim?: string;

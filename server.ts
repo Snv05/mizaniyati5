@@ -37,8 +37,8 @@ app.post('/api/gemini/generate', async (req, res) => {
         },
       },
     });
-    // استخدام النموذج المعتمد والمحدث gemini-3.6-flash
-    const model = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
+    // استخدام النموذج المعتمد gemini-2.5-flash
+    const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
     const response = await ai.models.generateContent({
       model,
       contents: finalPrompt,

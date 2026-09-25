@@ -25,6 +25,10 @@ import {
 } from 'lucide-react';
 import { LESSONS_DATA } from '../data/lessonsData';
 import { MemoConfig } from '../types';
+import card1amImg from '../assets/images/card_1am_plant_1790373274426.jpg';
+import card2amImg from '../assets/images/card_2am_ecosystem_1790373285211.jpg';
+import card3amImg from '../assets/images/card_3am_geology_1790373295369.jpg';
+import card4amImg from '../assets/images/card_4am_human_1790373304110.jpg';
 
 interface LevelsHomePageProps {
   onSelectYear: (level: '1am' | '2am' | '3am' | '4am', subTab?: 'memos' | 'distribution') => void;
@@ -45,83 +49,87 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
   config,
   curriculumBackground,
 }) => {
-  // Level theme cards custom-designed for each curriculum Midan (Domain)
+  // تصميم بطاقات المستويات الدراسية وفق الهوية البصرية الجديدة المستوحاة من النموذج اللوحي
   const levelThemes = [
     {
       id: '1am' as const,
-      backgroundImage: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=1800&q=85',
-      title: '1 متوسط',
-      subtitle: 'السنة الأولى متوسط',
-      midanName: 'ميدان: الإنسان والصحة + الإنسان والمحيط',
-      midanFocus: 'التغذية والوظائف الحيوية • التغذية عند النبات الأخضر والتحصل على الطاقة',
-      accentColor: '#0284c7', // Sky / Bio Blue
-      darkAccent: '#0369a1',
-      bgGradient: 'from-sky-50/80 via-white to-emerald-50/40',
-      borderClass: 'border-sky-300 hover:border-sky-500 hover:shadow-sky-100',
-      badgeBg: 'bg-sky-100 text-sky-800 border-sky-300',
-      iconBadge: <Sprout className="w-5 h-5 text-emerald-600" />,
-      patternOverlay: (
-        <div className="absolute left-0 top-0 bottom-0 w-48 opacity-[0.07] pointer-events-none overflow-hidden flex items-center justify-center">
-          <Sprout className="w-40 h-40 text-sky-900" />
-        </div>
-      ),
+      image: card1amImg,
+      title: '1 متوسط (السنة الأولى متوسط)',
+      midanFocus: 'ميدان: الإنسان والصحة • التغذية عند النبات الأخضر والتحصل على الطاقة',
+      gradient: 'linear-gradient(135deg, #74dfc7 0%, #6cdbc3 50%, #82e4ce 100%)',
+      borderColor: 'border-[#5ecfb5]',
+      titleColor: 'text-[#0d3b32]',
+      subtitleColor: 'text-[#164e43]',
+      statsColor: 'text-[#164e43]',
+      primaryBtn: {
+        bg: 'bg-[#d5faf2] hover:bg-white text-[#0d3b32]',
+        border: 'border-[#a8ebd9]',
+      },
+      secondaryBtn: {
+        bg: 'bg-white/40 hover:bg-white/80 text-[#0d3b32]',
+        border: 'border-[#5ecfb5]/40',
+      },
+      hasBem: false,
     },
     {
       id: '2am' as const,
-      backgroundImage: 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1800&q=85',
-      title: '2 متوسط',
-      subtitle: 'السنة الثانية متوسط',
-      midanName: 'ميدان: الإنسان والمحيط',
-      midanFocus: 'الوسط الحي • التكيف وإعمار الأوساط • التنوع البيولوجي وتاريخ الأرض',
-      accentColor: '#7c3aed', // Purple / Ecology Violet
-      darkAccent: '#6d28d9',
-      bgGradient: 'from-purple-50/80 via-white to-indigo-50/40',
-      borderClass: 'border-purple-300 hover:border-purple-500 hover:shadow-purple-100',
-      badgeBg: 'bg-purple-100 text-purple-900 border-purple-300',
-      iconBadge: <TreePine className="w-5 h-5 text-purple-600" />,
-      patternOverlay: (
-        <div className="absolute left-0 top-0 bottom-0 w-48 opacity-[0.07] pointer-events-none overflow-hidden flex items-center justify-center">
-          <TreePine className="w-40 h-40 text-purple-900" />
-        </div>
-      ),
+      image: card2amImg,
+      title: '2 متوسط (السنة الثانية متوسط)',
+      midanFocus: 'ميدان: الإنسان والمحيط • الوسط الحي • التكيف وإعمار الأوساط',
+      gradient: 'linear-gradient(135deg, #cfb16e 0%, #c5a45b 50%, #d8be7e 100%)',
+      borderColor: 'border-[#bfa157]',
+      titleColor: 'text-[#3e2b0a]',
+      subtitleColor: 'text-[#4a3512]',
+      statsColor: 'text-[#4e3814]',
+      primaryBtn: {
+        bg: 'bg-[#fbf3d3] hover:bg-white text-[#451a03]',
+        border: 'border-[#ecdba4]',
+      },
+      secondaryBtn: {
+        bg: 'bg-white/40 hover:bg-white/80 text-[#451a03]',
+        border: 'border-[#bfa157]/40',
+      },
+      hasBem: false,
     },
     {
       id: '3am' as const,
-      backgroundImage: '/src/assets/images/card_3am_geology_1790188430402.jpg',
-      title: '3 متوسط',
-      subtitle: 'السنة الثالثة متوسط',
-      midanName: 'ميدان: الإنسان والمحيط (الدينامية الداخلية للأرض والجيولوجيا)',
-      midanFocus: 'علم الجيولوجيا • تكتونية الصفائح • الزلازل والبراكين • البنية الباطنية للكرة الأرضية',
-      accentColor: '#0f766e',
-      darkAccent: '#115e59',
-      bgGradient: 'from-teal-50/90 via-white to-amber-50/40',
-      borderClass: 'border-teal-300 hover:border-teal-500 hover:shadow-teal-100',
-      badgeBg: 'bg-teal-100 text-teal-900 border-teal-300',
-      iconBadge: <Globe2 className="w-5 h-5 text-teal-600" />,
-      patternOverlay: (
-        <div className="absolute left-0 top-0 bottom-0 w-48 opacity-[0.10] pointer-events-none overflow-hidden flex items-center justify-center">
-          <Globe2 className="w-40 h-40 text-teal-900" />
-        </div>
-      ),
+      image: card3amImg,
+      title: '3 متوسط (السنة الثالثة متوسط)',
+      midanFocus: 'ميدان: الإنسان والمحيط (الدينامية الداخلية للأرض والجيولوجيا)',
+      gradient: 'linear-gradient(135deg, #96bdf7 0%, #88b3f4 50%, #a4c7f9 100%)',
+      borderColor: 'border-[#78a3ea]',
+      titleColor: 'text-[#132c57]',
+      subtitleColor: 'text-[#1a3666]',
+      statsColor: 'text-[#19396e]',
+      primaryBtn: {
+        bg: 'bg-[#e0efff] hover:bg-white text-[#172554]',
+        border: 'border-[#bad7fc]',
+      },
+      secondaryBtn: {
+        bg: 'bg-white/40 hover:bg-white/80 text-[#172554]',
+        border: 'border-[#78a3ea]/40',
+      },
+      hasBem: false,
     },
     {
       id: '4am' as const,
-      backgroundImage: 'https://images.unsplash.com/photo-1579154204601-01588f351e67?auto=format&fit=crop&w=1800&q=85',
-      title: '4 متوسط',
-      subtitle: 'السنة الرابعة متوسط (BEM)',
-      midanName: 'ميدان: الإنسان والصحة',
-      midanFocus: 'التغذية والأيض الخلوي • التنسيق الوظيفي العصبي والمناعي • الوراثة والجينات',
-      accentColor: '#c2185b',
-      darkAccent: '#9d174d',
-      bgGradient: 'from-rose-50/80 via-white to-pink-50/40',
-      borderClass: 'border-rose-300 hover:border-[#c2185b] hover:shadow-pink-100',
-      badgeBg: 'bg-rose-100 text-[#c2185b] border-rose-300',
-      iconBadge: <Dna className="w-5 h-5 text-[#c2185b]" />,
-      patternOverlay: (
-        <div className="absolute left-0 top-0 bottom-0 w-48 opacity-[0.08] pointer-events-none overflow-hidden flex items-center justify-center">
-          <Dna className="w-40 h-40 text-rose-900" />
-        </div>
-      ),
+      image: card4amImg,
+      title: '4 متوسط (السنة الرابعة متوسط)',
+      midanFocus: 'ميدان: الإنسان والصحة • التغذية والأيض الخلوي • الوراثة والجينات',
+      gradient: 'linear-gradient(135deg, #78d2c6 0%, #6ecbbd 50%, #8ae0d4 100%)',
+      borderColor: 'border-[#5fc1b1]',
+      titleColor: 'text-[#12443c]',
+      subtitleColor: 'text-[#1b4f47]',
+      statsColor: 'text-[#1a534b]',
+      primaryBtn: {
+        bg: 'bg-[#fed8dc] hover:bg-white text-[#881337]',
+        border: 'border-[#fbbbc5]',
+      },
+      secondaryBtn: {
+        bg: 'bg-white/40 hover:bg-white/80 text-[#0f3d35]',
+        border: 'border-[#5fc1b1]/40',
+      },
+      hasBem: true,
     },
   ];
 
@@ -315,77 +323,71 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
                   key={lvl.id}
                   id={`card-select-level-${lvl.id}`}
                   style={{
-                    backgroundImage: `linear-gradient(rgba(255,255,255,0.78), rgba(255,255,255,0.88)), url(${lvl.backgroundImage})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
+                    background: lvl.gradient,
                   }}
-                  className={`relative overflow-hidden w-full text-right p-6 rounded-3xl border transition-all duration-300 shadow-md hover:shadow-xl bg-white/85 backdrop-blur-md ${lvl.borderClass} group`}
+                  className={`relative overflow-hidden w-full text-right p-5 sm:p-6 rounded-3xl border ${lvl.borderColor} transition-all duration-300 shadow-md hover:shadow-xl group flex flex-col sm:flex-row items-center justify-between gap-5`}
                 >
-                  {lvl.patternOverlay}
-
-                  <div className="relative z-10 flex flex-col justify-between h-full space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap items-center gap-2.5">
-                        <h3
-                          className="text-2xl sm:text-3xl font-black tracking-tight"
-                          style={{ color: lvl.accentColor }}
-                        >
+                  {/* محتوى البطاقة النصي (على الجهة اليمنى في الواجهة العربية RTL) */}
+                  <div className="flex-1 flex flex-col justify-between h-full space-y-3.5 w-full">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className={`text-xl sm:text-2xl font-black ${lvl.titleColor}`}>
                           {lvl.title}
                         </h3>
-                        <span className="text-base sm:text-lg font-black text-gray-800">
-                          {lvl.subtitle}
-                        </span>
-
-                        <span className={`text-[11.5px] font-black px-2.5 py-0.5 rounded-full border flex items-center gap-1.5 ${lvl.badgeBg}`}>
-                          {lvl.iconBadge}
-                          <span>{lvl.midanName}</span>
-                        </span>
-
-                        {lvl.id === '4am' && (
-                          <span className="bg-[#c2185b] text-white text-[11px] font-black px-2.5 py-0.5 rounded-full shadow-2xs">
-                            شهادة BEM
+                        {lvl.hasBem && (
+                          <span className="text-[11.5px] font-black px-2.5 py-0.5 rounded-full border border-white/60 bg-white/30 text-[#0f3d35] shadow-2xs">
+                            BEM
                           </span>
                         )}
                       </div>
 
-                      <p className="text-[13px] text-slate-700 font-semibold leading-6">
+                      <p className={`text-[12.5px] sm:text-[13px] font-bold mt-2 leading-relaxed ${lvl.subtitleColor}`}>
                         {lvl.midanFocus}
                       </p>
-
-                      <div className="flex items-center gap-3 pt-1 text-[12px] text-gray-600 font-bold">
-                        <span className="flex items-center gap-1.5 bg-white/90 px-2.5 py-1 rounded-lg border border-gray-200">
-                          <FileText className="w-3.5 h-3.5 text-gray-500" />
-                          <span>{count} مذكرة معتمدة</span>
-                        </span>
-                        <span className="flex items-center gap-1.5 bg-white/90 px-2.5 py-1 rounded-lg border border-gray-200">
-                          <Layers className="w-3.5 h-3.5 text-gray-500" />
-                          <span>نموذج مفصل ومدمج</span>
-                        </span>
-                      </div>
                     </div>
 
-                    {/* أزرار الإجراء المزدوجة: المذكرات والتدرج السنوي */}
-                    <div className="pt-2 flex flex-wrap items-center gap-2.5 border-t border-gray-200/60">
+                    {/* إحصائيات المذكرات الرسمية والنموذج */}
+                    <div className={`flex flex-wrap items-center gap-4 text-[12px] sm:text-[12.5px] font-black ${lvl.statsColor}`}>
+                      <span className="flex items-center gap-1.5">
+                        <CalendarDays className="w-4 h-4 opacity-85" />
+                        <span>{count} مذكرة معتمدة</span>
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <Layers className="w-4 h-4 opacity-85" />
+                        <span>نموذج مفصل ومدمج</span>
+                      </span>
+                    </div>
+
+                    {/* أزرار الإجراء: فتح المذكرات والتدرج السنوي بتصميم Pill المعتمد في النموذج اللوحي */}
+                    <div className="pt-1.5 flex flex-wrap items-center gap-2.5">
                       <button
                         type="button"
                         onClick={() => onSelectYear(lvl.id, 'memos')}
-                        style={{ backgroundColor: lvl.accentColor }}
-                        className="px-4 py-2 rounded-xl text-white text-[12.5px] font-black flex items-center gap-1.5 transition-all hover:opacity-95 shadow-xs cursor-pointer"
+                        className={`px-5 py-2.5 rounded-full text-[13px] sm:text-[13.5px] font-black flex items-center gap-2 border transition-all shadow-xs hover:shadow-md cursor-pointer ${lvl.primaryBtn.bg} ${lvl.primaryBtn.border}`}
                       >
-                        <FileText className="w-4 h-4" />
+                        <BookOpenCheck className="w-4 h-4" />
                         <span>فتح المذكرات البيداغوجية</span>
-                        <ChevronLeft className="w-3.5 h-3.5" />
                       </button>
 
                       <button
                         type="button"
                         onClick={() => onSelectYear(lvl.id, 'distribution')}
-                        className="px-3.5 py-2 rounded-xl bg-white border border-gray-300 text-gray-800 text-[12.5px] font-bold flex items-center gap-1.5 hover:bg-gray-50 transition cursor-pointer"
+                        className={`px-4 py-2 rounded-full text-[12px] font-bold flex items-center gap-1.5 border transition cursor-pointer ${lvl.secondaryBtn.bg} ${lvl.secondaryBtn.border}`}
                       >
-                        <CalendarDays className="w-4 h-4 text-gray-500" />
+                        <CalendarDays className="w-3.5 h-3.5" />
                         <span>التدرج السنوي</span>
                       </button>
                     </div>
+                  </div>
+
+                  {/* الصورة التوضيحية ثلاثية الأبعاد (على الجهة اليسرى كما في النموذج) */}
+                  <div className="w-full sm:w-40 md:w-48 lg:w-52 h-40 sm:h-44 md:h-48 rounded-2xl overflow-hidden shrink-0 shadow-sm relative group-hover:scale-[1.02] transition-transform duration-300 border border-white/40 bg-black/5">
+                    <img
+                      src={lvl.image}
+                      alt={lvl.title}
+                      className="w-full h-full object-cover rounded-2xl"
+                      referrerPolicy="no-referrer"
+                    />
                   </div>
                 </div>
               );
