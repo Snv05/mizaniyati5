@@ -163,6 +163,12 @@ const auditCurriculumDatabase = (
   db: Record<'1م' | '2م' | '3م' | '4م', CurriculumResourceItem[]>
 ): CurriculumDatabaseAudit => {
   const levels = ['1م', '2م', '3م', '4م'] as const;
+  const expectedCounts: CurriculumDatabaseAudit['byLevel'] = {
+    '1م': { resources: 27, activities: 53 },
+    '2م': { resources: 30, activities: 57 },
+    '3م': { resources: 33, activities: 52 },
+    '4م': { resources: 26, activities: 48 },
+  };
   const byLevel = {} as CurriculumDatabaseAudit['byLevel'];
   const errors: string[] = [];
 
@@ -172,6 +178,15 @@ const auditCurriculumDatabase = (
       resources: resources.length,
       activities: resources.reduce((sum, item) => sum + item.activities.length, 0),
     };
+
+    if (
+      byLevel[level].resources !== expectedCounts[level].resources ||
+      byLevel[level].activities !== expectedCounts[level].activities
+    ) {
+      errors.push(
+        `${level}: العدد الحالي ${byLevel[level].resources} مورد / ${byLevel[level].activities} نشاط، والمتوقع ${expectedCounts[level].resources} مورد / ${expectedCounts[level].activities} نشاط.`
+      );
+    }
 
     const unitKeys = new Set<string>();
     const activityIds = new Set<string>();
