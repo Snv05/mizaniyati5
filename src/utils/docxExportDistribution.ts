@@ -91,7 +91,7 @@ const createParagraph = (text: string, bold = false, color = "000000", size = 20
         color: color,
         rightToLeft: true,
         size: size,
-        font: "Arial"
+        font: "Cairo"
       }),
       ...(i < arr.length - 1 ? [new TextRun({ break: 1 })] : [])
     ]).flat()
@@ -130,7 +130,7 @@ export const generateDistributionDocx = async (
     styles: {
       default: {
         document: {
-          run: { rightToLeft: true, font: "Arial" },
+          run: { rightToLeft: true, font: "Cairo" },
           paragraph: {  alignment: AlignmentType.RIGHT }
         }
       }
@@ -147,54 +147,64 @@ export const generateDistributionDocx = async (
 
       const rows: TableRow[] = [];
 
-      // Header row for Midan (if applicable)
+      // Header row: exactly mirrors the seven-column on-screen table.
       if (level !== '3am' && pageTitle) {
         rows.push(new TableRow({
           children: [
-            createCell(`الميــــــدان: ${pageTitle}`, true, "F0F0F0", 6, 1, 24)
+            createCell(`الميدان: ${pageTitle}`, true, "ECFDF5", 7, 1, 24)
           ]
         }));
       }
 
-      // Column Headers
       rows.push(new TableRow({
         children: [
-          new TableCell({ width: { size: 8, type: WidthType.PERCENTAGE }, shading: { fill: "F8F8F8", type: ShadingType.CLEAR, color: "auto" }, children: [createParagraph("الأشهر", true, "000000", 20)] }),
-          new TableCell({ width: { size: 12, type: WidthType.PERCENTAGE }, shading: { fill: "F8F8F8", type: ShadingType.CLEAR, color: "auto" }, children: [createParagraph("الأسابيع", true, "000000", 20)] }),
-          new TableCell({ width: { size: 20, type: WidthType.PERCENTAGE }, shading: { fill: "F8F8F8", type: ShadingType.CLEAR, color: "auto" }, children: [createParagraph("المقطع التعلمي", true, "000000", 20)] }),
-          new TableCell({ width: { size: 20, type: WidthType.PERCENTAGE }, shading: { fill: "F8F8F8", type: ShadingType.CLEAR, color: "auto" }, children: [createParagraph("المورد المعرفي", true, "000000", 20)] }),
-          new TableCell({ width: { size: 20, type: WidthType.PERCENTAGE }, shading: { fill: "F8F8F8", type: ShadingType.CLEAR, color: "auto" }, children: [createParagraph("الحصة الأولى", true, "000000", 20)] }),
-          new TableCell({ width: { size: 20, type: WidthType.PERCENTAGE }, shading: { fill: "F8F8F8", type: ShadingType.CLEAR, color: "auto" }, children: [createParagraph("الحصة الثانية", true, "000000", 20)] }),
+          new TableCell({ width: { size: 8, type: WidthType.PERCENTAGE }, shading: { fill: "F8F8F8", type: ShadingType.CLEAR, color: "auto" }, children: [createParagraph("الشهر", true, "000000", 20)] }),
+          new TableCell({ width: { size: 11, type: WidthType.PERCENTAGE }, shading: { fill: "F8F8F8", type: ShadingType.CLEAR, color: "auto" }, children: [createParagraph("التاريخ", true, "000000", 20)] }),
+          new TableCell({ width: { size: 13, type: WidthType.PERCENTAGE }, shading: { fill: "ECFDF5", type: ShadingType.CLEAR, color: "auto" }, children: [createParagraph("الميدان", true, "065F46", 20)] }),
+          new TableCell({ width: { size: 17, type: WidthType.PERCENTAGE }, shading: { fill: "FFFBEB", type: ShadingType.CLEAR, color: "auto" }, children: [createParagraph("المقطع التعلمي", true, "92400E", 20)] }),
+          new TableCell({ width: { size: 15, type: WidthType.PERCENTAGE }, shading: { fill: "F8F8F8", type: ShadingType.CLEAR, color: "auto" }, children: [createParagraph("المورد المعرفي", true, "000000", 20)] }),
+          new TableCell({ width: { size: 18, type: WidthType.PERCENTAGE }, shading: { fill: "F8F8F8", type: ShadingType.CLEAR, color: "auto" }, children: [createParagraph("الحصة الأولى", true, "000000", 20)] }),
+          new TableCell({ width: { size: 18, type: WidthType.PERCENTAGE }, shading: { fill: "F8F8F8", type: ShadingType.CLEAR, color: "auto" }, children: [createParagraph("الحصة الثانية", true, "000000", 20)] }),
         ]
       }));
 
-      // Content Rows
-      page.forEach((item) => {
+      // Content rows: same order, colors and repetition rules as the preview.
+      page.forEach((item, rowIndex) => {
+        const previous = page[rowIndex - 1];
+        const sameMidan = !!previous && previous.midan === item.midan;
+        const sameMaqta = sameMidan && previous.maqta === item.maqta;
+
         if (item.isHoliday) {
           rows.push(new TableRow({
             children: [
-              createCell(item.month, true),
-              createCell(item.dates, true),
-              createCell(item.holidayLabel || 'عطلة', true, "E5E7EB", 4)
+              createCell(item.month, true, "DCFCE7"),
+              createCell(item.dates, true, "DCFCE7"),
+              createCell(item.holidayLabel || 'عطلة', true, "DCFCE7", 5)
             ]
           }));
         } else if (item.isExam) {
           rows.push(new TableRow({
             children: [
-              createCell(item.month, true),
-              createCell(item.dates, true),
-              createCell(item.session1 || 'اختبار / فرض', true, "FEF08A", 4)
+              createCell(item.month, true, "FDF2F8"),
+              createCell(item.dates, true, "FDF2F8"),
+              createCell(item.midan || '', true, "FDF2F8"),
+              createCell(item.maqta || '', true, "FDF2F8"),
+              createCell(item.mawrid || '', true, "FDF2F8"),
+              createCell(item.session1 || 'اختبار / فرض', true, "FEF08A"),
+              createCell(item.session2 || '', true, "FEF08A")
             ]
           }));
         } else {
+          const rowBg = rowIndex % 2 === 0 ? "FFFFFF" : "F0FDF4";
           rows.push(new TableRow({
             children: [
-              createCell(item.month, false),
-              createCell(item.dates, false),
-              createCell(item.maqta || '', true),
-              createCell(item.mawrid || '', true),
-              createCell(item.session1 || '', false, undefined, 1, 1, 20, AlignmentType.RIGHT),
-              createCell(item.session2 || '', false, undefined, 1, 1, 20, AlignmentType.RIGHT),
+              createCell(item.month, false, rowBg),
+              createCell(item.dates, false, rowBg),
+              createCell(sameMidan ? '' : (item.midan || ''), true, "ECFDF5"),
+              createCell(sameMaqta ? '' : (item.maqta || ''), true, "FFFBEB"),
+              createCell(item.mawrid || '', true, rowBg),
+              createCell(item.session1 || '', false, rowBg, 1, 1, 20, AlignmentType.RIGHT),
+              createCell(item.session2 || '', false, rowBg, 1, 1, 20, AlignmentType.RIGHT),
             ]
           }));
         }
@@ -214,8 +224,8 @@ export const generateDistributionDocx = async (
             children: [new Paragraph({
               alignment: AlignmentType.CENTER,
               children: [
-                new TextRun({ text: 'الصفحة ', font: 'Arial', rightToLeft: true }),
-                new TextRun({ children: [PageNumber.CURRENT], font: 'Arial' })
+                new TextRun({ text: 'الصفحة ', font: "Cairo", rightToLeft: true }),
+                new TextRun({ children: [PageNumber.CURRENT], font: "Cairo" })
               ]
             })]
           })
