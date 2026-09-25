@@ -18,6 +18,8 @@ interface Props {
   curriculumBackground?: string;
 }
 
+const ANNUAL_SCHEDULE_DATA_VERSION = '2026-09-25-v16';
+
 export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, showToast, curriculumLessons, curriculumBackground }) => {
   const [showPreview, setShowPreview] = useState(false);
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
@@ -154,6 +156,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
         orientation,
         items: pages.flat(),
         generatedFromCurriculum: true,
+        curriculumDataVersion: ANNUAL_SCHEDULE_DATA_VERSION,
         updatedAt: new Date().toISOString()
       };
       localStorage.setItem(key, JSON.stringify(existing));
