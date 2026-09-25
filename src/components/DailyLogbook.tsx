@@ -735,7 +735,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
   const pageDimensions = getPageDimensions(orientation);
   const deriveSchoolEntryDate = (schoolYear: string): string => {
-    const match = schoolYear?.match(/(20\\d{2})/);
+    const match = schoolYear?.match(/(20\d{2})/);
     if (!match) return '';
     const year = Number(match[1]);
     // التاريخ الرسمي لدخول التلاميذ للموسم 2026-2027.
