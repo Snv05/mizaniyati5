@@ -63,9 +63,10 @@ export function generateAnnualDistribution(
   const currentDate = new Date(startDateStr);
   if (Number.isNaN(currentDate.getTime())) return [];
   
-  // Align to Sunday
+  // Align to the Sunday containing the school-entry date (or the Sunday
+  // immediately before it). Never jump to the following week.
   while (currentDate.getDay() !== 0) {
-    currentDate.setDate(currentDate.getDate() + 1);
+    currentDate.setDate(currentDate.getDate() - 1);
   }
 
   const ARABIC_MONTHS = ['جانفي', 'فيفري', 'مارس', 'أفريل', 'ماي', 'جوان', 'جويلية', 'أوت', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
