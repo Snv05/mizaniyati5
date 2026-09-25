@@ -4,6 +4,7 @@ import { DIAGRAMS_3AM } from './diagrams3am';
 export const seq_3am_4: DB_Sequence = {
   "sequence_id": "seq_3am_4",
   "sequence_name": "التربة ثروة هشة",
+  "field_name": "الإنسان والمحيط",
   "resources": [
     {
       "resource_id": "res_3am_4_01",
