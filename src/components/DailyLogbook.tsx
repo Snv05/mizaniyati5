@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { generateLogbookDocx, generatePreviewMatchDocx } from "../utils/docxExportLogbook";
+import { generateLogbookDocx } from "../utils/docxExportLogbook";
 import { generatePreviewMatchPdf } from "../utils/pdfExportLogbook";
 import {
   BookOpen,
@@ -1211,41 +1211,6 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
         showToast('ولّد الدفتر أولاً قبل تصدير Word');
         return;
       }
-      if (!isPreviewModalOpen || previewMode !== 'all') {
-        setPreviewMode('all');
-        setIsPreviewModalOpen(true);
-        await new Promise(resolve => setTimeout(resolve, 200));
-      }
-      if (document.fonts?.ready) await document.fonts.ready;
-      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-
-      const pages = Array.from(
-        document.querySelectorAll<HTMLElement>('[data-preview-export-page="true"]')
-      );
-      if (!pages.length) throw new Error('تعذر العثور على صفحات المعاينة للتصدير');
-
-      const blob = await generatePreviewMatchDocx(pages, orientation);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `الدفتر-اليومي-مطابق-للمعاينة-${orientation === 'landscape' ? 'أفقي' : 'عمودي'}.docx`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
-      showToast('تم تصدير Word مطابقاً لصفحات المعاينة');
-    } catch (error) {
-      console.error(error);
-      showToast('تعذر تصدير Word المطابق للمعاينة');
-    }
-  };
-
-  const handleExportEditableWord = async () => {
-    try {
-      if (rows.length === 0) {
-        showToast('ولّد الدفتر أولاً قبل تصدير Word القابل للتعديل');
-        return;
-      }
       const blob = await generateLogbookDocx(
         rows,
         config,
@@ -1257,7 +1222,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `الدفتر-اليومي-قابل-للتعديل-${orientation === 'landscape' ? 'أفقي' : 'عمودي'}.docx`;
+      a.download = `الدفتر-اليومي-${orientation === 'landscape' ? 'أفقي' : 'عمودي'}.docx`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -1265,7 +1230,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
       showToast('تم تصدير Word قابل للتعديل');
     } catch (error) {
       console.error(error);
-      showToast('تعذر تصدير Word القابل للتعديل');
+      showToast('تعذر تصدير Word');
     }
   };
 
@@ -2993,11 +2958,11 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
               </button>
               <button
                 type="button"
-                onClick={handleExportEditableWord}
-                className="inline-flex items-center gap-1.5 bg-[#7c3aed] hover:bg-[#6d28d9] text-white px-3 py-1.5 rounded-full text-[11px] font-bold transition shadow-sm cursor-pointer"
+                onClick={handleExportWord}
+                className="inline-flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 text-white px-3 py-1.5 rounded-full text-[11px] font-bold transition shadow-sm cursor-pointer ml-2"
               >
                 <FileText className="w-3.5 h-3.5" />
-                <span>Word قابل للتعديل</span>
+                <span>تصدير Word</span>
               </button>
               <button
                 type="button"
