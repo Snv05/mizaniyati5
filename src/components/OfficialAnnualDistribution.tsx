@@ -266,8 +266,8 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
                 </th>
               </tr>
               <tr className="bg-[#f8f8f8]">
-                <th className="border border-black p-1 w-[8%]">الأشهر</th>
-                <th className="border border-black p-1 w-[12%]">الأسابيع</th>
+                <th className="border border-black p-1 w-[8%]">الشهر</th>
+                <th className="border border-black p-1 w-[12%]">التاريخ</th>
                 <th className="border border-black p-1 w-[13%] bg-emerald-50 text-emerald-900">الميدان</th>
                 <th className="border border-black p-1 w-[17%] bg-amber-50 text-amber-900">المقطع التعلمي</th>
                 <th className="border border-black p-1 w-[15%]">المورد المعرفي</th>
