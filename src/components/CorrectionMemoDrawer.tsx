@@ -14,7 +14,7 @@ export const CorrectionMemoDrawer: React.FC<{
   const [correction, setCorrection] = useState('');
   const [busy, setBusy] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
-  const context = useMemo(() => currentLesson ? `المستوى: ${currentLesson.level}\nالميدان: ${currentLesson.midan}\nالمقطع: ${currentLesson.maqta}\nالمورد: ${currentLesson.mawrid}\nتعلم المورد: ${currentLesson.ta3alom}\nالأنشطة: ${currentLesson.anshita.join(' | ')}` : 'لا يوجد مورد محدد.', [currentLesson]);
+  const context = useMemo(() => currentLesson ? `المستوى: ${currentLesson.level}\nالميدان: ${currentLesson.midan}\nالمقطع: ${currentLesson.maqta}\nالمورد: ${currentLesson.mawrid}\nتعلم المورد: ${currentLesson.ta3alom}\nالأنشطة: ${currentLesson.anshita.map(a => a.title).join(' | ')}` : 'لا يوجد مورد محدد.', [currentLesson]);
 
   if (!isOpen) return null;
   const generate = async () => {
