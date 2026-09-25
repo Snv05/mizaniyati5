@@ -51,15 +51,17 @@ const createParagraph = (text: string, bold = false, color = "000000", size = 20
   });
 };
 
-const createCell = (text: string, bold = false, _bgColor?: string, columnSpan?: number, rowSpan?: number, size = 20, alignment: any = AlignmentType.CENTER, widthPercent?: number) => {
+const createCell = (text: string, bold = false, bgColor?: string, columnSpan?: number, rowSpan?: number, size = 20, alignment: any = AlignmentType.CENTER, widthPercent?: number) => {
+  const fill = bgColor === "000000" ? "064E3B" : (bgColor || "FFFFFF");
+  const textColor = fill === "064E3B" || fill === "006233" ? "FFFFFF" : "000000";
   return new TableCell({
     columnSpan,
     rowSpan,
-    shading: { fill: "FFFFFF", type: ShadingType.CLEAR, color: "auto" },
+    shading: { fill, type: ShadingType.CLEAR, color: "auto" },
     margins: { top: 100, bottom: 100, left: 100, right: 100 },
     verticalAlign: VerticalAlign.CENTER,
     width: widthPercent ? { size: widthPercent, type: WidthType.PERCENTAGE } : undefined,
-    children: [createParagraph(text, bold, "000000", size, alignment)]
+    children: [createParagraph(text, bold, textColor, size, alignment)]
   });
 };
 
@@ -253,7 +255,7 @@ export const generateLogbookDocx = async (
     }
 
     previousWeekKey = currentWeekKey;
-    const bgColor = index % 2 === 0 ? "FFFFFF" : "FFFFFF";
+    const bgColor = index % 2 === 0 ? "FFFFFF" : "F0FDF4";
     rows.push(new TableRow({
       cantSplit: true,
       children: [
