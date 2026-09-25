@@ -23,6 +23,8 @@ const preparePageForExport = (source: HTMLElement): { page: HTMLElement; cleanup
   page.style.margin = "0";
   page.style.transform = "none";
   page.style.backgroundColor = "#ffffff";
+  // التصدير الرسمي أبيض وأسود؛ إزالة ألوان واجهة المعاينة من PDF.
+  page.style.filter = "grayscale(1)";
   page.style.setProperty("-webkit-print-color-adjust", "exact");
   page.style.setProperty("print-color-adjust", "exact");
 
