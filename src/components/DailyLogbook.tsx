@@ -2953,14 +2953,6 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
               <button
                 type="button"
                 onClick={handleExportWord}
-                className="inline-flex items-center gap-1.5 bg-[#0369a1] hover:bg-[#0284c7] text-white px-3 py-1.5 rounded-full text-[11px] font-bold transition shadow-sm cursor-pointer ml-2"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                <span>Word مطابق للمعاينة</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleExportWord}
                 className="inline-flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 text-white px-3 py-1.5 rounded-full text-[11px] font-bold transition shadow-sm cursor-pointer ml-2"
               >
                 <FileText className="w-3.5 h-3.5" />
