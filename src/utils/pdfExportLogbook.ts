@@ -113,5 +113,5 @@ export const generatePreviewMatchPdf = async (
     }
   }
 
-  pdf.save(`الدفتر-اليومي-مطابق-للمعاينة-${orientation === "landscape" ? "أفقي" : "عمودي"}.pdf`);
+  pdf.save(`الدفتر-اليومي-${orientation === "landscape" ? "أفقي" : "عمودي"}.pdf`);
 };
