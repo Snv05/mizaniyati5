@@ -269,6 +269,7 @@ const getStoredAnnualSchedule = (level: '1م' | '2م' | '3م' | '4م'): { startD
     const key = level.replace('م', 'am') as '1am' | '2am' | '3am' | '4am';
     const value = raw?.[key];
     if (!value?.startDate || !Array.isArray(value.items)) return null;
+    if (value.curriculumDataVersion !== ANNUAL_SCHEDULE_DATA_VERSION) return null;
     const ARABIC_MONTHS = ['جانفي','فيفري','مارس','أفريل','ماي','جوان','جويلية','أوت','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
     const normalizedItems = value.items.map((item: AnnualStoredItem, index: number) => {
       if (item.month && item.dates) return item;
@@ -403,7 +404,8 @@ const AUTO_FILLED_TIMETABLE_ROWS: TimetableGridRow[] = EMPTY_TIMETABLE_ROWS.map(
   cells: createEmptyDayCells(),
 }));
 
-const LOGBOOK_DATA_VERSION = '2026-09-25-v15';
+const LOGBOOK_DATA_VERSION = '2026-09-25-v16';
+const ANNUAL_SCHEDULE_DATA_VERSION = '2026-09-25-v16';
 const ROWS_PER_PAGE = 12;
 const getPageDimensions = (orientation: 'portrait' | 'landscape') => orientation === 'landscape' ? { w: 297, h: 210 } : { w: 210, h: 297 };
 const PRINT_MARGIN = '14mm';
