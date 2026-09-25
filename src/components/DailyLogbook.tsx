@@ -965,7 +965,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
     const getBaseSection = (sec: string) => {
       if (!sec) return 'قسم غير محدد';
       return sec
-        .replace(/\\s*\\(?(?:فوج|ف|فـ|g|grp|group)\\s*\\d+\\)?\\s*/gi, '')
+        .replace(/\s*\(?(?:فوج|ف|فـ|g|grp|group)\s*\d+\)?\s*/gi, '')
         .trim();
     };
 
@@ -1016,6 +1016,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
         let linkedSourceLearningUnitId = res.sourceLearningUnitId;
         let linkedSourceActivityId = res.sourceActivityIds?.[0];
         let linkedSourceActivityId2 = res.sourceActivityIds?.[1];
+        let sessionOrdinal = 0;
 
         if (annual) {
           const start = new Date(annual.startDate);
@@ -1029,6 +1030,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
             const weekKey = baseSection + "::" + weekIndex;
             const ordinal = weeklySessionCounters[weekKey] || 0;
             weeklySessionCounters[weekKey] = ordinal + 1;
+            sessionOrdinal = ordinal;
 
             const scheduledTitle = ordinal === 0
               ? annualItem.session1
@@ -1120,12 +1122,12 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
             if (currentLessonType !== 'curriculum') return [];
             const unique = Array.from(new Set((res.activities || []).map((x) => String(x || '').trim()).filter(Boolean)));
             if (!annual) return unique.slice(0, 2);
-            const scheduledActivityId = ordinal === 0 ? linkedSourceActivityId : linkedSourceActivityId2;
+            const scheduledActivityId = sessionOrdinal === 0 ? linkedSourceActivityId : linkedSourceActivityId2;
             if (scheduledActivityId) {
               const activityIndex = (res.sourceActivityIds || []).indexOf(scheduledActivityId);
               if (activityIndex >= 0 && res.activities[activityIndex]) return [res.activities[activityIndex]];
             }
-            return ordinal === 0 ? unique.slice(0, 1) : unique.slice(1, 2);
+            return sessionOrdinal === 0 ? unique.slice(0, 1) : unique.slice(1, 2);
           })(),
           taqwim: res.taqwim || '',
           sourceSequenceId: linkedSourceSequenceId,
