@@ -194,26 +194,8 @@ export function generateAnnualDistribution(
       continue;
     }
 
-    // Check holiday
-    const hol = isDateInHolidays(currentDate);
-    if (hol) {
-      generated.push({
-        midan: lastMidan,
-        maqta: lastMaqta,
-        mawrid: lastMawrid,
-        session1: '',
-        session2: '',
-        isHoliday: true,
-        holidayLabel: hol,
-        month,
-        dates
-      });
-      currentDate.setDate(currentDate.getDate() + 7);
-      continue;
-    }
-
-    // العطل والاختبارات والفروض لا تُخترع بتثبيت أرقام أسابيع.
-    // تُقرأ من الرزنامة المحفوظة/المعتمدة، حتى لا نضع تاريخاً غير صحيح.
+    // العطل والاختبارات والفروض تُقرأ من الرزنامة المحفوظة/المعتمدة.
+    // لا نستعمل دالة غير معرفة ولا نثبت عطلاً بأرقام أسابيع.
     const calendarEvent = findCalendarEvent(currentDate);
     if (calendarEvent) {
       const isHolidayEvent = calendarEvent.type === 'holiday';
