@@ -23,14 +23,19 @@ const preparePageForExport = (source: HTMLElement): { page: HTMLElement; cleanup
   page.style.margin = "0";
   page.style.transform = "none";
   page.style.backgroundColor = "#ffffff";
-  // التصدير الرسمي أبيض وأسود؛ إزالة ألوان واجهة المعاينة من PDF.
-  page.style.filter = "grayscale(1)";
+  // يحافظ PDF على ألوان الدفتر والمربعات الصغيرة كما تظهر في المعاينة.
   page.style.setProperty("-webkit-print-color-adjust", "exact");
   page.style.setProperty("print-color-adjust", "exact");
 
-  page.querySelectorAll<HTMLElement>(".grid-paper-bg, .writing-grid-cell, .logbook-grid-cell").forEach((cell) => {
-    cell.style.backgroundImage = "none";
+  page.querySelectorAll<HTMLElement>(".grid-paper-bg").forEach((cell) => {
     cell.style.backgroundColor = "#ffffff";
+  });
+  // لا نحذف شبكة المربعات الصغيرة من خلايا الدفتر أثناء التصدير.
+  page.querySelectorAll<HTMLElement>(".writing-grid-cell, .logbook-grid-cell").forEach((cell) => {
+    cell.style.backgroundColor = "#ffffff";
+    cell.style.backgroundImage =
+      "linear-gradient(to right, rgba(6, 78, 59, 0.10) 1px, transparent 1px), linear-gradient(to bottom, rgba(6, 78, 59, 0.10) 1px, transparent 1px)";
+    cell.style.backgroundSize = "8px 8px";
   });
 
   const host = document.createElement("div");
