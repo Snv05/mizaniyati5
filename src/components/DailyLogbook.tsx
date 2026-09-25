@@ -274,7 +274,8 @@ const getStoredAnnualSchedule = (level: '1م' | '2م' | '3م' | '4م'): { startD
     const normalizedItems = value.items.map((item: AnnualStoredItem, index: number) => {
       if (item.month && item.dates) return item;
       const d = new Date(value.startDate);
-      while (d.getDay() !== 0) d.setDate(d.getDate() + 1);
+      // حساب الأسبوع من الأحد الذي يحتوي تاريخ البداية أو يسبقه.
+      while (d.getDay() !== 0) d.setDate(d.getDate() - 1);
       d.setDate(d.getDate() + index * 7);
       const thu = new Date(d); thu.setDate(thu.getDate() + 4);
       return { ...item, month: item.month || ARABIC_MONTHS[d.getMonth()], dates: item.dates || `${String(d.getDate()).padStart(2,'0')}-${String(thu.getDate()).padStart(2,'0')}` };
@@ -733,10 +734,18 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
   const [period, setPeriod] = useState<string>('شهر');
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
   const pageDimensions = getPageDimensions(orientation);
+  const deriveSchoolEntryDate = (schoolYear: string): string => {
+    const match = schoolYear?.match(/(20\\d{2})/);
+    if (!match) return '';
+    const year = Number(match[1]);
+    // التاريخ الرسمي لدخول التلاميذ للموسم 2026-2027.
+    if (year === 2026) return '2026-09-06';
+    return `${year}-09-01`;
+  };
+
   const [startDate, setStartDate] = useState<string>(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    return formatDateToIsoString(d);
+    const automaticDate = deriveSchoolEntryDate(config.schoolYear);
+    return automaticDate || formatDateToIsoString(new Date());
   });
 
   // Generated Daily Log Entries
@@ -783,7 +792,14 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           if (normalized.length > 0) setHolidays(normalized);
         }
         if (parsed.logbookDataVersion === LOGBOOK_DATA_VERSION && parsed.rows && Array.isArray(parsed.rows)) setRows(normalizeDailyLogbookRows(parsed.rows, CURRICULUM_DATABASE));
-        if (parsed.startDate) setStartDate(parsed.startDate);
+        if (parsed.startDate) {
+          const officialStart = deriveSchoolEntryDate(config.schoolYear);
+          setStartDate(
+            officialStart && parsed.startDate < officialStart
+              ? officialStart
+              : parsed.startDate
+          );
+        }
         if (parsed.period) setPeriod(parsed.period);
         if (parsed.orientation === 'portrait' || parsed.orientation === 'landscape') setOrientation(parsed.orientation);
         if (parsed.gridRows && Array.isArray(parsed.gridRows)) {
@@ -1020,7 +1036,8 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
 
         if (annual) {
           const start = new Date(annual.startDate);
-          while (start.getDay() !== 0) start.setDate(start.getDate() + 1);
+          // بداية الأسبوع هي الأحد الذي يحتوي تاريخ بداية الدراسة أو يسبقه.
+          while (start.getDay() !== 0) start.setDate(start.getDate() - 1);
           const current = new Date(dateStr);
           const diffDays = Math.floor((current.getTime() - start.getTime()) / 86400000);
           const weekIndex = Math.floor(diffDays / 7);
@@ -1258,10 +1275,10 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
       if (!pages.length) throw new Error('تعذر العثور على صفحات المعاينة للتصدير');
 
       await generatePreviewMatchPdf(pages, orientation);
-      showToast('تم تصدير PDF مطابقاً لصفحات المعاينة');
+      showToast('تم تصدير PDF للدفتر اليومي بنجاح');
     } catch (error) {
       console.error(error);
-      showToast('تعذر تصدير PDF المطابق للمعاينة');
+      showToast('تعذر تصدير PDF للدفتر اليومي');
     }
   };
 
@@ -1883,8 +1900,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           .print-page { break-inside: avoid; page-break-inside: avoid; }
         }
         .print-page { direction: rtl; box-sizing: border-box; }
-        .writing-grid-cell { background-color: rgba(255,255,255,.90); background-image: linear-gradient(rgba(100,116,139,.18) 1px, transparent 1px), linear-gradient(90deg, rgba(100,116,139,.18) 1px, transparent 1px); background-size: 8px 8px; }
-        .logbook-grid-cell { background-color: rgba(255,255,255,.90); background-image: linear-gradient(rgba(100,116,139,.16) 1px, transparent 1px), linear-gradient(90deg, rgba(100,116,139,.16) 1px, transparent 1px); background-size: 8px 8px; }
+        .writing-grid-cell, .logbook-grid-cell { background-color: #ffffff; background-image: none; background-size: auto; }
         @media print {
   @page { size: A4 ${orientation}; margin: 0 !important; }
   body { margin: 0 !important; padding: 0 !important; background: #fff !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
