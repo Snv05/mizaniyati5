@@ -7,6 +7,7 @@ import { LESSONS_2AM } from '../data/lessons2am';
 import { LESSONS_3AM } from '../data/lessons3am';
 import { LESSONS_4AM } from '../data/lessons4am';
 import { generateAnnualDistribution, AnnualCalendarEvent } from '../utils/annualDistributionGenerator';
+import { generateDistributionPdf } from '../utils/pdfExportDistribution';
 
 import { Printer, FileDown, Eye, X } from 'lucide-react';
 
@@ -186,6 +187,20 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
   }, [pages, startDate, level, orientation, config.schoolYear]);
 
 
+  const handleExportPdf = async () => {
+    try {
+      if (document.fonts?.ready) await document.fonts.ready;
+      const pagesForExport = Array.from(
+        document.querySelectorAll<HTMLElement>('#official-distribution-content .annual-export-page')
+      );
+      await generateDistributionPdf(pagesForExport, orientation);
+      showToast("تم تصدير التدرج السنوي بنفس ألوان وخط وجدول المعاينة (PDF)");
+    } catch (error) {
+      console.error(error);
+      showToast("حدث خطأ أثناء تصدير PDF");
+    }
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -230,7 +245,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
       `}</style>
 
       {pages.map((page, pageIndex) => (
-        <div key={pageIndex} className={`relative z-10 bg-white/84 backdrop-blur-[1px] p-[10mm] mb-8 shadow-md print:bg-white print:shadow-none print:m-0 ${orientation === 'portrait' ? 'w-[210mm] min-h-[297mm]' : 'w-[297mm] min-h-[210mm]'}`} style={{ pageBreakAfter: pageIndex < pages.length - 1 ? 'always' : 'auto' }}>
+        <div key={pageIndex} className={`annual-export-page relative z-10 bg-white/84 backdrop-blur-[1px] p-[10mm] mb-8 shadow-md print:bg-white print:shadow-none print:m-0 ${orientation === 'portrait' ? 'w-[210mm] min-h-[297mm]' : 'w-[297mm] min-h-[210mm]'}`} style={{ pageBreakAfter: pageIndex < pages.length - 1 ? 'always' : 'auto' }}>
           
           {/* Header */}
           <div className="text-center mb-4">
@@ -391,6 +406,9 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
 
           <button onClick={() => setShowPreview(true)} className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 shadow-sm transition">
             <Eye size={18} /> معاينة الطباعة
+          </button>
+          <button onClick={handleExportPdf} className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow-sm transition">
+            <FileDown size={18} /> PDF
           </button>
           <button onClick={handleExportWord} className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-sm transition">
             <FileDown size={18} /> Word
