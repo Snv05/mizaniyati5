@@ -734,12 +734,12 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
   const [period, setPeriod] = useState<string>('شهر');
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
   const pageDimensions = getPageDimensions(orientation);
+  // تاريخ الدخول الافتراضي يُشتق من السنة الدراسية، لكنه ليس ثابتاً:
+  // يمكن للأستاذ تغييره من حقل «تاريخ بداية الدفتر» حسب القرار الرسمي للسنة المعنية.
   const deriveSchoolEntryDate = (schoolYear: string): string => {
-    const match = schoolYear?.match(/(20\d{2})/);
+    const match = String(schoolYear || '').match(/(20\d{2})/);
     if (!match) return '';
     const year = Number(match[1]);
-    // التاريخ الرسمي لدخول التلاميذ للموسم 2026-2027.
-    if (year === 2026) return '2026-09-06';
     return `${year}-09-01`;
   };
 
@@ -793,12 +793,8 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
         }
         if (parsed.logbookDataVersion === LOGBOOK_DATA_VERSION && parsed.rows && Array.isArray(parsed.rows)) setRows(normalizeDailyLogbookRows(parsed.rows, CURRICULUM_DATABASE));
         if (parsed.startDate) {
-          const officialStart = deriveSchoolEntryDate(config.schoolYear);
-          setStartDate(
-            officialStart && parsed.startDate < officialStart
-              ? officialStart
-              : parsed.startDate
-          );
+          // تاريخ البداية إعداد متغير يحدده الأستاذ؛ لا نفرض تاريخاً ثابتاً.
+          setStartDate(parsed.startDate);
         }
         if (parsed.period) setPeriod(parsed.period);
         if (parsed.orientation === 'portrait' || parsed.orientation === 'landscape') setOrientation(parsed.orientation);
@@ -1015,7 +1011,8 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
         sectionCounters[baseSection] += 1;
 
         const storedAnnual = getStoredAnnualSchedule(lvl);
-        const annual = storedAnnual || (() => {
+        // لا نستخدم تدرجاً محفوظاً إذا كان مولداً بتاريخ بداية مختلف.
+        const annual = storedAnnual && storedAnnual.startDate === startDate ? storedAnnual : (() => {
           const sourceLessons =
             lvl === '1م' ? LESSONS_1AM :
             lvl === '2م' ? LESSONS_2AM :
@@ -1917,7 +1914,13 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           .print-page { break-inside: avoid; page-break-inside: avoid; }
         }
         .print-page { direction: rtl; box-sizing: border-box; }
-        .writing-grid-cell, .logbook-grid-cell { background-color: #ffffff; background-image: none; background-size: auto; }
+        .writing-grid-cell, .logbook-grid-cell {
+          background-color: #ffffff;
+          background-image:
+            linear-gradient(to right, rgba(6, 78, 59, 0.10) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(6, 78, 59, 0.10) 1px, transparent 1px);
+          background-size: 8px 8px;
+        }
         @media print {
   @page { size: A4 ${orientation}; margin: 0 !important; }
   body { margin: 0 !important; padding: 0 !important; background: #fff !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
