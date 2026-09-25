@@ -421,7 +421,7 @@ function getSchoolWeekKey(dateStr: string): string {
 }
 
 function getTotalLogbookPages(rowCount: number): number {
-  return 1 + Math.max(1, Math.ceil(rowCount / ROWS_PER_PAGE));
+  return Math.max(1, Math.ceil(rowCount / ROWS_PER_PAGE));
 }
 
 export function detectLevelFromSection(sec: string): '1م' | '2م' | '3م' | '4م' | null {
@@ -1269,10 +1269,14 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
       if (document.fonts?.ready) await document.fonts.ready;
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
+      // PDF يبدأ من أول صفحة فعلية للدفتر، لا من الغلاف، حتى يكون
+      // أول تاريخ ظاهر هو تاريخ دخول المدرسة/بداية الدفتر.
       const pages = Array.from(
-        document.querySelectorAll<HTMLElement>('[data-preview-export-page="true"]')
+        document.querySelectorAll<HTMLElement>(
+          '[data-preview-export-page="true"]:not(.cover-page)'
+        )
       );
-      if (!pages.length) throw new Error('تعذر العثور على صفحات المعاينة للتصدير');
+      if (!pages.length) throw new Error('تعذر العثور على صفحات الحصص للتصدير');
 
       await generatePreviewMatchPdf(pages, orientation);
       showToast('تم تصدير PDF للدفتر اليومي بنجاح');
@@ -1873,7 +1877,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
               <div className="mt-5 border-t border-dashed border-zinc-400 h-7" />
             </div>
             <div className="font-bold text-zinc-700 whitespace-nowrap">
-              صفحة 1 من {getTotalLogbookPages(rows.length)}
+              الغلاف
             </div>
           </div>
         </div>
@@ -1894,8 +1898,8 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .grid-paper-bg {
             background-color: #ffffff !important;
-            background-image: linear-gradient(rgba(148,163,184,.22) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,.22) 1px, transparent 1px) !important;
-            background-size: 10px 10px !important;
+            background-image: none !important;
+            background-size: auto !important;
           }
           .print-page { break-inside: avoid; page-break-inside: avoid; }
         }
