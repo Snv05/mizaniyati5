@@ -259,15 +259,15 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
           <table className="w-full border-collapse border border-black text-center text-[10px] leading-tight">
             <thead>
               <tr className="bg-[#f0f0f0]">
-                <th colSpan={6} className="border border-black p-2 text-sm font-black">
-                  Array.from(new Set(page.map(row => [row.midan, row.maqta].filter(Boolean).join(' — ')).filter(Boolean))).join('  |  ')
-                  }
+                <th colSpan={6} className="border border-black p-2 text-sm font-black bg-emerald-50 text-emerald-900">
+                  الميدان: {Array.from(new Set(page.map(row => row.midan).filter(Boolean))).join('  |  ') || '—'}
                 </th>
               </tr>
               <tr className="bg-[#f8f8f8]">
                 <th className="border border-black p-1 w-[8%]">الأشهر</th>
                 <th className="border border-black p-1 w-[12%]">الأسابيع</th>
-                <th className="border border-black p-1 w-[25%]">الميدان / المقطع</th>
+                <th className="border border-black p-1 w-[13%] bg-emerald-50 text-emerald-900">الميدان</th>
+                <th className="border border-black p-1 w-[17%] bg-amber-50 text-amber-900">المقطع التعلمي</th>
                 <th className="border border-black p-1 w-[15%]">المورد المعرفي</th>
                 <th className="border border-black p-1 w-[20%]">الحصة الأولى</th>
                 <th className="border border-black p-1 w-[20%]">الحصة الثانية</th>
@@ -293,10 +293,11 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
                       </div>
                     </td>
                     <td contentEditable suppressContentEditableWarning className="border border-black p-1 font-mono text-[10px] font-bold align-middle editable-cell outline-none">{row.dates}</td>
-                    <td contentEditable suppressContentEditableWarning className="border border-black p-1 font-bold align-middle editable-cell outline-none">
-                      {i > 0 && page[i - 1]?.midan === row.midan && page[i - 1]?.maqta === row.maqta
-                        ? ''
-                        : [row.midan, row.maqta].filter(Boolean).join(' — ')}
+                    <td contentEditable suppressContentEditableWarning className="border border-black p-1 font-bold align-middle editable-cell outline-none bg-emerald-50/60 text-emerald-950">
+                      {i > 0 && page[i - 1]?.midan === row.midan ? '' : row.midan}
+                    </td>
+                    <td contentEditable suppressContentEditableWarning className="border border-black p-1 font-bold align-middle editable-cell outline-none bg-amber-50/60 text-amber-950">
+                      {i > 0 && page[i - 1]?.midan === row.midan && page[i - 1]?.maqta === row.maqta ? '' : row.maqta}
                     </td>
                     <td contentEditable suppressContentEditableWarning className="border border-black p-1 font-bold align-middle editable-cell outline-none">{row.mawrid}</td>
                     <td contentEditable suppressContentEditableWarning className="border border-black p-1.5 text-right font-medium align-middle editable-cell outline-none">{(row.session1 || '').trim() || (row.taqwim ? `تقويم: ${row.taqwim}` : '—')}</td>
