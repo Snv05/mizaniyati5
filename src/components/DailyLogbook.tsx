@@ -389,66 +389,74 @@ function buildHierarchicalContent(
     return row.content || '';
   }
 
-  const cleanUnique = (values: string[] = []) =>
-    Array.from(new Set(values.map((x) => String(x || '').trim()).filter(Boolean))).slice(0, 2);
+  // نحتفظ بكل بيانات المصدر في قاعدة البيانات، لكن العرض يكون هرمياً
+  // حتى لا تتكرر نفس المعلومة في الصفوف المتتالية.
+  const clean = (value?: string) => String(value || '').trim();
+  const unique = (values: string[] = []) =>
+    Array.from(new Set(values.map(clean).filter(Boolean))).slice(0, 2);
 
-  const activities = cleanUnique(row.activitiesList);
-  const previousActivities = cleanUnique(previous?.activitiesList);
-  const sameSection =
-    !!previous &&
-    previous.level === row.level &&
-    previous.section === row.section;
+  const activities = unique(row.activitiesList);
+  const previousActivities = unique(previous?.activitiesList);
+  const sameSection = !!previous && previous.level === row.level && previous.section === row.section;
 
-  // نكرر عناصر المنهاج فقط عند الانتقال إلى مورد/تعلم مورد مختلف.
-  // إذا استمرت الحصة لنفس تعلم المورد، تظهر العناوين مرة واحدة فقط.
-  const sameHierarchy =
+  const sameSource =
     sameSection &&
     previous?.sourceSequenceId === row.sourceSequenceId &&
     previous?.sourceResourceId === row.sourceResourceId &&
     previous?.sourceLearningUnitId === row.sourceLearningUnitId &&
-    previous?.midan === row.midan &&
-    previous?.maqta === row.maqta &&
-    previous?.mawrid === row.mawrid &&
-    previous?.ta3alom === row.ta3alom;
-
-  const sameActivities =
-    sameSection &&
     previous?.sourceActivityId === row.sourceActivityId &&
-    previous?.sourceActivityId2 === row.sourceActivityId2 &&
-    previousActivities.join('|') === activities.join('|');
+    previous?.sourceActivityId2 === row.sourceActivityId2;
 
   const parts: string[] = [];
-  const seenHierarchyValues = new Set<string>();
-  const addHierarchyLine = (label: string, value?: string) => {
-    const cleanValue = String(value || '').trim();
-    if (!cleanValue || seenHierarchyValues.has(cleanValue)) return;
-    seenHierarchyValues.add(cleanValue);
-    parts.push(`${label}: ${cleanValue}`);
+  const seen = new Set<string>();
+  const addLine = (label: string, value?: string) => {
+    const cleanValue = clean(value);
+    if (!cleanValue) return;
+    const line = label + ': ' + cleanValue;
+    if (seen.has(line)) return;
+    seen.add(line);
+    parts.push(line);
   };
 
-  if (!sameHierarchy) {
-    addHierarchyLine('الميدان', row.midan);
-    addHierarchyLine('المقطع', row.maqta);
-    addHierarchyLine('المورد التعلمي', row.mawrid);
-    addHierarchyLine('تعلم المورد', row.ta3alom);
-  }
+  // كل عنصر هرمي يقارن مع الصف السابق بشكل مستقل:
+  // الميدان ثم المقطع ثم المورد ثم تعلم المورد.
+  const sameMidan = sameSection && clean(previous?.midan) === clean(row.midan);
+  const sameMaqta =
+    sameSection &&
+    clean(previous?.midan) === clean(row.midan) &&
+    clean(previous?.maqta) === clean(row.maqta);
+  const sameMawrid =
+    sameSection &&
+    clean(previous?.midan) === clean(row.midan) &&
+    clean(previous?.maqta) === clean(row.maqta) &&
+    clean(previous?.mawrid) === clean(row.mawrid);
+  const sameTa3alom =
+    sameSection &&
+    clean(previous?.midan) === clean(row.midan) &&
+    clean(previous?.maqta) === clean(row.maqta) &&
+    clean(previous?.mawrid) === clean(row.mawrid) &&
+    clean(previous?.ta3alom) === clean(row.ta3alom);
 
-  const seenLines = new Set(parts);
-  if (!sameActivities) {
+  if (!sameMidan) addLine('الميدان', row.midan);
+  if (!sameMaqta) addLine('المقطع', row.maqta);
+  if (!sameMawrid) addLine('المورد التعلمي', row.mawrid);
+  if (!sameTa3alom) addLine('تعلم المورد', row.ta3alom);
+
+  const activitiesChanged =
+    !sameSection ||
+    !sameSource ||
+    previousActivities.join('|') !== activities.join('|');
+
+  if (activitiesChanged) {
     for (const activity of activities) {
-      if (!seenLines.has(activity)) {
-        seenLines.add(activity);
-        parts.push(activity);
-      }
+      if (!parts.includes(activity)) parts.push(activity);
     }
   }
 
-  if (row.taqwim) {
-    const assessmentLine = `تقويم: ${String(row.taqwim).trim()}`;
-    if (String(row.taqwim).trim() && !seenLines.has(assessmentLine)) {
-      seenLines.add(assessmentLine);
-      parts.push(assessmentLine);
-    }
+  const taqwim = clean(row.taqwim);
+  if (taqwim) {
+    const assessmentLine = 'تقويم: ' + taqwim;
+    if (!parts.includes(assessmentLine)) parts.push(assessmentLine);
   }
 
   return parts.join('\n');
