@@ -95,57 +95,49 @@ const getExportLessonContent = (log: LogEntry, previous?: LogEntry): string => {
     return log.content || '';
   }
 
-  const activities = Array.from(new Set((log.activitiesList || []).map((x) => String(x || '').trim()).filter(Boolean))).slice(0, 2);
-  const previousActivities = Array.from(new Set((previous?.activitiesList || []).map((x) => String(x || '').trim()).filter(Boolean))).slice(0, 2);
+  const clean = (value?: string) => String(value || '').trim();
+  const unique = (values: string[] = []) =>
+    Array.from(new Set(values.map(clean).filter(Boolean))).slice(0, 2);
+  const activities = unique(log.activitiesList);
+  const previousActivities = unique(previous?.activitiesList);
   const sameSection = !!previous && previous.level === log.level && previous.section === log.section;
-  const sameHierarchy =
+  const sameSource =
     sameSection &&
     previous?.sourceSequenceId === log.sourceSequenceId &&
     previous?.sourceResourceId === log.sourceResourceId &&
     previous?.sourceLearningUnitId === log.sourceLearningUnitId &&
-    previous?.midan === log.midan &&
-    previous?.maqta === log.maqta &&
-    previous?.mawrid === log.mawrid &&
-    previous?.ta3alom === log.ta3alom;
-  const sameActivities =
-    sameSection &&
     previous?.sourceActivityId === log.sourceActivityId &&
-    previous?.sourceActivityId2 === log.sourceActivityId2 &&
-    previousActivities.join('|') === activities.join('|');
+    previous?.sourceActivityId2 === log.sourceActivityId2;
 
   const lines: string[] = [];
-  const seenHierarchyValues = new Set<string>();
-  const addHierarchyLine = (label: string, value?: string) => {
-    const cleanValue = String(value || '').trim();
-    if (!cleanValue || seenHierarchyValues.has(cleanValue)) return;
-    seenHierarchyValues.add(cleanValue);
-    lines.push(`${label}: ${cleanValue}`);
+  const addLine = (label: string, value?: string) => {
+    const cleanValue = clean(value);
+    if (!cleanValue) return;
+    const line = label + ': ' + cleanValue;
+    if (!lines.includes(line)) lines.push(line);
   };
 
-  if (!sameHierarchy) {
-    addHierarchyLine('الميدان', log.midan);
-    addHierarchyLine('المقطع', log.maqta);
-    addHierarchyLine('المورد التعلمي', log.mawrid);
-    addHierarchyLine('تعلم المورد', log.ta3alom);
-  }
+  const sameMidan = sameSection && clean(previous?.midan) === clean(log.midan);
+  const sameMaqta = sameSection && clean(previous?.midan) === clean(log.midan) && clean(previous?.maqta) === clean(log.maqta);
+  const sameMawrid = sameSection && clean(previous?.midan) === clean(log.midan) && clean(previous?.maqta) === clean(log.maqta) && clean(previous?.mawrid) === clean(log.mawrid);
+  const sameTa3alom = sameSection && clean(previous?.midan) === clean(log.midan) && clean(previous?.maqta) === clean(log.maqta) && clean(previous?.mawrid) === clean(log.mawrid) && clean(previous?.ta3alom) === clean(log.ta3alom);
 
-  const seenLines = new Set(lines);
-  if (!sameActivities) {
+  if (!sameMidan) addLine('الميدان', log.midan);
+  if (!sameMaqta) addLine('المقطع', log.maqta);
+  if (!sameMawrid) addLine('المورد التعلمي', log.mawrid);
+  if (!sameTa3alom) addLine('تعلم المورد', log.ta3alom);
+
+  const activitiesChanged = !sameSection || !sameSource || previousActivities.join('|') !== activities.join('|');
+  if (activitiesChanged) {
     for (const activity of activities) {
-      if (!seenLines.has(activity)) {
-        seenLines.add(activity);
-        lines.push(activity);
-      }
+      if (!lines.includes(activity)) lines.push(activity);
     }
   }
 
-  const assessment = String((log as any).taqwim || '').trim();
+  const assessment = clean((log as any).taqwim);
   if (assessment) {
-    const assessmentLine = `تقويم: ${assessment}`;
-    if (!seenLines.has(assessmentLine)) {
-      seenLines.add(assessmentLine);
-      lines.push(assessmentLine);
-    }
+    const assessmentLine = 'تقويم: ' + assessment;
+    if (!lines.includes(assessmentLine)) lines.push(assessmentLine);
   }
 
   return lines.join('\n');
