@@ -175,26 +175,62 @@ const auditCurriculumDatabase = (
 
     const unitKeys = new Set<string>();
     const activityIds = new Set<string>();
+    const activityTitles = new Set<string>();
+
     resources.forEach((item) => {
-      const fallbackKey = `${item.level}|${item.memoNumber}|${item.midan}|${item.maqta}|${item.mawrid}|${item.ta3alom}`;
-      const unitKey = item.sourceLearningUnitId ? `id:${item.sourceLearningUnitId}` : `fallback:${fallbackKey}`;
-      if (unitKeys.has(unitKey)) errors.push(`${level}: تكرار تعلم المورد ${item.ta3alom || '(بدون عنوان)'}.`);
+      const clean = (v?: string) => String(v || '').trim();
+      const fallbackKey = `${item.level}|${clean(item.memoNumber)}|${clean(item.midan)}|${clean(item.maqta)}|${clean(item.mawrid)}|${clean(item.ta3alom)}`;
+      const unitKey = item.sourceLearningUnitId
+        ? `id:${clean(item.sourceLearningUnitId)}`
+        : `fallback:${fallbackKey}`;
+
+      if (unitKeys.has(unitKey)) {
+        errors.push(`${level}: تكرار سجل تعلم المورد ${item.ta3alom || '(بدون عنوان)'}.`);
+      }
       unitKeys.add(unitKey);
 
-      if (!item.midan || !item.maqta || !item.mawrid || !item.ta3alom) {
+      if (!clean(item.midan) || !clean(item.maqta) || !clean(item.mawrid) || !clean(item.ta3alom)) {
         errors.push(`${level}: بيانات التسلسل ناقصة في ${item.ta3alom || item.mawrid || item.maqta || 'مورد غير محدد'}.`);
       }
       if (item.activities.length === 0) {
         errors.push(`${level}: لا يوجد نشاط مرتبط بـ ${item.ta3alom || item.mawrid || 'المورد'}.`);
       }
-      if (level !== '4م' && !item.sourceLearningUnitId) {
+
+      if (level !== '4م' && !clean(item.sourceLearningUnitId)) {
         errors.push(`${level}: معرف تعلم المورد الرسمي مفقود في ${item.ta3alom || '(بدون عنوان)'}.`);
       }
-      if (level !== '4م') {
-        for (const id of item.sourceActivityIds || []) {
-          if (activityIds.has(id)) errors.push(`${level}: تكرار معرف النشاط الرسمي ${id}.`);
-          activityIds.add(id);
+
+      const localActivityIds = new Set<string>();
+      const localActivityTitles = new Set<string>();
+      (item.sourceActivityIds || []).forEach((id) => {
+        const cleanId = clean(id);
+        if (!cleanId) return;
+        if (localActivityIds.has(cleanId)) {
+          errors.push(`${level}: معرف نشاط مكرر داخل ${item.ta3alom || 'المورد'}: ${cleanId}.`);
         }
+        localActivityIds.add(cleanId);
+        if (activityIds.has(cleanId)) {
+          errors.push(`${level}: تكرار معرف النشاط الرسمي ${cleanId}.`);
+        }
+        activityIds.add(cleanId);
+      });
+
+      item.activities.forEach((title) => {
+        const cleanTitle = clean(title);
+        if (!cleanTitle) return;
+        if (localActivityTitles.has(cleanTitle)) {
+          errors.push(`${level}: تكرار عنوان نشاط داخل ${item.ta3alom || 'المورد'}: ${cleanTitle}.`);
+        }
+        localActivityTitles.add(cleanTitle);
+        const titleKey = `${level}|${cleanTitle}`;
+        if (activityTitles.has(titleKey)) {
+          errors.push(`${level}: عنوان نشاط مكرر في أكثر من سجل: ${cleanTitle}.`);
+        }
+        activityTitles.add(titleKey);
+      });
+
+      if (item.sourceActivityIds && item.sourceActivityIds.length !== item.activities.length) {
+        errors.push(`${level}: عدد معرفات الأنشطة لا يطابق عدد عناوين الأنشطة في ${item.ta3alom || 'المورد'}.`);
       }
     });
   }
@@ -344,7 +380,7 @@ const AUTO_FILLED_TIMETABLE_ROWS: TimetableGridRow[] = EMPTY_TIMETABLE_ROWS.map(
   cells: createEmptyDayCells(),
 }));
 
-const LOGBOOK_DATA_VERSION = '2026-09-24-v14';
+const LOGBOOK_DATA_VERSION = '2026-09-25-v15';
 const ROWS_PER_PAGE = 12;
 const getPageDimensions = (orientation: 'portrait' | 'landscape') => orientation === 'landscape' ? { w: 297, h: 210 } : { w: 210, h: 297 };
 const PRINT_MARGIN = '14mm';
@@ -963,7 +999,29 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
               !annualItem.sourceActivityId2 &&
               (!!annualItem.taqwim || String(scheduledTitle || '').trim().startsWith('تقويم'));
 
-            if (isAssessmentSession || (annualItem.lessonType && annualItem.lessonType !== 'curriculum' && !hasCurriculumSourceForSession)) {
+            // التدرج السنوي يعرّف حصتين فقط لكل أسبوع.
+            // إذا وُجدت حصة ثالثة لن نعيد النشاط الأول ولن نخترع نشاطاً جديداً.
+            const hasUnsupportedExtraSession = ordinal > 1 && !annualItem.taqwim;
+
+            if (hasUnsupportedExtraSession) {
+              currentLessonType = 'remediation';
+              linkedSourceSequenceId = undefined;
+              linkedSourceResourceId = undefined;
+              linkedSourceLearningUnitId = undefined;
+              linkedSourceActivityId = undefined;
+              linkedSourceActivityId2 = undefined;
+              res = {
+                level: lvl,
+                memoNumber: '',
+                midan: '',
+                maqta: '',
+                mawrid: '',
+                ta3alom: '',
+                formattedText: 'حصة إضافية — تُملأ يدوياً من الأستاذ',
+                activities: [],
+                taqwim: ''
+              };
+            } else if (isAssessmentSession || (annualItem.lessonType && annualItem.lessonType !== 'curriculum' && !hasCurriculumSourceForSession)) {
               currentLessonType = isAssessmentSession
                 ? 'assessment'
                 : annualItem.lessonType as LogEntry['lessonType'];
