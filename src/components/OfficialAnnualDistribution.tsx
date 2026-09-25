@@ -261,7 +261,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
           <table className="w-full border-collapse border border-black text-center text-[10px] leading-tight">
             <thead>
               <tr className="bg-[#f0f0f0]">
-                <th colSpan={6} className="border border-black p-2 text-sm font-black bg-emerald-50 text-emerald-900">
+                <th colSpan={7} className="border border-black p-2 text-sm font-black bg-emerald-50 text-emerald-900">
                   الميدان: {Array.from(new Set(page.map(row => row.midan).filter(Boolean))).join('  |  ') || '—'}
                 </th>
               </tr>
