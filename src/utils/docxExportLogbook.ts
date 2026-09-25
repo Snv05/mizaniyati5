@@ -51,15 +51,15 @@ const createParagraph = (text: string, bold = false, color = "000000", size = 20
   });
 };
 
-const createCell = (text: string, bold = false, bgColor?: string, columnSpan?: number, rowSpan?: number, size = 20, alignment: any = AlignmentType.CENTER, widthPercent?: number) => {
+const createCell = (text: string, bold = false, _bgColor?: string, columnSpan?: number, rowSpan?: number, size = 20, alignment: any = AlignmentType.CENTER, widthPercent?: number) => {
   return new TableCell({
     columnSpan,
     rowSpan,
-    shading: bgColor ? { fill: bgColor, type: ShadingType.CLEAR, color: "auto" } : undefined,
+    shading: { fill: "FFFFFF", type: ShadingType.CLEAR, color: "auto" },
     margins: { top: 100, bottom: 100, left: 100, right: 100 },
     verticalAlign: VerticalAlign.CENTER,
     width: widthPercent ? { size: widthPercent, type: WidthType.PERCENTAGE } : undefined,
-    children: [createParagraph(text, bold, bgColor === "064E3B" || bgColor === "333333" ? "FFFFFF" : "000000", size, alignment)]
+    children: [createParagraph(text, bold, "000000", size, alignment)]
   });
 };
 
@@ -173,14 +173,14 @@ const buildTeacherStampSvg = (config: MemoConfig, size = 420): string => {
   const grade = (config.teacherGrade || "أستاذ المادة").replace("للتعليم المتوسط", "").trim().replace(/[<>&"]/g, "");
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
     <rect width="100%" height="100%" fill="white"/>
-    <circle cx="210" cy="210" r="170" fill="#eff6ff" fill-opacity=".55" stroke="#1d4ed8" stroke-width="7" stroke-dasharray="12 6"/>
-    <circle cx="210" cy="210" r="132" fill="none" stroke="#1d4ed8" stroke-width="3"/>
-    <text x="210" y="105" text-anchor="middle" font-family="Arial" font-size="25" font-weight="bold" fill="#1e40af">الجمهورية الجزائرية الديمقراطية الشعبية</text>
-    <text x="210" y="150" text-anchor="middle" font-family="Arial" font-size="23" font-weight="bold" fill="#1e40af">وزارة التربية الوطنية</text>
-    <text x="210" y="200" text-anchor="middle" font-family="Arial" font-size="22" font-weight="bold" fill="#1e40af">علوم الطبيعة والحياة</text>
-    <text x="210" y="245" text-anchor="middle" font-family="Arial" font-size="30" font-weight="900" fill="#1e40af">${name}</text>
-    <text x="210" y="285" text-anchor="middle" font-family="Arial" font-size="20" font-weight="bold" fill="#1e40af">${grade}</text>
-    <text x="210" y="320" text-anchor="middle" font-family="Arial" font-size="17" fill="#1e40af">${school}</text>
+    <circle cx="210" cy="210" r="170" fill="white" fill-opacity=".55" stroke="#000000" stroke-width="7" stroke-dasharray="12 6"/>
+    <circle cx="210" cy="210" r="132" fill="none" stroke="#000000" stroke-width="3"/>
+    <text x="210" y="105" text-anchor="middle" font-family="Arial" font-size="25" font-weight="bold" fill="#000000">الجمهورية الجزائرية الديمقراطية الشعبية</text>
+    <text x="210" y="150" text-anchor="middle" font-family="Arial" font-size="23" font-weight="bold" fill="#000000">وزارة التربية الوطنية</text>
+    <text x="210" y="200" text-anchor="middle" font-family="Arial" font-size="22" font-weight="bold" fill="#000000">علوم الطبيعة والحياة</text>
+    <text x="210" y="245" text-anchor="middle" font-family="Arial" font-size="30" font-weight="900" fill="#000000">${name}</text>
+    <text x="210" y="285" text-anchor="middle" font-family="Arial" font-size="20" font-weight="bold" fill="#000000">${grade}</text>
+    <text x="210" y="320" text-anchor="middle" font-family="Arial" font-size="17" fill="#000000">${school}</text>
   </svg>`;
 };
 
@@ -253,7 +253,7 @@ export const generateLogbookDocx = async (
     }
 
     previousWeekKey = currentWeekKey;
-    const bgColor = index % 2 === 0 ? "FFFFFF" : "F9FAF6";
+    const bgColor = index % 2 === 0 ? "FFFFFF" : "FFFFFF";
     rows.push(new TableRow({
       cantSplit: true,
       children: [
@@ -291,7 +291,7 @@ export const generateLogbookDocx = async (
       ]
     }),
     new Paragraph({ text: "", spacing: { after: 600 } }),
-    createParagraph("الدفتر اليومي", true, "006233", 40),
+    createParagraph("الدفتر اليومي", true, "000000", 40),
     new Paragraph({ text: "", spacing: { after: 400 } }),
     
     // Info Block (Simple border)
@@ -299,11 +299,11 @@ export const generateLogbookDocx = async (
       visuallyRightToLeft: true,
       width: { size: 100, type: WidthType.PERCENTAGE },
       borders: {
-        top: { style: BorderStyle.SINGLE, size: 2, color: "CCCCCC" },
-        bottom: { style: BorderStyle.SINGLE, size: 2, color: "CCCCCC" },
-        left: { style: BorderStyle.SINGLE, size: 2, color: "CCCCCC" },
-        right: { style: BorderStyle.SINGLE, size: 2, color: "CCCCCC" },
-        insideHorizontal: { style: BorderStyle.SINGLE, size: 2, color: "EEEEEE" },
+        top: { style: BorderStyle.SINGLE, size: 2, color: "000000" },
+        bottom: { style: BorderStyle.SINGLE, size: 2, color: "000000" },
+        left: { style: BorderStyle.SINGLE, size: 2, color: "000000" },
+        right: { style: BorderStyle.SINGLE, size: 2, color: "000000" },
+        insideHorizontal: { style: BorderStyle.SINGLE, size: 2, color: "000000" },
         insideVertical: { style: BorderStyle.NONE, size: 0, color: "FFFFFF" },
       },
       rows: [
@@ -316,7 +316,7 @@ export const generateLogbookDocx = async (
     }),
     
     new Paragraph({ text: "", spacing: { after: 600 } }),
-    createParagraph("جدول استعمال الزمن", true, "006233", 24, AlignmentType.RIGHT),
+    createParagraph("جدول استعمال الزمن", true, "000000", 24, AlignmentType.RIGHT),
     new Paragraph({ text: "", spacing: { after: 100 } }),
   ];
 
@@ -325,13 +325,13 @@ export const generateLogbookDocx = async (
     const timetableRows: TableRow[] = [];
     timetableRows.push(new TableRow({
       children: [
-        createCell("اليوم \ التوقيت", true, "F0FDF4", 1, 1, 16),
-        ...gridRows.map((r: any) => createCell(r.time, true, "F9FAF6", 1, 1, 14))
+        createCell("اليوم \ التوقيت", true, "FFFFFF", 1, 1, 16),
+        ...gridRows.map((r: any) => createCell(r.time, true, "FFFFFF", 1, 1, 14))
       ]
     }));
     
     WEEK_DAYS.forEach((day, index) => {
-      const bgColor = index % 2 === 0 ? "FFFFFF" : "F9FAF6";
+      const bgColor = index % 2 === 0 ? "FFFFFF" : "FFFFFF";
       timetableRows.push(new TableRow({
         children: [
           createCell(day, true, bgColor, 1, 1, 16),
@@ -345,12 +345,12 @@ export const generateLogbookDocx = async (
         visuallyRightToLeft: true,
         width: { size: 100, type: WidthType.PERCENTAGE },
         borders: {
-          top: { style: BorderStyle.SINGLE, size: 2, color: "CCCCCC" },
-          bottom: { style: BorderStyle.SINGLE, size: 2, color: "CCCCCC" },
-          left: { style: BorderStyle.SINGLE, size: 2, color: "CCCCCC" },
-          right: { style: BorderStyle.SINGLE, size: 2, color: "CCCCCC" },
-          insideHorizontal: { style: BorderStyle.SINGLE, size: 2, color: "CCCCCC" },
-          insideVertical: { style: BorderStyle.SINGLE, size: 2, color: "CCCCCC" },
+          top: { style: BorderStyle.SINGLE, size: 2, color: "000000" },
+          bottom: { style: BorderStyle.SINGLE, size: 2, color: "000000" },
+          left: { style: BorderStyle.SINGLE, size: 2, color: "000000" },
+          right: { style: BorderStyle.SINGLE, size: 2, color: "000000" },
+          insideHorizontal: { style: BorderStyle.SINGLE, size: 2, color: "000000" },
+          insideVertical: { style: BorderStyle.SINGLE, size: 2, color: "000000" },
         },
         rows: timetableRows
       })
@@ -360,19 +360,19 @@ export const generateLogbookDocx = async (
   // Holidays
   if (holidays.length > 0) {
     frontPageChildren.push(new Paragraph({ text: "", spacing: { after: 600 } }));
-    frontPageChildren.push(createParagraph("جدول العطل", true, "991B1B", 24, AlignmentType.RIGHT));
+    frontPageChildren.push(createParagraph("جدول العطل", true, "000000", 24, AlignmentType.RIGHT));
     frontPageChildren.push(new Paragraph({ text: "", spacing: { after: 100 } }));
     
     const holidayRows: TableRow[] = [];
     holidayRows.push(new TableRow({
       children: [
-        createCell("العطلة", true, "FEF2F2", 1, 1, 18),
-        createCell("من", true, "F9FAF6", 1, 1, 18),
-        createCell("إلى", true, "F9FAF6", 1, 1, 18),
+        createCell("العطلة", true, "FFFFFF", 1, 1, 18),
+        createCell("من", true, "FFFFFF", 1, 1, 18),
+        createCell("إلى", true, "FFFFFF", 1, 1, 18),
       ]
     }));
     holidays.forEach((h: any, index) => {
-      const bgColor = index % 2 === 0 ? "FFFFFF" : "F9FAF6";
+      const bgColor = index % 2 === 0 ? "FFFFFF" : "FFFFFF";
       holidayRows.push(new TableRow({
         children: [
           createCell(h.label, true, bgColor, 1, 1, 16),
@@ -388,12 +388,12 @@ export const generateLogbookDocx = async (
         width: { size: 80, type: WidthType.PERCENTAGE },
         alignment: AlignmentType.RIGHT,
         borders: {
-          top: { style: BorderStyle.SINGLE, size: 2, color: "CCCCCC" },
-          bottom: { style: BorderStyle.SINGLE, size: 2, color: "CCCCCC" },
-          left: { style: BorderStyle.SINGLE, size: 2, color: "CCCCCC" },
-          right: { style: BorderStyle.SINGLE, size: 2, color: "CCCCCC" },
-          insideHorizontal: { style: BorderStyle.SINGLE, size: 2, color: "CCCCCC" },
-          insideVertical: { style: BorderStyle.SINGLE, size: 2, color: "CCCCCC" },
+          top: { style: BorderStyle.SINGLE, size: 2, color: "000000" },
+          bottom: { style: BorderStyle.SINGLE, size: 2, color: "000000" },
+          left: { style: BorderStyle.SINGLE, size: 2, color: "000000" },
+          right: { style: BorderStyle.SINGLE, size: 2, color: "000000" },
+          insideHorizontal: { style: BorderStyle.SINGLE, size: 2, color: "000000" },
+          insideVertical: { style: BorderStyle.SINGLE, size: 2, color: "000000" },
         },
         rows: holidayRows
       })
