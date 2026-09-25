@@ -183,7 +183,6 @@ export function generateAnnualDistribution(
           sourceSequenceId: act1?.sourceSequenceId,
           sourceResourceId: act1?.sourceResourceId,
           sourceLearningUnitId: act1?.sourceLearningUnitId,
-          sourceActivityId: act1?.sourceActivityId,
           sourceActivityId2: act1?.sourceActivityId,
           learningUnit: act1?.learningUnit,
           taqwim: lessons[0]?.taqwim || ''
