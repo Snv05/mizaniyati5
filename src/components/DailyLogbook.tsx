@@ -81,7 +81,7 @@ const transformLessonMemoToLogbook = (lessons: LessonMemo[], levelLabel: '1م' |
     }
 
     const sourceActivityIds = lesson.anshita.map((a, index) =>
-      a.sourceActivityId || `generated:${levelLabel}:${lesson.memoNumber || lesson.sourceLearningUnitId || 'unit'}:activity-${index + 1}`
+      a.sourceActivityId || `generated:${lesson.level || levelLabel}:${lesson.memoNumber || lesson.sourceLearningUnitId || 'unit'}:activity-${index + 1}`
     );
 
     return {
