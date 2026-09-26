@@ -67,7 +67,7 @@ export const generatePreviewMatchPdf = async (
 ): Promise<void> => {
   if (!pageElements.length) throw new Error("لا توجد صفحات للمعاينة");
   if (document.fonts?.ready) await document.fonts.ready;
-  await waitForImages(pageElements[0]);
+  await Promise.all(pageElements.map((page) => waitForImages(page)));
 
   const pdf = new jsPDF({
     orientation: orientation === "landscape" ? "landscape" : "portrait",
