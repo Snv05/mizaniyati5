@@ -37,7 +37,7 @@ import { LESSONS_2AM } from '../data/lessons2am';
 import { LESSONS_3AM } from '../data/lessons3am';
 import { LESSONS_4AM } from '../data/lessons4am';
 import { generateAnnualDistribution } from '../utils/annualDistributionGenerator';
-import { OFFICIAL_1AM_DISTRIBUTION, OFFICIAL_2AM_DISTRIBUTION } from '../data/officialAnnualDistributionData';
+import { OFFICIAL_1AM_DISTRIBUTION, OFFICIAL_2AM_DISTRIBUTION, OFFICIAL_3AM_DISTRIBUTION, OFFICIAL_4AM_DISTRIBUTION } from '../data/officialAnnualDistributionData';
 
 interface DailyLogbookProps {
   selectedLevel?: '1am' | '2am' | '3am' | '4am';
@@ -406,8 +406,8 @@ const AUTO_FILLED_TIMETABLE_ROWS: TimetableGridRow[] = EMPTY_TIMETABLE_ROWS.map(
   cells: createEmptyDayCells(),
 }));
 
-const LOGBOOK_DATA_VERSION = '2026-09-25-v16';
-const ANNUAL_SCHEDULE_DATA_VERSION = '2026-09-25-v16';
+const LOGBOOK_DATA_VERSION = '2026-09-26-official-v17';
+const ANNUAL_SCHEDULE_DATA_VERSION = '2026-09-26-official-v17';
 const ROWS_PER_PAGE = 12;
 const getPageDimensions = (orientation: 'portrait' | 'landscape') => orientation === 'landscape' ? { w: 297, h: 210 } : { w: 210, h: 297 };
 const PRINT_MARGIN = '14mm';
@@ -1014,8 +1014,12 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
         const storedAnnual = getStoredAnnualSchedule(lvl);
         // لا نستخدم تدرجاً محفوظاً إذا كان مولداً بتاريخ بداية مختلف.
         const annual = storedAnnual && storedAnnual.startDate === startDate ? storedAnnual : (() => {
-          if (lvl === '1م' || lvl === '2م') {
-            const sourceRows = lvl === '1م' ? OFFICIAL_1AM_DISTRIBUTION : OFFICIAL_2AM_DISTRIBUTION;
+          if (lvl === '1م' || lvl === '2م' || lvl === '3م' || lvl === '4م') {
+            const sourceRows =
+              lvl === '1م' ? OFFICIAL_1AM_DISTRIBUTION :
+              lvl === '2م' ? OFFICIAL_2AM_DISTRIBUTION :
+              lvl === '3م' ? OFFICIAL_3AM_DISTRIBUTION :
+              OFFICIAL_4AM_DISTRIBUTION;
             const officialItems = sourceRows.map((item) => {
               const text = [item.maqta, item.mawrid, item.session1, item.session2].join(' ');
               const isHoliday = /عطل[ةــــــــ]/.test(text);
