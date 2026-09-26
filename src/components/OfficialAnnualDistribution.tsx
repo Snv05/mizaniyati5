@@ -8,6 +8,7 @@ import { LESSONS_3AM } from '../data/lessons3am';
 import { LESSONS_4AM } from '../data/lessons4am';
 import { generateAnnualDistribution, AnnualCalendarEvent } from '../utils/annualDistributionGenerator';
 import { generateDistributionPdf } from '../utils/pdfExportDistribution';
+import { OFFICIAL_1AM_DISTRIBUTION, OFFICIAL_2AM_DISTRIBUTION } from '../data/officialAnnualDistributionData';
 
 import { Printer, FileDown, Eye, X } from 'lucide-react';
 
@@ -95,6 +96,27 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
 
   // Group by pages based on the official sequence order.
   const pages = useMemo(() => {
+    // 1AM و2AM: المصدر المباشر هو التدرجان المرفقان من المستخدم.
+    // لا نعيد توليدهما من قاعدة المنهاج ولا نغيّر التواريخ/الأنشطة.
+    if (level === '1am' || level === '2am') {
+      const sourceRows = level === '1am' ? OFFICIAL_1AM_DISTRIBUTION : OFFICIAL_2AM_DISTRIBUTION;
+      const rows = sourceRows.map((row) => {
+        const text = [row.maqta, row.mawrid, row.session1, row.session2].join(' ');
+        const isHoliday = /عطل[ةــــــــ]/.test(text);
+        const isExam = /اختبار|اختبارات|تقوي.*تحصيلي/.test(text);
+        return {
+          ...row,
+          isHoliday,
+          isExam,
+          lessonType: isHoliday ? 'holiday' as const : isExam ? 'assessment' as const : 'curriculum' as const,
+          holidayLabel: isHoliday ? row.mawrid || row.maqta || 'عطلة' : undefined,
+        };
+      });
+      const pageSize = 11;
+      return Array.from({ length: Math.ceil(rows.length / pageSize) }, (_, index) =>
+        rows.slice(index * pageSize, index * pageSize + pageSize)
+      ).filter(page => page.length > 0);
+    }
 
     const effectiveStartDate = startDate || deriveStartDate(config.schoolYear);
     const dynamicCurriculum = generateAnnualDistribution(baseLessons, effectiveStartDate, calendarHolidays, calendarEvents);
@@ -110,23 +132,8 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
         dynamicCurriculum.filter(item => item.maqta === maqta3)
       ].filter(page => page.length > 0);
     } else if (level === '1am') {
-       // 1AM uses the same three-page document model as the other levels.
-       // Pages are source-order chunks of the official sequences; activities
-       // are never reordered and no unsupported content is introduced.
-       const specialRows = dynamicCurriculum.filter(item => !item.maqta && item.lessonType !== 'holiday');
-       const curriculumRows = dynamicCurriculum.filter(item => !!item.maqta);
-       const sequenceNames = Array.from(new Set(curriculumRows.map(item => item.maqta).filter(Boolean)));
-       const chunks = [sequenceNames.slice(0, 3), sequenceNames.slice(3, 6), sequenceNames.slice(6)];
-       const chunkPages = chunks
-         .map(chunk => curriculumRows.filter(item => chunk.includes(item.maqta)))
-         .filter(page => page.length > 0);
-       if (specialRows.length > 0 && chunkPages.length > 0) {
-         chunkPages[0] = [...specialRows, ...chunkPages[0]];
-       }
-       return chunkPages;
+       return [dynamicCurriculum];
     } else if (level === '2am' || level === '3am') {
-       // تقسيم الصفحات حسب ترتيب المقاطع الرسمي، وليس حسب أرقام أسابيع ثابتة.
-       // هذا مهم لأن تغيير تاريخ الدخول أو إضافة عطلة/اختبار يغيّر عدد الصفوف.
        const curriculumRows = dynamicCurriculum.filter(item => !!item.maqta);
        const specialRows = dynamicCurriculum.filter(item => !item.maqta && item.lessonType !== 'holiday');
        const sequenceNames = Array.from(new Set(curriculumRows.map(item => item.maqta).filter(Boolean)));
@@ -139,12 +146,11 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
        if (specialRows.length > 0 && chunkPages.length > 0) {
          chunkPages[0] = [...specialRows, ...chunkPages[0]];
        }
-       return chunkPages; 
+       return chunkPages;
     }
-    
-    return [dynamicCurriculum];
-  }, [startDate, level, curriculumLessons, config.schoolYear, calendarHolidays, calendarEvents]);
 
+    return [dynamicCurriculum];
+  }, [startDate, level, curriculumLessons, config.schoolYear, calendarHolidays, calendarEvents, baseLessons]);
   const distributionStats = useMemo(() => {
     const rows = pages.flat().filter((row: any) => !row.isHoliday && !row.isExam);
     const unique = (values: string[]) =>
@@ -276,7 +282,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
           <table className="w-full border-collapse border border-black text-center text-[10px] leading-tight">
             <thead>
               <tr className="bg-[#f0f0f0]">
-                <th colSpan={7} className="border border-black p-2 text-sm font-black bg-emerald-50 text-emerald-900">
+                <th colSpan={8} className="border border-black p-2 text-sm font-black bg-emerald-50 text-emerald-900">
                   الميدان: {Array.from(new Set(page.map(row => row.midan).filter(Boolean))).join('  |  ') || '—'}
                 </th>
               </tr>
@@ -287,7 +293,8 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
                 <th className="border border-black p-1 w-[17%] bg-amber-50 text-amber-900">المقطع التعلمي</th>
                 <th className="border border-black p-1 w-[15%]">المورد المعرفي</th>
                 <th className="border border-black p-1 w-[20%]">الحصة الأولى</th>
-                <th className="border border-black p-1 w-[20%]">الحصة الثانية</th>
+                <th className="border border-black p-1 w-[17%]">الحصة الثانية</th>
+                <th className="border border-black p-1 w-[8%]">نسبة الإنجاز</th>
               </tr>
             </thead>
             <tbody>
@@ -297,7 +304,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
                     <tr key={i} className="bg-[#dcfce7] print:bg-[#f0f0f0] font-bold">
                       <td contentEditable suppressContentEditableWarning className="border border-black p-1 editable-cell outline-none">{row.month}</td>
                       <td contentEditable suppressContentEditableWarning className="border border-black p-1 font-mono text-[10px] editable-cell outline-none">{row.dates || '—'}</td>
-                      <td colSpan={4} contentEditable suppressContentEditableWarning className="border border-black p-1 text-center text-[12px] editable-cell outline-none">{row.holidayLabel}</td>
+                      <td colSpan={5} contentEditable suppressContentEditableWarning className="border border-black p-1 text-center text-[12px] editable-cell outline-none">{row.holidayLabel}</td>
                     </tr>
                   );
                 }
@@ -319,6 +326,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
                     <td contentEditable suppressContentEditableWarning className="border border-black p-1 font-bold align-middle editable-cell outline-none">{row.mawrid}</td>
                     <td contentEditable suppressContentEditableWarning className="border border-black p-1.5 text-right font-medium align-middle editable-cell outline-none">{(row.session1 || '').trim() || (row.taqwim ? `تقويم: ${row.taqwim}` : '—')}</td>
                     <td contentEditable suppressContentEditableWarning className="border border-black p-1.5 text-right font-medium align-middle editable-cell outline-none">{(row.session2 || '').trim() || (row.taqwim ? `تقويم: ${row.taqwim}` : '—')}</td>
+                    <td contentEditable suppressContentEditableWarning className="border border-black p-1 font-black text-center align-middle editable-cell outline-none">{(row as any).percent || '—'}</td>
                   </tr>
                 );
               })}
