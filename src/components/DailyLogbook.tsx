@@ -287,17 +287,58 @@ const getStoredAnnualSchedule = (level: '1م' | '2م' | '3م' | '4م'): { startD
   }
 };
 
-const findLessonForScheduledSource = (bank: CurriculumResourceItem[], item: AnnualStoredItem, sessionOrdinal: number): CurriculumResourceItem | null => {
+const normalizeMatchText = (value: string) =>
+  String(value || '')
+    .toLowerCase()
+    .replace(/[ًٌٍَُِّْـ]/g, '')
+    .replace(/[إأآ]/g, 'ا')
+    .replace(/ة/g, 'ه')
+    .replace(/ى/g, 'ي')
+    .replace(/[\s\u200f\u200e]+/g, ' ')
+    .trim();
+
+const findLessonForScheduledSource = (
+  bank: CurriculumResourceItem[],
+  item: AnnualStoredItem,
+  sessionOrdinal: number
+): CurriculumResourceItem | null => {
   const activityId = sessionOrdinal === 0 ? item.sourceActivityId : item.sourceActivityId2;
   if (activityId) {
     const exact = bank.find(resource => resource.sourceActivityIds?.includes(activityId));
     if (exact) return exact;
   }
-  if (!item.session1 && !item.session2) return null;
+
   const title = sessionOrdinal === 0 ? item.session1 : item.session2;
-  if (!title) return null;
-  const titleMatches = bank.filter(resource => resource.activities.includes(title));
-  return titleMatches.length === 1 ? titleMatches[0] : null;
+  const targetTitle = normalizeMatchText(title || '');
+  if (!targetTitle) return null;
+
+  const targetMidan = normalizeMatchText(item.midan || '');
+  const targetMaqta = normalizeMatchText(item.maqta || '');
+  const targetMawrid = normalizeMatchText(item.mawrid || '');
+
+  const candidates = bank.filter(resource => {
+    const hierarchyMatches =
+      (!targetMidan || normalizeMatchText(resource.midan).includes(targetMidan) || targetMidan.includes(normalizeMatchText(resource.midan))) &&
+      (!targetMaqta || normalizeMatchText(resource.maqta).includes(targetMaqta) || targetMaqta.includes(normalizeMatchText(resource.maqta))) &&
+      (!targetMawrid || normalizeMatchText(resource.mawrid).includes(targetMawrid) || targetMawrid.includes(normalizeMatchText(resource.mawrid)));
+
+    const activityMatches = (resource.activities || []).some(activity => {
+      const candidate = normalizeMatchText(activity);
+      return candidate === targetTitle || candidate.includes(targetTitle) || targetTitle.includes(candidate);
+    });
+
+    return hierarchyMatches && activityMatches;
+  });
+
+  if (candidates.length === 1) return candidates[0];
+
+  const titleOnlyCandidates = bank.filter(resource =>
+    (resource.activities || []).some(activity => {
+      const candidate = normalizeMatchText(activity);
+      return candidate === targetTitle || candidate.includes(targetTitle) || targetTitle.includes(candidate);
+    })
+  );
+  return titleOnlyCandidates.length === 1 ? titleOnlyCandidates[0] : null;
 };
 
 const LEVEL_NAMES_MAP: Record<string, string> = {
@@ -406,8 +447,8 @@ const AUTO_FILLED_TIMETABLE_ROWS: TimetableGridRow[] = EMPTY_TIMETABLE_ROWS.map(
   cells: createEmptyDayCells(),
 }));
 
-const LOGBOOK_DATA_VERSION = '2026-09-26-official-v17';
-const ANNUAL_SCHEDULE_DATA_VERSION = '2026-09-26-official-v17';
+const LOGBOOK_DATA_VERSION = '2026-09-26-official-v18';
+const ANNUAL_SCHEDULE_DATA_VERSION = '2026-09-26-official-v18';
 const ROWS_PER_PAGE = 12;
 const getPageDimensions = (orientation: 'portrait' | 'landscape') => orientation === 'landscape' ? { w: 297, h: 210 } : { w: 210, h: 297 };
 const PRINT_MARGIN = '14mm';
@@ -741,7 +782,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
     const match = String(schoolYear || '').match(/(20\d{2})/);
     if (!match) return '';
     const year = Number(match[1]);
-    return `${year}-09-01`;
+    return `${year}-09-22`;
   };
 
   const [startDate, setStartDate] = useState<string>(() => {
@@ -1045,7 +1086,8 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
 
         if (annual) {
           const start = new Date(annual.startDate);
-          // بداية الأسبوع هي الأحد الذي يحتوي تاريخ بداية الدراسة أو يسبقه.
+          // كل صف في التدرج يمثل أسبوعاً واحداً، وكل أسبوع له حصتان = ساعتان.
+          // نربط الأسبوع بتاريخ بداية الدفتر، ثم نربط أول حصة بـ session1 والثانية بـ session2.
           while (start.getDay() !== 0) start.setDate(start.getDate() - 1);
           const current = new Date(dateStr);
           const diffDays = Math.floor((current.getTime() - start.getTime()) / 86400000);
@@ -1053,22 +1095,22 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           const annualItem = weekIndex >= 0 ? annual.items[weekIndex] : null;
 
           if (annualItem) {
-            const weekKey = baseSection + "::" + weekIndex;
+            const weekKey = baseSection + "::" + getSchoolWeekKey(dateStr);
             const ordinal = weeklySessionCounters[weekKey] || 0;
+
+            // الحد الصريح: حصة واحدة = ساعة واحدة، والحد الأسبوعي = حصتان = ساعتان.
+            // أي خانة ثالثة في استعمال الزمن لا تُنشئ حصة ثالثة ولا تعيد نشاطاً سابقاً.
+            if (ordinal >= 2) {
+              continue;
+            }
             weeklySessionCounters[weekKey] = ordinal + 1;
             sessionOrdinal = ordinal;
 
-            const scheduledTitle = ordinal === 0
-              ? annualItem.session1
-              : annualItem.session2;
-
+            const scheduledTitle = ordinal === 0 ? annualItem.session1 : annualItem.session2;
             const hasCurriculumSourceForSession =
               ordinal === 0 ? !!annualItem.sourceActivityId : !!annualItem.sourceActivityId2;
 
-            const isCalendarSpecialSession =
-              !!annualItem.isExam ||
-              !!annualItem.isHoliday;
-
+            const isCalendarSpecialSession = !!annualItem.isExam || !!annualItem.isHoliday;
             const isAssessmentSession =
               ordinal === 1 &&
               !annualItem.sourceActivityId2 &&
@@ -1076,9 +1118,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                 String(scheduledTitle || '').trim().startsWith('تقويم') ||
                 isCalendarSpecialSession);
 
-            // التقويم ليس حصة مستقلة في الدفتر اليومي.
-            // إذا كانت الحصة الثانية في التدرج مجرد تقويم، نضيف التقويم إلى
-            // نهاية الحصة المنهجية السابقة ونمنع إنشاء صف/حصة إضافية باسم «تقويم».
+            // التقويم لا يتحول إلى حصة ثالثة أو درس مستقل.
             if (isAssessmentSession && !annualItem.isHoliday && !annualItem.isExam) {
               const previousLessonIndex = generated.findLastIndex((entry) =>
                 entry.dateStr === dateStr &&
@@ -1095,29 +1135,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
               continue;
             }
 
-            // التدرج السنوي يعرّف حصتين فقط لكل أسبوع.
-            // إذا وُجدت حصة ثالثة لن نعيد النشاط الأول ولن نخترع نشاطاً جديداً.
-            const hasUnsupportedExtraSession = ordinal > 1 && !annualItem.taqwim;
-
-            if (hasUnsupportedExtraSession) {
-              currentLessonType = 'remediation';
-              linkedSourceSequenceId = undefined;
-              linkedSourceResourceId = undefined;
-              linkedSourceLearningUnitId = undefined;
-              linkedSourceActivityId = undefined;
-              linkedSourceActivityId2 = undefined;
-              res = {
-                level: lvl,
-                memoNumber: '',
-                midan: '',
-                maqta: '',
-                mawrid: '',
-                ta3alom: '',
-                formattedText: 'حصة إضافية — تُملأ يدوياً من الأستاذ',
-                activities: [],
-                taqwim: ''
-              };
-            } else if (
+            if (
               isAssessmentSession ||
               annualItem.isHoliday ||
               (annualItem.lessonType && annualItem.lessonType !== 'curriculum' && !hasCurriculumSourceForSession)
@@ -1126,9 +1144,6 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                 ? 'assessment'
                 : annualItem.lessonType as LogEntry['lessonType'];
 
-              // الأسبوع الافتتاحي/الحصص الخاصة لا ترتبط بأي نشاط منهجي عادي.
-              // نصفر المعرفات هنا حتى لا تتسرب بيانات الأسبوع السابق أو المورد الافتراضي
-              // إلى الحصة الافتتاحية أو الصحة المدرسية أو المعالجة.
               linkedSourceSequenceId = undefined;
               linkedSourceResourceId = undefined;
               linkedSourceLearningUnitId = undefined;
@@ -1139,12 +1154,13 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                 scheduledTitle ||
                 (annualItem.isHoliday ? (annualItem.holidayLabel || 'عطلة') : '') ||
                 (annualItem.taqwim ? `تقويم: ${annualItem.taqwim}` : 'تقويم');
+
               res = {
                 level: lvl,
                 memoNumber: '',
-                midan: '',
-                maqta: '',
-                mawrid: '',
+                midan: annualItem.midan || '',
+                maqta: annualItem.maqta || '',
+                mawrid: annualItem.mawrid || '',
                 ta3alom: '',
                 formattedText: specialTitle,
                 activities: [],
@@ -1159,6 +1175,25 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                 linkedSourceLearningUnitId = annualItem.sourceLearningUnitId || scheduled.sourceLearningUnitId;
                 linkedSourceActivityId = annualItem.sourceActivityId || scheduled.sourceActivityIds?.[0];
                 linkedSourceActivityId2 = annualItem.sourceActivityId2 || scheduled.sourceActivityIds?.[1];
+              } else {
+                // لا نستخدم المورد المتسلسل التالي كبديل؛ الربط يجب أن يبقى مطابقاً للتدرج.
+                res = {
+                  level: lvl,
+                  memoNumber: '',
+                  midan: annualItem.midan || '',
+                  maqta: annualItem.maqta || '',
+                  mawrid: annualItem.mawrid || '',
+                  ta3alom: '',
+                  formattedText: scheduledTitle || 'محتوى الحصة غير مرتبط بالمذكرة',
+                  activities: scheduledTitle ? [scheduledTitle] : [],
+                  taqwim: annualItem.taqwim || ''
+                };
+                linkedSourceSequenceId = annualItem.sourceSequenceId;
+                linkedSourceResourceId = annualItem.sourceResourceId;
+                linkedSourceLearningUnitId = annualItem.sourceLearningUnitId;
+                linkedSourceActivityId = ordinal === 0 ? annualItem.sourceActivityId : annualItem.sourceActivityId2;
+                linkedSourceActivityId2 = undefined;
+                currentLessonType = 'curriculum';
               }
             }
           }
