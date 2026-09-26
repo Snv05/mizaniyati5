@@ -15,7 +15,7 @@ const waitForImages = async (root: HTMLElement): Promise<void> => {
 };
 
 
-const preparePageForExport = (source: HTMLElement): { page: HTMLElement; cleanup: () => void } => {
+const preparePageForExport = (source: HTMLElement, orientation: LogbookOrientation): { page: HTMLElement; cleanup: () => void } => {
   const page = source.cloneNode(true) as HTMLElement;
   page.classList.add("export-clean-page");
   page.style.boxShadow = "none";
@@ -23,6 +23,10 @@ const preparePageForExport = (source: HTMLElement): { page: HTMLElement; cleanup
   page.style.margin = "0";
   page.style.transform = "none";
   page.style.backgroundColor = "#ffffff";
+  page.style.width = orientation === "landscape" ? "297mm" : "210mm";
+  page.style.height = orientation === "landscape" ? "210mm" : "297mm";
+  page.style.minHeight = page.style.height;
+  page.style.maxWidth = "none";
   // يحافظ PDF على ألوان الدفتر والمربعات الصغيرة كما تظهر في المعاينة.
   page.style.setProperty("-webkit-print-color-adjust", "exact");
   page.style.setProperty("print-color-adjust", "exact");
@@ -42,8 +46,8 @@ const preparePageForExport = (source: HTMLElement): { page: HTMLElement; cleanup
   host.style.position = "fixed";
   host.style.left = "-100000px";
   host.style.top = "0";
-  host.style.width = source.getBoundingClientRect().width + "px";
-  host.style.height = source.getBoundingClientRect().height + "px";
+  host.style.width = page.getBoundingClientRect().width + "px";
+  host.style.height = page.getBoundingClientRect().height + "px";
   host.style.overflow = "hidden";
   host.style.background = "#ffffff";
   host.style.zIndex = "-1";
@@ -63,6 +67,7 @@ export const generatePreviewMatchPdf = async (
 ): Promise<void> => {
   if (!pageElements.length) throw new Error("لا توجد صفحات للمعاينة");
   if (document.fonts?.ready) await document.fonts.ready;
+  await waitForImages(pageElements[0]);
 
   const pdf = new jsPDF({
     orientation: orientation === "landscape" ? "landscape" : "portrait",
@@ -77,20 +82,17 @@ export const generatePreviewMatchPdf = async (
 
   for (let index = 0; index < pageElements.length; index += 1) {
     const element = pageElements[index];
-    const prepared = preparePageForExport(element);
+    const prepared = preparePageForExport(element, orientation);
     try {
-      await waitForImages(prepared.page);
-      await new Promise<void>((resolve) =>
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
-      );
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
       const canvas = await html2canvas(prepared.page, {
-        scale: 2,
+        scale: 1.5,
         useCORS: true,
         allowTaint: false,
         backgroundColor: "#ffffff",
         logging: false,
-        imageTimeout: 15000,
+        imageTimeout: 10000,
         scrollX: 0,
         scrollY: 0,
         width: prepared.page.scrollWidth,
