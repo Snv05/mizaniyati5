@@ -1,68 +1,6 @@
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import type { MemoConfig } from '../types';
-
-type PdfLibraries = {
-  html2canvas: (element: HTMLElement, options?: Record<string, unknown>) => Promise<HTMLCanvasElement>;
-  jsPDF: new (options?: Record<string, unknown>) => {
-    internal: { pageSize: { getWidth: () => number; getHeight: () => number } };
-    addImage: (imageData: string, format: string, x: number, y: number, width: number, height: number, alias?: string, compression?: string) => void;
-    addPage: () => void;
-    save: (filename: string) => void;
-  };
-};
-
-declare global {
-  interface Window {
-    html2canvas?: PdfLibraries['html2canvas'];
-    jspdf?: { jsPDF: PdfLibraries['jsPDF'] };
-  }
-}
-
-const loadScript = (src: string, id: string): Promise<void> =>
-  new Promise((resolve, reject) => {
-    const existing = document.getElementById(id) as HTMLScriptElement | null;
-    if (existing) {
-      if (existing.dataset.loaded === 'true') {
-        resolve();
-        return;
-      }
-      existing.addEventListener('load', () => resolve(), { once: true });
-      existing.addEventListener('error', () => reject(new Error('تعذر تحميل مكتبة PDF')), { once: true });
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.id = id;
-    script.src = src;
-    script.async = true;
-    script.onload = () => {
-      script.dataset.loaded = 'true';
-      resolve();
-    };
-    script.onerror = () => reject(new Error('تعذر تحميل مكتبة PDF'));
-    document.head.appendChild(script);
-  });
-
-const ensurePdfLibraries = async (): Promise<PdfLibraries> => {
-  if (!window.html2canvas) {
-    await loadScript(
-      'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',
-      'edu-maker-html2canvas'
-    );
-  }
-
-  if (!window.jspdf?.jsPDF) {
-    await loadScript(
-      'https://cdn.jsdelivr.net/npm/jspdf@3.0.3/dist/jspdf.umd.min.js',
-      'edu-maker-jspdf'
-    );
-  }
-
-  if (!window.html2canvas || !window.jspdf?.jsPDF) {
-    throw new Error('مكتبات PDF غير متاحة');
-  }
-
-  return { html2canvas: window.html2canvas, jsPDF: window.jspdf.jsPDF };
-};
 
 const waitForImages = async (root: HTMLElement): Promise<void> => {
   const images = Array.from(root.querySelectorAll('img'));
@@ -82,100 +20,182 @@ const buildSafeFilename = (config: MemoConfig, title: string): string => {
   return raw.replace(/[^a-zA-Z0-9\\u0600-\\u06FF_-]/g, '_').replace(/_+/g, '_').slice(0, 100) + '.pdf';
 };
 
+const nextFrame = () =>
+  new Promise<void>((resolve) =>
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+  );
+
+const prepareExportPage = (
+  source: HTMLElement,
+  children: HTMLElement[],
+  pageNumber: number,
+  totalPages: number,
+  pageHeightPx: number
+): { page: HTMLElement; cleanup: () => void } => {
+  const page = source.cloneNode(false) as HTMLElement;
+
+  page.style.boxShadow = 'none';
+  page.style.borderRadius = '0';
+  page.style.margin = '0';
+  page.style.width = source.getBoundingClientRect().width + 'px';
+  page.style.height = pageHeightPx + 'px';
+  page.style.minHeight = pageHeightPx + 'px';
+  page.style.maxWidth = 'none';
+  page.style.overflow = 'hidden';
+  page.style.transform = 'none';
+  page.style.backgroundColor = '#ffffff';
+  page.style.setProperty('-webkit-print-color-adjust', 'exact');
+  page.style.setProperty('print-color-adjust', 'exact');
+
+  children.forEach((child) => page.appendChild(child.cloneNode(true)));
+
+  // ترقيم حقيقي لكل صفحة بدل بقاء "1 / 1" في كل نسخة.
+  page.querySelectorAll<HTMLElement>('.memo-page-number').forEach((el) => {
+    el.textContent = `الصفحة ${pageNumber} / ${totalPages}`;
+    el.classList.remove('print:hidden');
+  });
+
+  // لا تسمح العناصر الكبيرة بالانقسام عشوائياً داخل الصفحة.
+  page.querySelectorAll<HTMLElement>('table, tr, .page-break-inside-avoid, .break-inside-avoid').forEach((el) => {
+    el.style.breakInside = 'avoid';
+    el.style.pageBreakInside = 'avoid';
+  });
+
+  const host = document.createElement('div');
+  host.style.position = 'fixed';
+  host.style.left = '-100000px';
+  host.style.top = '0';
+  host.style.width = page.getBoundingClientRect().width + 'px';
+  host.style.height = pageHeightPx + 'px';
+  host.style.overflow = 'hidden';
+  host.style.background = '#ffffff';
+  host.style.zIndex = '-1';
+  host.setAttribute('aria-hidden', 'true');
+  host.appendChild(page);
+  document.body.appendChild(host);
+
+  return { page, cleanup: () => host.remove() };
+};
+
+const buildSmartPages = (paper: HTMLElement): { children: HTMLElement[]; pageHeightPx: number }[] => {
+  const paperRect = paper.getBoundingClientRect();
+  const pageWidthPx = paperRect.width;
+  const pageHeightPx = Math.round(pageWidthPx * (297 / 210));
+  const computed = getComputedStyle(paper);
+  const paddingTop = parseFloat(computed.paddingTop) || 0;
+  const paddingBottom = parseFloat(computed.paddingBottom) || 0;
+  const availableHeight = pageHeightPx - paddingTop - paddingBottom;
+
+  const sourceChildren = Array.from(paper.children) as HTMLElement[];
+  if (!sourceChildren.length) return [{ children: [], pageHeightPx }];
+
+  const paperTop = paperRect.top;
+  const measured = sourceChildren.map((child) => {
+    const rect = child.getBoundingClientRect();
+    return {
+      child,
+      top: rect.top - paperTop,
+      height: rect.height,
+      bottom: rect.bottom - paperTop,
+    };
+  });
+
+  const pages: { children: HTMLElement[]; pageHeightPx: number }[] = [];
+  let current: HTMLElement[] = [];
+  let currentStart = paddingTop;
+  let currentBottom = paddingTop;
+
+  for (let i = 0; i < measured.length; i += 1) {
+    const item = measured[i];
+    const nextTop = i > 0 ? measured[i - 1].bottom : paddingTop;
+    const gap = Math.max(0, item.top - nextTop);
+    const projected = currentBottom + gap + item.height;
+
+    if (current.length > 0 && projected > availableHeight) {
+      pages.push({ children: current, pageHeightPx });
+      current = [];
+      currentStart = paddingTop;
+      currentBottom = currentStart;
+    }
+
+    const effectiveGap = current.length > 0 ? gap : 0;
+    current.push(item.child);
+    currentBottom += effectiveGap + item.height;
+  }
+
+  if (current.length) pages.push({ children: current, pageHeightPx });
+
+  return pages;
+};
+
 export const generateMemoPdf = async (
   config: MemoConfig,
   title = 'مذكرة بيداغوجية'
 ): Promise<void> => {
   const paper = document.getElementById('memo-paper');
-  if (!paper) {
-    throw new Error('لم يتم العثور على المذكرة للتصدير');
-  }
+  if (!paper) throw new Error('لم يتم العثور على المذكرة للتصدير');
 
-  const { html2canvas, jsPDF } = await ensurePdfLibraries();
+  if (document.fonts?.ready) await document.fonts.ready;
+  await waitForImages(paper);
+  await nextFrame();
 
-  const hiddenForPdf = Array.from(
-    paper.querySelectorAll<HTMLElement>('.print\\:hidden, [data-pdf-hidden="true"]')
-  );
-  const previousVisibility = hiddenForPdf.map((el) => el.style.visibility);
-  hiddenForPdf.forEach((el) => {
-    el.style.visibility = 'hidden';
+  const smartPages = buildSmartPages(paper);
+  if (!smartPages.length) throw new Error('تعذر إنشاء صفحات المذكرة');
+
+  const pdf = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+    compress: true,
+    putOnlyUsedFonts: true,
   });
 
-  const previousShadow = paper.style.boxShadow;
-  const previousBorderRadius = paper.style.borderRadius;
-  paper.style.boxShadow = 'none';
-  paper.style.borderRadius = '0';
+  const pageWidth = 210;
+  const pageHeight = 297;
 
-  try {
-    if (document.fonts?.ready) await document.fonts.ready;
-    await waitForImages(paper);
-    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve(undefined))));
+  for (let index = 0; index < smartPages.length; index += 1) {
+    const prepared = prepareExportPage(
+      paper,
+      smartPages[index].children,
+      index + 1,
+      smartPages.length,
+      smartPages[index].pageHeightPx
+    );
 
-    const canvas = await html2canvas(paper, {
-      scale: Math.min(2, window.devicePixelRatio || 1.5),
-      useCORS: true,
-      allowTaint: false,
-      backgroundColor: '#ffffff',
-      logging: false,
-      imageTimeout: 15000,
-      scrollX: 0,
-      scrollY: -window.scrollY,
-      windowWidth: paper.scrollWidth,
-    });
+    try {
+      await waitForImages(prepared.page);
+      await nextFrame();
 
-    const pdf = new jsPDF({
-      orientation: 'p',
-      unit: 'mm',
-      format: 'a4',
-      compress: true,
-    });
+      const canvas = await html2canvas(prepared.page, {
+        scale: Math.min(1.6, Math.max(1.2, window.devicePixelRatio || 1.4)),
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: '#ffffff',
+        logging: false,
+        imageTimeout: 10000,
+        scrollX: 0,
+        scrollY: 0,
+        width: prepared.page.scrollWidth,
+        height: prepared.page.scrollHeight,
+        windowWidth: prepared.page.scrollWidth,
+        windowHeight: prepared.page.scrollHeight,
+      });
 
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-    const margin = 0;
-    const imageWidth = pageWidth - margin * 2;
-    const pagePixelHeight = Math.floor((canvas.width * pageHeight) / imageWidth);
-
-    let sourceY = 0;
-    let pageIndex = 0;
-
-    while (sourceY < canvas.height) {
-      const sliceHeight = Math.min(pagePixelHeight, canvas.height - sourceY);
-      const slice = document.createElement('canvas');
-      slice.width = canvas.width;
-      slice.height = sliceHeight;
-
-      const ctx = slice.getContext('2d');
-      if (!ctx) throw new Error('تعذر إنشاء صفحة PDF');
-
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, slice.width, slice.height);
-      ctx.drawImage(
-        canvas,
-        0,
-        sourceY,
-        canvas.width,
-        sliceHeight,
+      if (index > 0) pdf.addPage();
+      pdf.addImage(
+        canvas.toDataURL('image/png'),
+        'PNG',
         0,
         0,
-        slice.width,
-        slice.height
+        pageWidth,
+        pageHeight,
+        undefined,
+        'FAST'
       );
-
-      const renderedHeight = (sliceHeight * imageWidth) / canvas.width;
-      if (pageIndex > 0) pdf.addPage();
-      pdf.addImage(slice.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, imageWidth, renderedHeight, undefined, 'FAST');
-
-      sourceY += sliceHeight;
-      pageIndex += 1;
+    } finally {
+      prepared.cleanup();
     }
-
-    pdf.save(buildSafeFilename(config, title));
-  } finally {
-    hiddenForPdf.forEach((el, i) => {
-      el.style.visibility = previousVisibility[i];
-    });
-    paper.style.boxShadow = previousShadow;
-    paper.style.borderRadius = previousBorderRadius;
   }
+
+  pdf.save(buildSafeFilename(config, title));
 };
