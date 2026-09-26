@@ -1573,8 +1573,8 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
         <div>
           {/* Header Flag */}
           <div className="h-1 flex -mx-[1px] mb-3">
-            <div className="flex-1 bg-[#159a8c]" />
-            <div className="flex-1 bg-[#e58aa5]" />
+            <div className="flex-1 bg-[#006233]" />
+            <div className="flex-1 bg-[#D21034]" />
           </div>
 
           {/* Official Republic Header */}
