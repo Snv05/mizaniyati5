@@ -784,7 +784,11 @@ export const MemoSheet: React.FC<MemoSheetProps> = ({
 
       {/* 5.5. الرسومات والسندات العلمية المرفقة بالمذكرة */}
       {((lesson.diagrams && lesson.diagrams.length > 0) || lesson.diagramSvg || lesson.diagram) && (
-        <div className="mt-6 p-4 rounded-xl border border-gray-300 bg-gray-50/70 print:border-gray-400 print:bg-white page-break-inside-avoid">
+        <div
+          className="memo-diagram-block mt-6 p-4 rounded-xl border border-gray-300 bg-gray-50/70 print:border-gray-400 print:bg-white page-break-inside-avoid break-inside-avoid"
+          style={{ position: 'relative', top: 'auto', bottom: 'auto', transform: 'none', float: 'none', clear: 'both' }}
+          data-pdf-keep="true"
+        >
           <div className="flex items-center justify-between gap-2 mb-3 pb-2 border-b border-gray-200">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: theme.hex }}></span>
@@ -808,14 +812,19 @@ export const MemoSheet: React.FC<MemoSheetProps> = ({
                   description: lesson.diagramDescription || (typeof lesson.diagram === 'object' ? lesson.diagram?.description : undefined)
                 }]
             ).map((diagram, index) => (
-              <div key={index} className="page-break-inside-avoid">
+              <div
+                key={index}
+                className="memo-diagram-item page-break-inside-avoid break-inside-avoid"
+                style={{ position: 'relative', top: 'auto', bottom: 'auto', transform: 'none', float: 'none' }}
+              >
                 {diagram.title && (
                   <div className="font-extrabold text-[12.5px] text-center mb-2" style={{ color: theme.hex }}>
                     {diagram.title}
                   </div>
                 )}
                 <div
-                  className="w-full flex items-center justify-center p-2 bg-white rounded-lg border border-gray-200 overflow-x-auto shadow-2xs"
+                  className="memo-diagram-canvas w-full flex items-center justify-center p-2 bg-white rounded-lg border border-gray-200 overflow-x-auto shadow-2xs"
+                  style={{ position: 'relative', top: 'auto', bottom: 'auto', transform: 'none', float: 'none', minHeight: '0' }}
                   dangerouslySetInnerHTML={{ __html: diagram.svg || '' }}
                 />
                 {diagram.description && (
