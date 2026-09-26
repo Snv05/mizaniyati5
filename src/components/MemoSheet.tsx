@@ -22,7 +22,7 @@ const THEMES: Record<string, {
   borderSoft: string;
 }> = {
   '1am': {
-    hex: '#0284c7',
+    hex: '#159a8c',
     headerGrad: 'from-[#f0f9ff]/80 to-white',
     badgeBg: 'bg-[#0284c7]/10 text-[#0284c7]',
     boxBg: 'bg-[#f0f9ff]/60 border-[#0284c7]/25',
@@ -31,7 +31,7 @@ const THEMES: Record<string, {
     borderSoft: 'border-[#0284c7]/30',
   },
   '2am': {
-    hex: '#7c3aed',
+    hex: '#5b82c4',
     headerGrad: 'from-[#f5f3ff]/80 to-white',
     badgeBg: 'bg-[#7c3aed]/10 text-[#7c3aed]',
     boxBg: 'bg-[#f5f3ff]/60 border-[#7c3aed]/25',
@@ -40,7 +40,7 @@ const THEMES: Record<string, {
     borderSoft: 'border-[#7c3aed]/30',
   },
   '3am': {
-    hex: '#0f766e',
+    hex: '#159a8c',
     headerGrad: 'from-[#f0fdfa]/90 via-[#e6fffa]/80 to-white',
     badgeBg: 'bg-teal-100 text-teal-900 border border-teal-300',
     boxBg: 'bg-[#f0fdfa]/70 border-teal-300/40',
@@ -49,7 +49,7 @@ const THEMES: Record<string, {
     borderSoft: 'border-[#0f766e]/30',
   },
   '4am': {
-    hex: '#c2185b',
+    hex: '#d46a91',
     headerGrad: 'from-[#fff0f5]/80 to-white',
     badgeBg: 'bg-[#c2185b]/10 text-[#c2185b]',
     boxBg: 'bg-[#fff5f8]/60 border-[#c2185b]/25',
@@ -142,7 +142,7 @@ export const MemoSheet: React.FC<MemoSheetProps> = ({
   return (
     <div
       id="memo-paper"
-      className="bg-white/95 backdrop-blur-[2px] text-gray-900 shadow-xl rounded-sm mx-auto p-7 md:p-9 max-w-[960px] border border-gray-300 font-sans leading-relaxed text-[13.5px] print:shadow-none print:border-none print:p-0 print:m-0 print:max-w-none print:w-full"
+      className="bg-[#fffdf8]/96 backdrop-blur-[2px] text-gray-900 shadow-[0_14px_45px_rgba(20,110,100,0.10)] rounded-sm mx-auto p-7 md:p-9 max-w-[960px] border border-[#d8eee9] font-sans leading-relaxed text-[13.5px] print:shadow-none print:border-none print:p-0 print:m-0 print:max-w-none print:w-full"
       style={{ minHeight: '1120px' }}
       dir="rtl"
     >
@@ -385,7 +385,7 @@ export const MemoSheet: React.FC<MemoSheetProps> = ({
 
       {/* 2. الكفاءة الختامية */}
       {lesson.kafaaKhitamiya && (
-        <div className="mb-3.5 border border-gray-300 rounded-lg p-2.5 bg-gray-50/70 text-[12.5px]">
+        <div className="mb-3.5 border border-[#cfe7e2] rounded-lg p-2.5 bg-[#f1faf7]/80 text-[12.5px]">
           <span className="font-extrabold ml-1.5" style={{ color: theme.hex }}>الكفاءة الختامية:</span>
           <span className="editable-cell text-gray-800 leading-snug font-medium" contentEditable="plaintext-only" suppressContentEditableWarning>{lesson.kafaaKhitamiya}</span>
         </div>
@@ -455,7 +455,7 @@ export const MemoSheet: React.FC<MemoSheetProps> = ({
       </div>
 
       {/* شريط الوسائل والمراجع والزمن الكلي */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 p-2.5 mb-4 bg-gray-50 border border-gray-300 rounded-lg text-[12px]">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 p-2.5 mb-4 bg-[#f1faf7] border border-[#cfe7e2] rounded-lg text-[12px]">
         <div>
           <span className="font-extrabold" style={{ color: theme.hex }}>الوسائل: </span>
           <span className="editable-cell text-gray-800" contentEditable="plaintext-only" suppressContentEditableWarning>{lesson.wasail}</span>
@@ -785,7 +785,7 @@ export const MemoSheet: React.FC<MemoSheetProps> = ({
       {/* 5.5. الرسومات والسندات العلمية المرفقة بالمذكرة */}
       {((lesson.diagrams && lesson.diagrams.length > 0) || lesson.diagramSvg || lesson.diagram) && (
         <div
-          className="memo-diagram-block mt-6 p-4 rounded-xl border border-gray-300 bg-gray-50/70 print:border-gray-400 print:bg-white page-break-inside-avoid break-inside-avoid"
+          className="memo-diagram-block mt-6 p-4 rounded-xl border border-[#cfe7e2] bg-[#f1faf7]/80 print:border-gray-400 print:bg-white page-break-inside-avoid break-inside-avoid"
           style={{ position: 'relative', top: 'auto', bottom: 'auto', transform: 'none', float: 'none', clear: 'both' }}
           data-pdf-keep="true"
         >
