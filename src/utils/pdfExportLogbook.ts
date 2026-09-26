@@ -27,21 +27,12 @@ const preparePageForExport = (source: HTMLElement, orientation: LogbookOrientati
   page.style.height = orientation === "landscape" ? "210mm" : "297mm";
   page.style.minHeight = page.style.height;
   page.style.maxWidth = "none";
-  // يحافظ PDF على ألوان الدفتر والمربعات الصغيرة كما تظهر في المعاينة.
+  // التصدير يلتقط نفس CSS الفعلي للمعاينة؛ لا نعيد رسم الخلفيات أو شبكة الخلايا.
   page.style.setProperty("-webkit-print-color-adjust", "exact");
   page.style.setProperty("print-color-adjust", "exact");
-
-  page.querySelectorAll<HTMLElement>(".grid-paper-bg").forEach((cell) => {
-    cell.style.backgroundColor = "#ffffff";
-  });
-  // لا نحذف شبكة المربعات الصغيرة من خلايا الدفتر أثناء التصدير.
-  page.querySelectorAll<HTMLElement>(".writing-grid-cell, .logbook-grid-cell").forEach((cell) => {
-    cell.style.backgroundColor = "#ffffff";
-    cell.style.backgroundImage =
-      "linear-gradient(to right, rgba(6, 78, 59, 0.10) 1px, transparent 1px), linear-gradient(to bottom, rgba(6, 78, 59, 0.10) 1px, transparent 1px)";
-    cell.style.backgroundSize = "8px 8px";
-  });
-
+  page.style.setProperty("box-sizing", "border-box");
+  page.style.setProperty("direction", "rtl");
+  page.style.setProperty("overflow", "hidden");
   const host = document.createElement("div");
   host.style.position = "fixed";
   host.style.left = "-100000px";
@@ -50,7 +41,9 @@ const preparePageForExport = (source: HTMLElement, orientation: LogbookOrientati
   host.style.height = page.getBoundingClientRect().height + "px";
   host.style.overflow = "hidden";
   host.style.background = "#ffffff";
-  host.style.zIndex = "-1";
+  host.style.zIndex = "2147483647";
+  host.style.pointerEvents = "none";
+  host.style.userSelect = "none";
   host.setAttribute("aria-hidden", "true");
   host.appendChild(page);
   document.body.appendChild(host);
@@ -84,6 +77,7 @@ export const generatePreviewMatchPdf = async (
     const element = pageElements[index];
     const prepared = preparePageForExport(element, orientation);
     try {
+      // لا نستخدم scrollIntoView أو focus أثناء التصدير حتى لا تتحرك المعاينة.
       await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
       const canvas = await html2canvas(prepared.page, {
