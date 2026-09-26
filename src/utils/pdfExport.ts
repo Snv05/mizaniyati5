@@ -77,6 +77,74 @@ const prepareExportPage = (
   return { page, cleanup: () => host.remove() };
 };
 
+const cloneWithRows = (
+  source: HTMLElement,
+  table: HTMLTableElement,
+  rows: HTMLTableRowElement[],
+  fragmentIndex: number
+): HTMLElement => {
+  const fragment = source.cloneNode(true) as HTMLElement;
+  const targetTable = fragment.querySelector('table');
+  if (!targetTable) return fragment;
+
+  const targetBody = targetTable.tBodies[0];
+  if (targetBody) {
+    targetBody.replaceChildren(...rows.map((row) => row.cloneNode(true)));
+  }
+
+  // عند تقسيم جدول كبير نكرر رأس الجدول تلقائياً في كل جزء.
+  targetTable.querySelectorAll('thead').forEach((thead) => {
+    thead.style.display = 'table-header-group';
+  });
+
+  fragment.dataset.pdfTableFragment = String(fragmentIndex + 1);
+  fragment.style.breakInside = 'avoid';
+  fragment.style.pageBreakInside = 'avoid';
+  return fragment;
+};
+
+const splitOversizedTable = (
+  source: HTMLElement,
+  maxHeight: number
+): HTMLElement[] => {
+  const table = source.querySelector('table');
+  if (!table || !table.tBodies.length) return [source];
+
+  const sourceRect = source.getBoundingClientRect();
+  if (sourceRect.height <= maxHeight) return [source];
+
+  const rows = Array.from(table.tBodies[0].rows);
+  if (!rows.length) return [source];
+
+  const headerHeight = table.tHead?.getBoundingClientRect().height || 0;
+  const tableRect = table.getBoundingClientRect();
+  const fixedHeight = Math.max(0, sourceRect.height - tableRect.height);
+  const usableTableHeight = Math.max(120, maxHeight - fixedHeight);
+
+  const fragments: HTMLElement[] = [];
+  let current: HTMLTableRowElement[] = [];
+  let currentHeight = headerHeight;
+
+  rows.forEach((row, index) => {
+    const rowHeight = Math.max(18, row.getBoundingClientRect().height);
+    if (current.length > 0 && currentHeight + rowHeight > usableTableHeight) {
+      fragments.push(cloneWithRows(source, table, current, fragments.length));
+      current = [];
+      currentHeight = headerHeight;
+    }
+
+    // إذا كان الصف نفسه أكبر من الصفحة، نضعه منفرداً بدلاً من فقدانه.
+    current.push(row);
+    currentHeight += rowHeight;
+
+    if (index === rows.length - 1 && current.length) {
+      fragments.push(cloneWithRows(source, table, current, fragments.length));
+    }
+  });
+
+  return fragments.length ? fragments : [source];
+};
+
 const buildSmartPages = (paper: HTMLElement): { children: HTMLElement[]; pageHeightPx: number }[] => {
   const paperRect = paper.getBoundingClientRect();
   const pageWidthPx = paperRect.width;
@@ -89,38 +157,31 @@ const buildSmartPages = (paper: HTMLElement): { children: HTMLElement[]; pageHei
   const sourceChildren = Array.from(paper.children) as HTMLElement[];
   if (!sourceChildren.length) return [{ children: [], pageHeightPx }];
 
-  const paperTop = paperRect.top;
-  const measured = sourceChildren.map((child) => {
+  // نحول الجدول الكبير إلى أجزاء مستقلة مع تكرار رأسه.
+  const expandedChildren = sourceChildren.flatMap((child) =>
+    splitOversizedTable(child, availableHeight)
+  );
+
+  const measured = expandedChildren.map((child) => {
     const rect = child.getBoundingClientRect();
-    return {
-      child,
-      top: rect.top - paperTop,
-      height: rect.height,
-      bottom: rect.bottom - paperTop,
-    };
+    return { child, height: rect.height };
   });
 
   const pages: { children: HTMLElement[]; pageHeightPx: number }[] = [];
   let current: HTMLElement[] = [];
-  let currentStart = paddingTop;
-  let currentBottom = paddingTop;
+  let currentHeight = paddingTop;
 
-  for (let i = 0; i < measured.length; i += 1) {
-    const item = measured[i];
-    const nextTop = i > 0 ? measured[i - 1].bottom : paddingTop;
-    const gap = Math.max(0, item.top - nextTop);
-    const projected = currentBottom + gap + item.height;
+  for (const item of measured) {
+    const gap = current.length ? 0 : 0;
 
-    if (current.length > 0 && projected > availableHeight) {
+    if (current.length > 0 && currentHeight + gap + item.height > availableHeight) {
       pages.push({ children: current, pageHeightPx });
       current = [];
-      currentStart = paddingTop;
-      currentBottom = currentStart;
+      currentHeight = paddingTop;
     }
 
-    const effectiveGap = current.length > 0 ? gap : 0;
     current.push(item.child);
-    currentBottom += effectiveGap + item.height;
+    currentHeight += gap + item.height;
   }
 
   if (current.length) pages.push({ children: current, pageHeightPx });
