@@ -476,7 +476,9 @@ export const generateLogbookDocx = async (
                 children: [
                   teacherStampRun(),
                   new TextRun({ text: "   الصفحة ", font: "Arial", rightToLeft: true }),
-                  new TextRun({ children: [PageNumber.CURRENT], font: "Arial" })
+                  new TextRun({ children: [PageNumber.CURRENT], font: "Arial" }),
+                  new TextRun({ text: " من ", font: "Arial", rightToLeft: true }),
+                  new TextRun({ children: [PageNumber.TOTAL_PAGES], font: "Arial" })
                 ]
               })
             ]
