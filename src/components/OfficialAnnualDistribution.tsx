@@ -96,61 +96,32 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
 
   // Group by pages based on the official sequence order.
   const pages = useMemo(() => {
-    // 1AM و2AM: المصدر المباشر هو التدرجان المرفقان من المستخدم.
-    // لا نعيد توليدهما من قاعدة المنهاج ولا نغيّر التواريخ/الأنشطة.
-    if (level === '1am' || level === '2am' || level === '3am' || level === '4am') {
-      const sourceRows =
-        level === '1am' ? OFFICIAL_1AM_DISTRIBUTION :
-        level === '2am' ? OFFICIAL_2AM_DISTRIBUTION :
-        level === '3am' ? OFFICIAL_3AM_DISTRIBUTION :
-        OFFICIAL_4AM_DISTRIBUTION;
-      const rows = sourceRows.map((row) => {
-        const text = [row.maqta, row.mawrid, row.session1, row.session2].join(' ');
-        const isHoliday = /عطل[ةــــــــ]/.test(text);
-        const isExam = /اختبار|اختبارات|تقوي.*تحصيلي/.test(text);
-        return {
-          ...row,
-          isHoliday,
-          isExam,
-          lessonType: isHoliday ? 'holiday' as const : isExam ? 'assessment' as const : 'curriculum' as const,
-          holidayLabel: isHoliday ? row.mawrid || row.maqta || 'عطلة' : undefined,
-        };
-      });
-      const pageSize = 11;
-      return Array.from({ length: Math.ceil(rows.length / pageSize) }, (_, index) =>
-        rows.slice(index * pageSize, index * pageSize + pageSize)
-      ).filter(page => page.length > 0);
-    }
+    // المصدر الرسمي الموحد للسنوات الأربع: البيانات المنقولة من الوثائق المرفقة.
+    const sourceRows =
+      level === '1am' ? OFFICIAL_1AM_DISTRIBUTION :
+      level === '2am' ? OFFICIAL_2AM_DISTRIBUTION :
+      level === '3am' ? OFFICIAL_3AM_DISTRIBUTION :
+      OFFICIAL_4AM_DISTRIBUTION;
 
-    const effectiveStartDate = startDate || deriveStartDate(config.schoolYear);
-    const dynamicCurriculum = generateAnnualDistribution(baseLessons, effectiveStartDate, calendarHolidays, calendarEvents);
+    const rows = sourceRows.map((row) => {
+      const text = [row.maqta, row.mawrid, row.session1, row.session2].join(' ');
+      const isHoliday = /عطلة/.test(text);
+      const isExam = /إ?ختبار|اختبارات|الفرض المحروس|الفرض/.test(text);
+      return {
+        ...row,
+        isHoliday,
+        isExam,
+        lessonType: isHoliday ? 'holiday' as const : isExam ? 'assessment' as const : 'curriculum' as const,
+        holidayLabel: isHoliday ? row.mawrid || row.maqta || 'عطلة' : undefined,
+      };
+    });
 
-    if (level === '4am') {
-      const maqta1 = 'المقطع الأول: التغذية عند الإنسان';
-      const maqta2 = 'المقطع الثاني: التنسيق الوظيفي في العضوية';
-      const maqta3 = 'المقطع الثالث: انتقال الصفات الوراثية';
-      const specialRows = dynamicCurriculum.filter(item => !item.maqta && item.lessonType !== 'holiday');
-      return [
-        [...specialRows, ...dynamicCurriculum.filter(item => item.maqta === maqta1)],
-        dynamicCurriculum.filter(item => item.maqta === maqta2),
-        dynamicCurriculum.filter(item => item.maqta === maqta3)
-      ].filter(page => page.length > 0);
-    } else if (level === '3am') {
-       const curriculumRows = dynamicCurriculum.filter(item => !!item.maqta);
-       const specialRows = dynamicCurriculum.filter(item => !item.maqta && item.lessonType !== 'holiday');
-       const sequenceNames = Array.from(new Set(curriculumRows.map(item => item.maqta).filter(Boolean)));
-       const pageChunks = [sequenceNames.slice(0, 2), sequenceNames.slice(2, 3), sequenceNames.slice(3)];
-       const chunkPages = pageChunks
-         .map(chunk => curriculumRows.filter(item => chunk.includes(item.maqta)))
-         .filter(page => page.length > 0);
-       if (specialRows.length > 0 && chunkPages.length > 0) {
-         chunkPages[0] = [...specialRows, ...chunkPages[0]];
-       }
-       return chunkPages;
-    }
+    const pageSize = 11;
+    return Array.from({ length: Math.ceil(rows.length / pageSize) }, (_, index) =>
+      rows.slice(index * pageSize, index * pageSize + pageSize)
+    ).filter(page => page.length > 0);
+  }, [level]);
 
-    return [dynamicCurriculum];
-  }, [startDate, level, curriculumLessons, config.schoolYear, calendarHolidays, calendarEvents, baseLessons]);
   const distributionStats = useMemo(() => {
     const rows = pages.flat().filter((row: any) => !row.isHoliday && !row.isExam);
     const unique = (values: string[]) =>
@@ -345,7 +316,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
                 <TeacherOfficialStamp
               config={config}
               size="sm"
-              color={level === '1am' ? 'blue' : level === '2am' ? 'purple' : level === '3am' ? 'teal' : 'red'}
+              color="teal"
             />
               </div>
             </div>
