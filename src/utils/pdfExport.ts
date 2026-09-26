@@ -81,7 +81,8 @@ const cloneWithRows = (
   source: HTMLElement,
   table: HTMLTableElement,
   rows: HTMLTableRowElement[],
-  fragmentIndex: number
+  fragmentIndex: number,
+  estimatedHeight: number
 ): HTMLElement => {
   const fragment = source.cloneNode(true) as HTMLElement;
   const targetTable = fragment.querySelector('table');
@@ -98,6 +99,7 @@ const cloneWithRows = (
   });
 
   fragment.dataset.pdfTableFragment = String(fragmentIndex + 1);
+  fragment.dataset.pdfFragmentHeight = String(Math.ceil(estimatedHeight));
   fragment.style.breakInside = 'avoid';
   fragment.style.pageBreakInside = 'avoid';
   return fragment;
@@ -128,7 +130,7 @@ const splitOversizedTable = (
   rows.forEach((row, index) => {
     const rowHeight = Math.max(18, row.getBoundingClientRect().height);
     if (current.length > 0 && currentHeight + rowHeight > usableTableHeight) {
-      fragments.push(cloneWithRows(source, table, current, fragments.length));
+      fragments.push(cloneWithRows(source, table, current, fragments.length, fixedHeight + currentHeight));
       current = [];
       currentHeight = headerHeight;
     }
@@ -138,7 +140,7 @@ const splitOversizedTable = (
     currentHeight += rowHeight;
 
     if (index === rows.length - 1 && current.length) {
-      fragments.push(cloneWithRows(source, table, current, fragments.length));
+      fragments.push(cloneWithRows(source, table, current, fragments.length, fixedHeight + currentHeight));
     }
   });
 
@@ -163,8 +165,9 @@ const buildSmartPages = (paper: HTMLElement): { children: HTMLElement[]; pageHei
   );
 
   const measured = expandedChildren.map((child) => {
+    const estimated = Number(child.dataset.pdfFragmentHeight);
     const rect = child.getBoundingClientRect();
-    return { child, height: rect.height };
+    return { child, height: Number.isFinite(estimated) && estimated > 0 ? estimated : rect.height };
   });
 
   const pages: { children: HTMLElement[]; pageHeightPx: number }[] = [];
