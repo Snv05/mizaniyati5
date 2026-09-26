@@ -664,7 +664,7 @@ export const OFFICIAL_2AM_DISTRIBUTION: OfficialAnnualDistributionRow[] = [
     "mawrid": "مفهوم النوع عند الكائنات الحية",
     "session1": "الوضعية الإنطلاقية للمقطع التعلمي تصنيف الكائنات الحية",
     "session2": "النشاط1: شروط الإنتماء الى نفس النوع 85% | _",
-    "percent": "النشاط1: شروط الإنتماء الى نفس النوع 85% | _"
+    "percent": ""
   },
   {
     "id": "2am-official-28",
