@@ -1014,32 +1014,24 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
         const storedAnnual = getStoredAnnualSchedule(lvl);
         // لا نستخدم تدرجاً محفوظاً إذا كان مولداً بتاريخ بداية مختلف.
         const annual = storedAnnual && storedAnnual.startDate === startDate ? storedAnnual : (() => {
-          if (lvl === '1م' || lvl === '2م' || lvl === '3م' || lvl === '4م') {
-            const sourceRows =
-              lvl === '1م' ? OFFICIAL_1AM_DISTRIBUTION :
-              lvl === '2م' ? OFFICIAL_2AM_DISTRIBUTION :
-              lvl === '3م' ? OFFICIAL_3AM_DISTRIBUTION :
-              OFFICIAL_4AM_DISTRIBUTION;
-            const officialItems = sourceRows.map((item) => {
-              const text = [item.maqta, item.mawrid, item.session1, item.session2].join(' ');
-              const isHoliday = /عطل[ةــــــــ]/.test(text);
-              const isExam = /اختبار|اختبارات|تقوي.*تحصيلي/.test(text);
-              return {
-                ...item,
-                isHoliday,
-                isExam,
-                lessonType: isHoliday ? 'holiday' as const : isExam ? 'assessment' as const : 'curriculum' as const,
-                holidayLabel: isHoliday ? item.mawrid || item.maqta || 'عطلة' : undefined,
-              };
-            });
-            return { startDate, items: officialItems };
-          }
-
-          const sourceLessons =
-            lvl === '3م' ? LESSONS_3AM :
-            LESSONS_4AM;
-          const generatedAnnual = generateAnnualDistribution(sourceLessons, startDate, holidays);
-          return generatedAnnual.length > 0 ? { startDate, items: generatedAnnual } : null;
+          const sourceRows =
+            lvl === '1م' ? OFFICIAL_1AM_DISTRIBUTION :
+            lvl === '2م' ? OFFICIAL_2AM_DISTRIBUTION :
+            lvl === '3م' ? OFFICIAL_3AM_DISTRIBUTION :
+            OFFICIAL_4AM_DISTRIBUTION;
+          const officialItems = sourceRows.map((item) => {
+            const text = [item.maqta, item.mawrid, item.session1, item.session2].join(' ');
+            const isHoliday = /عطلة/.test(text);
+            const isExam = /إ?ختبار|اختبارات|الفرض المحروس|الفرض/.test(text);
+            return {
+              ...item,
+              isHoliday,
+              isExam,
+              lessonType: isHoliday ? 'holiday' as const : isExam ? 'assessment' as const : 'curriculum' as const,
+              holidayLabel: isHoliday ? item.mawrid || item.maqta || 'عطلة' : undefined,
+            };
+          });
+          return { startDate, items: officialItems };
         })();
 
         let res = bank[currentResIdx];
