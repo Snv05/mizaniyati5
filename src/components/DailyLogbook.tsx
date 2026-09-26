@@ -1064,6 +1064,25 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                 String(scheduledTitle || '').trim().startsWith('تقويم') ||
                 isCalendarSpecialSession);
 
+            // التقويم ليس حصة مستقلة في الدفتر اليومي.
+            // إذا كانت الحصة الثانية في التدرج مجرد تقويم، نضيف التقويم إلى
+            // نهاية الحصة المنهجية السابقة ونمنع إنشاء صف/حصة إضافية باسم «تقويم».
+            if (isAssessmentSession && !annualItem.isHoliday && !annualItem.isExam) {
+              const previousLessonIndex = generated.findLastIndex((entry) =>
+                entry.dateStr === dateStr &&
+                getBaseSection(entry.section) === baseSection &&
+                entry.level === lvl &&
+                entry.lessonType === 'curriculum'
+              );
+              if (previousLessonIndex >= 0 && annualItem.taqwim) {
+                generated[previousLessonIndex] = {
+                  ...generated[previousLessonIndex],
+                  taqwim: annualItem.taqwim,
+                };
+              }
+              continue;
+            }
+
             // التدرج السنوي يعرّف حصتين فقط لكل أسبوع.
             // إذا وُجدت حصة ثالثة لن نعيد النشاط الأول ولن نخترع نشاطاً جديداً.
             const hasUnsupportedExtraSession = ordinal > 1 && !annualItem.taqwim;
