@@ -37,6 +37,7 @@ import { LESSONS_2AM } from '../data/lessons2am';
 import { LESSONS_3AM } from '../data/lessons3am';
 import { LESSONS_4AM } from '../data/lessons4am';
 import { generateAnnualDistribution } from '../utils/annualDistributionGenerator';
+import { OFFICIAL_1AM_DISTRIBUTION, OFFICIAL_2AM_DISTRIBUTION } from '../data/officialAnnualDistributionData';
 
 interface DailyLogbookProps {
   selectedLevel?: '1am' | '2am' | '3am' | '4am';
@@ -1013,9 +1014,24 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
         const storedAnnual = getStoredAnnualSchedule(lvl);
         // لا نستخدم تدرجاً محفوظاً إذا كان مولداً بتاريخ بداية مختلف.
         const annual = storedAnnual && storedAnnual.startDate === startDate ? storedAnnual : (() => {
+          if (lvl === '1م' || lvl === '2م') {
+            const sourceRows = lvl === '1م' ? OFFICIAL_1AM_DISTRIBUTION : OFFICIAL_2AM_DISTRIBUTION;
+            const officialItems = sourceRows.map((item) => {
+              const text = [item.maqta, item.mawrid, item.session1, item.session2].join(' ');
+              const isHoliday = /عطل[ةــــــــ]/.test(text);
+              const isExam = /اختبار|اختبارات|تقوي.*تحصيلي/.test(text);
+              return {
+                ...item,
+                isHoliday,
+                isExam,
+                lessonType: isHoliday ? 'holiday' as const : isExam ? 'assessment' as const : 'curriculum' as const,
+                holidayLabel: isHoliday ? item.mawrid || item.maqta || 'عطلة' : undefined,
+              };
+            });
+            return { startDate, items: officialItems };
+          }
+
           const sourceLessons =
-            lvl === '1م' ? LESSONS_1AM :
-            lvl === '2م' ? LESSONS_2AM :
             lvl === '3م' ? LESSONS_3AM :
             LESSONS_4AM;
           const generatedAnnual = generateAnnualDistribution(sourceLessons, startDate, holidays);
