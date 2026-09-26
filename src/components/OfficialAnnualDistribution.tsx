@@ -131,15 +131,11 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
         dynamicCurriculum.filter(item => item.maqta === maqta2),
         dynamicCurriculum.filter(item => item.maqta === maqta3)
       ].filter(page => page.length > 0);
-    } else if (level === '1am') {
-       return [dynamicCurriculum];
-    } else if (level === '2am' || level === '3am') {
+    } else if (level === '3am') {
        const curriculumRows = dynamicCurriculum.filter(item => !!item.maqta);
        const specialRows = dynamicCurriculum.filter(item => !item.maqta && item.lessonType !== 'holiday');
        const sequenceNames = Array.from(new Set(curriculumRows.map(item => item.maqta).filter(Boolean)));
-       const pageChunks = level === '2am'
-         ? [sequenceNames.slice(0, 2), sequenceNames.slice(2, 4), sequenceNames.slice(4)]
-         : [sequenceNames.slice(0, 2), sequenceNames.slice(2, 3), sequenceNames.slice(3)];
+       const pageChunks = [sequenceNames.slice(0, 2), sequenceNames.slice(2, 3), sequenceNames.slice(3)];
        const chunkPages = pageChunks
          .map(chunk => curriculumRows.filter(item => chunk.includes(item.maqta)))
          .filter(page => page.length > 0);
