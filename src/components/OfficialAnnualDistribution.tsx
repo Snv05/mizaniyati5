@@ -20,7 +20,7 @@ interface Props {
   curriculumBackground?: string;
 }
 
-const ANNUAL_SCHEDULE_DATA_VERSION = '2026-09-26-official-v18';
+const ANNUAL_SCHEDULE_DATA_VERSION = '2026-09-26-official-v19';
 
 export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, showToast, curriculumLessons, curriculumBackground }) => {
   const [showPreview, setShowPreview] = useState(false);
@@ -222,7 +222,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
       `}</style>
 
       {pages.map((page, pageIndex) => (
-        <div key={pageIndex} className={`annual-export-page relative z-10 bg-white/84 backdrop-blur-[1px] p-[10mm] mb-8 shadow-md print:bg-white print:shadow-none print:m-0 ${orientation === 'portrait' ? 'w-[210mm] min-h-[297mm]' : 'w-[297mm] min-h-[210mm]'}`} style={{ pageBreakAfter: pageIndex < pages.length - 1 ? 'always' : 'auto' }}>
+        <div key={pageIndex} className={`annual-export-page relative z-10 bg-[#fffdf8]/95 backdrop-blur-[1px] p-[10mm] mb-8 shadow-[0_14px_40px_rgba(20,110,100,0.10)] border border-[#d8eee9] print:bg-white print:border-none print:shadow-none print:m-0 ${orientation === 'portrait' ? 'w-[210mm] min-h-[297mm]' : 'w-[297mm] min-h-[210mm]'}`} style={{ pageBreakAfter: pageIndex < pages.length - 1 ? 'always' : 'auto' }}>
           
           {/* Header */}
           <div className="text-center mb-4">
@@ -230,19 +230,19 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
             <h2 className="text-sm font-bold mb-2">وزارة التربية الوطنية</h2>
             
             <div className="flex justify-center items-center gap-4 mb-2">
-              <div className="w-12 h-12 bg-rose-50 rounded-full flex items-center justify-center border border-rose-100 print:hidden">
+              <div className="w-12 h-12 bg-[#e9f8f5] rounded-full flex items-center justify-center border border-[#bfe7df] print:hidden">
                 <span className="text-xl">🔬</span>
               </div>
               <div className="text-center">
-                <h1 className="text-2xl font-black text-black drop-shadow-sm">التدرج السنوي لبناء التعلمات</h1>
-                <h3 className="text-sm font-bold text-black mt-1">مادة علوم الطبيعة والحياة - السنة {level === "4am" ? "الرابعة" : level === "3am" ? "الثالثة" : level === "2am" ? "الثانية" : "الأولى"} متوسط</h3>
+                <h1 className="text-2xl font-black text-[#075e57] drop-shadow-sm">التدرج السنوي لبناء التعلمات</h1>
+                <h3 className="text-sm font-bold text-[#28756f] mt-1">مادة علوم الطبيعة والحياة - السنة {level === "4am" ? "الرابعة" : level === "3am" ? "الثالثة" : level === "2am" ? "الثانية" : "الأولى"} متوسط</h3>
               </div>
               <div className="w-12 h-12 bg-rose-50 rounded-full flex items-center justify-center border border-rose-100 print:hidden">
                 <span className="text-xl">🧠</span>
               </div>
             </div>
             
-            <div className="flex justify-between items-center border border-black p-2 font-bold text-[12px]">
+            <div className="flex justify-between items-center border border-[#b8dcd6] bg-[#f7fcfa] p-2 font-bold text-[12px]">
               <div>الأستاذ(ة): <span>{config.teacherName}</span></div>
               <div className="flex items-center gap-2">السنة الدراسية: <span>{config.schoolYear}</span></div>
               <div>متوسطة: <span>{config.schoolName}</span></div>
@@ -253,15 +253,15 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
           <table className="w-full border-collapse border border-black text-center text-[10px] leading-tight">
             <thead>
               <tr className="bg-[#f0f0f0]">
-                <th colSpan={8} className="border border-black p-2 text-sm font-black bg-emerald-50 text-emerald-900">
+                <th colSpan={8} className="border border-[#b8dcd6] p-2 text-sm font-black bg-[#dff6f0] text-[#075e57]">
                   الميدان: {Array.from(new Set(page.map(row => row.midan).filter(Boolean))).join('  |  ') || '—'}
                 </th>
               </tr>
               <tr className="bg-[#f8f8f8]">
                 <th className="border border-black p-1 w-[8%]">الشهر</th>
                 <th className="border border-black p-1 w-[12%]">التاريخ</th>
-                <th className="border border-black p-1 w-[13%] bg-emerald-50 text-emerald-900">الميدان</th>
-                <th className="border border-black p-1 w-[17%] bg-amber-50 text-amber-900">المقطع التعلمي</th>
+                <th className="border border-black p-1 w-[13%] bg-[#e5f7f3] text-[#075e57]">الميدان</th>
+                <th className="border border-black p-1 w-[17%] bg-[#fff1d6] text-[#8a5a00]">المقطع التعلمي</th>
                 <th className="border border-black p-1 w-[15%]">المورد المعرفي</th>
                 <th className="border border-black p-1 w-[20%]">الحصة الأولى</th>
                 <th className="border border-black p-1 w-[17%]">الحصة الثانية</th>
@@ -272,7 +272,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
               {page.map((row, i) => {
                 if (row.isHoliday) {
                   return (
-                    <tr key={i} className="bg-[#dcfce7] print:bg-[#f0f0f0] font-bold">
+                    <tr key={i} className="bg-[#e9f8f0] print:bg-[#f0f0f0] font-bold">
                       <td contentEditable suppressContentEditableWarning className="border border-black p-1 editable-cell outline-none">{row.month}</td>
                       <td contentEditable suppressContentEditableWarning className="border border-black p-1 font-mono text-[10px] editable-cell outline-none">{row.dates || '—'}</td>
                       <td colSpan={5} contentEditable suppressContentEditableWarning className="border border-black p-1 text-center text-[12px] editable-cell outline-none">{row.holidayLabel}</td>
@@ -281,17 +281,17 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
                 }
 
                 return (
-                  <tr key={i} className={`${row.isExam ? 'bg-[#fdf2f8] print:bg-transparent' : 'hover:bg-gray-50 print:bg-transparent'}`}>
+                  <tr key={i} className={`${row.isExam ? 'bg-[#fff0f5] print:bg-transparent' : 'hover:bg-gray-50 print:bg-transparent'}`}>
                     <td className="border border-black p-1 font-black whitespace-nowrap align-middle">
                       <div className="flex justify-center items-center h-full">
                         <span style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }} contentEditable suppressContentEditableWarning className="editable-cell outline-none">{row.month}</span>
                       </div>
                     </td>
                     <td contentEditable suppressContentEditableWarning className="border border-black p-1 font-mono text-[10px] font-bold align-middle editable-cell outline-none">{row.dates}</td>
-                    <td contentEditable suppressContentEditableWarning className="border border-black p-1 font-bold align-middle editable-cell outline-none bg-emerald-50/60 text-emerald-950">
+                    <td contentEditable suppressContentEditableWarning className="border border-black p-1 font-bold align-middle editable-cell outline-none bg-[#e5f7f3]/70 text-[#075e57]">
                       {i > 0 && page[i - 1]?.midan === row.midan ? '' : row.midan}
                     </td>
-                    <td contentEditable suppressContentEditableWarning className="border border-black p-1 font-bold align-middle editable-cell outline-none bg-amber-50/60 text-amber-950">
+                    <td contentEditable suppressContentEditableWarning className="border border-black p-1 font-bold align-middle editable-cell outline-none bg-[#fff1d6]/70 text-[#8a5a00]">
                       {i > 0 && page[i - 1]?.midan === row.midan && page[i - 1]?.maqta === row.maqta ? '' : row.maqta}
                     </td>
                     <td contentEditable suppressContentEditableWarning className="border border-black p-1 font-bold align-middle editable-cell outline-none">{row.mawrid}</td>
@@ -340,7 +340,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
           ['عدد تعلم المورد', distributionStats.ta3alomCount],
           ['عدد الأنشطة', distributionStats.activityCount],
         ].map(([label, value]) => (
-          <div key={String(label)} className="rounded-xl border-2 border-emerald-200 bg-emerald-50 px-4 py-3 text-center">
+          <div key={String(label)} className="rounded-xl border-2 border-[#bfe7df] bg-[#e5f7f3] px-4 py-3 text-center">
             <div className="text-[11px] font-bold text-emerald-700">{label}</div>
             <div className="text-2xl font-black text-emerald-900 mt-1">{value}</div>
           </div>
@@ -364,7 +364,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
         <div className="flex flex-wrap items-center gap-2 border-r pr-4">
           <div className="flex flex-col gap-1">
             <label className="text-xs font-bold text-gray-500">بداية السنة الدراسية</label>
-            <div className="border border-emerald-200 bg-emerald-50 rounded px-3 py-1 text-sm font-black text-emerald-800">
+            <div className="border border-emerald-200 bg-emerald-50 rounded px-3 py-1 text-sm font-black text-[#176b63]">
               {startDate ? new Intl.DateTimeFormat('ar-DZ', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date(startDate + 'T12:00:00')) : '—'}
             </div>
           </div>
@@ -386,13 +386,13 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
           <button onClick={() => setShowPreview(true)} className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 shadow-sm transition">
             <Eye size={18} /> معاينة الطباعة
           </button>
-          <button onClick={handleExportPdf} className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 shadow-sm transition">
+          <button onClick={handleExportPdf} className="flex items-center gap-1.5 px-4 py-2 bg-[#159a8c] text-white rounded-xl font-bold hover:bg-[#0f7f74] shadow-sm transition">
             <FileDown size={18} /> PDF
           </button>
-          <button onClick={handleExportWord} className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-sm transition">
+          <button onClick={handleExportWord} className="flex items-center gap-1.5 px-4 py-2 bg-[#4f86c6] text-white rounded-xl font-bold hover:bg-blue-700 shadow-sm transition">
             <FileDown size={18} /> Word
           </button>
-          <button onClick={handlePrint} className="flex items-center gap-1.5 px-4 py-2 bg-[#c2185b] text-white rounded-xl font-bold hover:bg-rose-700 shadow-sm transition">
+          <button onClick={handlePrint} className="flex items-center gap-1.5 px-4 py-2 bg-[#d46a91] text-white rounded-xl font-bold hover:bg-[#b65377] shadow-sm transition">
             <Printer size={18} /> طباعة / PDF
           </button>
         </div>
@@ -400,7 +400,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
 
       {/* Main Container */}
       {pages.flat().some(row => !row.session1 && !row.session2 && !row.isHoliday) && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-bold text-amber-800">
+        <div className="rounded-xl border border-amber-200 bg-[#fff6df] p-3 text-xs font-bold text-[#8a5a00]">
           تنبيه: توجد حصة بلا محتوى. لم يتم اختراع محتوى؛ راجع المورد/النشاط في قاعدة البيانات.
         </div>
       )}
