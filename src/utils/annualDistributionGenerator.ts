@@ -28,6 +28,7 @@ export interface GeneratedSession {
   sourceActivityId2?: string;
   learningUnit?: string;
   taqwim?: string;
+  percent?: string;
 }
 
 export function generateAnnualDistribution(
