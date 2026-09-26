@@ -20,7 +20,7 @@ interface Props {
   curriculumBackground?: string;
 }
 
-const ANNUAL_SCHEDULE_DATA_VERSION = '2026-09-26-official-v17';
+const ANNUAL_SCHEDULE_DATA_VERSION = '2026-09-26-official-v18';
 
 export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, showToast, curriculumLessons, curriculumBackground }) => {
   const [showPreview, setShowPreview] = useState(false);
