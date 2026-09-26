@@ -56,9 +56,32 @@ const prepareExportPage = (
   });
 
   // لا تسمح العناصر الكبيرة بالانقسام عشوائياً داخل الصفحة.
-  page.querySelectorAll<HTMLElement>('table, tr, .page-break-inside-avoid, .break-inside-avoid').forEach((el) => {
+  page.querySelectorAll<HTMLElement>('table, tr, .page-break-inside-avoid, .break-inside-avoid, [data-pdf-keep="true"]').forEach((el) => {
     el.style.breakInside = 'avoid';
     el.style.pageBreakInside = 'avoid';
+  });
+
+  // تثبيت هندسة الرسومات عند تحويلها إلى صورة: لا نسمح للـ SVG أو
+  // الحاوية المرنة بتغيير موضع الرسم مقارنة بالمعاينة.
+  page.querySelectorAll<HTMLElement>('.memo-diagram-block, .memo-diagram-item, .memo-diagram-canvas').forEach((el) => {
+    el.style.position = 'relative';
+    el.style.top = 'auto';
+    el.style.right = 'auto';
+    el.style.bottom = 'auto';
+    el.style.left = 'auto';
+    el.style.transform = 'none';
+    el.style.float = 'none';
+    el.style.clear = 'both';
+  });
+  page.querySelectorAll<SVGElement>('.memo-diagram-canvas svg').forEach((svg) => {
+    svg.style.display = 'block';
+    svg.style.position = 'relative';
+    svg.style.top = 'auto';
+    svg.style.transform = 'none';
+    svg.style.marginTop = '0';
+    svg.style.marginBottom = '0';
+    svg.style.maxWidth = '100%';
+    svg.style.height = 'auto';
   });
 
   const host = document.createElement('div');
@@ -167,7 +190,18 @@ const buildSmartPages = (paper: HTMLElement): { children: HTMLElement[]; pageHei
   const measured = expandedChildren.map((child) => {
     const estimated = Number(child.dataset.pdfFragmentHeight);
     const rect = child.getBoundingClientRect();
-    return { child, height: Number.isFinite(estimated) && estimated > 0 ? estimated : rect.height };
+    const styles = getComputedStyle(child);
+    const marginTop = parseFloat(styles.marginTop) || 0;
+    const marginBottom = parseFloat(styles.marginBottom) || 0;
+    const height = Number.isFinite(estimated) && estimated > 0 ? estimated : rect.height;
+
+    // احتساب الهوامش الفعلية يمنع وضع الرسم/الجدول أعلى الصفحة
+    // عند انتقاله إلى صفحة جديدة بسبب تجاهل margin في الحساب السابق.
+    return {
+      child,
+      height: height + marginTop + marginBottom,
+      keepTogether: child.matches('[data-pdf-keep="true"], .memo-diagram-block, .page-break-inside-avoid, .break-inside-avoid'),
+    };
   });
 
   const pages: { children: HTMLElement[]; pageHeightPx: number }[] = [];
@@ -177,6 +211,8 @@ const buildSmartPages = (paper: HTMLElement): { children: HTMLElement[]; pageHei
   for (const item of measured) {
     const gap = current.length ? 0 : 0;
 
+    // كتلة الرسم/الجدول المحمية تنتقل كاملة إلى الصفحة التالية إذا لم
+    // تتسع في المساحة المتبقية، بدلاً من محاولة حشرها أو تغيير موضعها.
     if (current.length > 0 && currentHeight + gap + item.height > availableHeight) {
       pages.push({ children: current, pageHeightPx });
       current = [];
