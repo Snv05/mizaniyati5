@@ -8,7 +8,7 @@ import { LESSONS_3AM } from '../data/lessons3am';
 import { LESSONS_4AM } from '../data/lessons4am';
 import { generateAnnualDistribution, AnnualCalendarEvent } from '../utils/annualDistributionGenerator';
 import { generateDistributionPdf } from '../utils/pdfExportDistribution';
-import { OFFICIAL_1AM_DISTRIBUTION, OFFICIAL_2AM_DISTRIBUTION } from '../data/officialAnnualDistributionData';
+import { OFFICIAL_1AM_DISTRIBUTION, OFFICIAL_2AM_DISTRIBUTION, OFFICIAL_3AM_DISTRIBUTION, OFFICIAL_4AM_DISTRIBUTION } from '../data/officialAnnualDistributionData';
 
 import { Printer, FileDown, Eye, X } from 'lucide-react';
 
@@ -20,7 +20,7 @@ interface Props {
   curriculumBackground?: string;
 }
 
-const ANNUAL_SCHEDULE_DATA_VERSION = '2026-09-25-v16';
+const ANNUAL_SCHEDULE_DATA_VERSION = '2026-09-26-official-v17';
 
 export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, showToast, curriculumLessons, curriculumBackground }) => {
   const [showPreview, setShowPreview] = useState(false);
@@ -98,8 +98,12 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, sho
   const pages = useMemo(() => {
     // 1AM و2AM: المصدر المباشر هو التدرجان المرفقان من المستخدم.
     // لا نعيد توليدهما من قاعدة المنهاج ولا نغيّر التواريخ/الأنشطة.
-    if (level === '1am' || level === '2am') {
-      const sourceRows = level === '1am' ? OFFICIAL_1AM_DISTRIBUTION : OFFICIAL_2AM_DISTRIBUTION;
+    if (level === '1am' || level === '2am' || level === '3am' || level === '4am') {
+      const sourceRows =
+        level === '1am' ? OFFICIAL_1AM_DISTRIBUTION :
+        level === '2am' ? OFFICIAL_2AM_DISTRIBUTION :
+        level === '3am' ? OFFICIAL_3AM_DISTRIBUTION :
+        OFFICIAL_4AM_DISTRIBUTION;
       const rows = sourceRows.map((row) => {
         const text = [row.maqta, row.mawrid, row.session1, row.session2].join(' ');
         const isHoliday = /عطل[ةــــــــ]/.test(text);
