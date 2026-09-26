@@ -323,12 +323,25 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
                   key={lvl.id}
                   id={`card-select-level-${lvl.id}`}
                   style={{
-                    background: lvl.gradient,
+                    backgroundImage: `url(${lvl.image})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
                   }}
-                  className={`relative overflow-hidden w-full text-right p-5 sm:p-6 rounded-3xl border ${lvl.borderColor} transition-all duration-300 shadow-md hover:shadow-xl group flex flex-col sm:flex-row items-center justify-between gap-5`}
+                  className={`relative overflow-hidden min-h-[310px] w-full text-right p-5 sm:p-7 rounded-3xl border ${lvl.borderColor} transition-all duration-300 shadow-md hover:shadow-xl group flex flex-col justify-end gap-5`}
                 >
-                  {/* محتوى البطاقة النصي (على الجهة اليمنى في الواجهة العربية RTL) */}
-                  <div className="flex-1 flex flex-col justify-between h-full space-y-3.5 w-full">
+                  {/* صورة المستوى تظهر كخلفية كاملة للبطاقة فقط؛ لا تؤثر على قوالب المذكرات أو التدرج السنوي */}
+                  <div
+                    className="absolute inset-0 bg-gradient-to-l from-black/65 via-black/30 to-black/5 pointer-events-none"
+                    aria-hidden="true"
+                  />
+                  {/* طبقة لونية خفيفة تحافظ على هوية كل مستوى دون إخفاء الصورة */}
+                  <div
+                    className="absolute inset-0 opacity-20 pointer-events-none"
+                    style={{ background: lvl.gradient }}
+                    aria-hidden="true"
+                  />
+                  {/* محتوى البطاقة النصي فوق الصورة */}
+                  <div className="relative z-10 flex-1 flex flex-col justify-end h-full space-y-3.5 w-full">
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className={`text-xl sm:text-2xl font-black ${lvl.titleColor}`}>
@@ -380,15 +393,7 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
                     </div>
                   </div>
 
-                  {/* الصورة التوضيحية ثلاثية الأبعاد (على الجهة اليسرى كما في النموذج) */}
-                  <div className="w-full sm:w-40 md:w-48 lg:w-52 h-40 sm:h-44 md:h-48 rounded-2xl overflow-hidden shrink-0 shadow-sm relative group-hover:scale-[1.02] transition-transform duration-300 border border-white/40 bg-black/5">
-                    <img
-                      src={lvl.image}
-                      alt={lvl.title}
-                      className="w-full h-full object-cover rounded-2xl"
-                      referrerPolicy="no-referrer"
-                    />
-                  </div>
+                  {/* الصورة أصبحت خلفية كاملة للبطاقة، لذلك لا نكررها كصورة جانبية */}
                 </div>
               );
             })}
@@ -506,4 +511,3 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
     </div>
   );
 };
-
