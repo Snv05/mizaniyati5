@@ -853,7 +853,7 @@ export const MemoSheet: React.FC<MemoSheetProps> = ({
           </div>
         </div>
 
-        <div className="text-center font-bold text-[12.5px] text-gray-500 editable-cell print:hidden" contentEditable="plaintext-only" suppressContentEditableWarning>الصفحة 1 / 1</div>
+        <div className="memo-page-number text-center font-bold text-[12.5px] text-gray-500 editable-cell print:hidden" contentEditable="plaintext-only" suppressContentEditableWarning>الصفحة 1 / 1</div>
 
         <div className="text-left">
           <div className="font-extrabold text-[13px] text-gray-800 mb-1">
