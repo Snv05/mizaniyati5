@@ -29,6 +29,7 @@ export interface GeneratedSession {
   learningUnit?: string;
   taqwim?: string;
   percent?: string;
+  week?: number | string;
 }
 
 export function generateAnnualDistribution(

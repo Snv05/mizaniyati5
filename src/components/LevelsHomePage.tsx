@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   GraduationCap,
   CalendarDays,
@@ -22,6 +22,8 @@ import {
   CheckCircle2,
   MessageSquare,
   HelpCircle,
+  Camera,
+  Upload,
 } from 'lucide-react';
 import { LESSONS_DATA } from '../data/lessonsData';
 import { MemoConfig } from '../types';
@@ -29,6 +31,8 @@ import card1amImg from '../assets/images/card_1am_plant_1790373274426.jpg';
 import card2amImg from '../assets/images/card_2am_ecosystem_1790373285211.jpg';
 import card3amImg from '../assets/images/card_3am_geology_1790373295369.jpg';
 import card4amImg from '../assets/images/card_4am_human_1790373304110.jpg';
+import designerPortraitImg from '../assets/images/designer_portrait_1790463396414.jpg';
+import { getDesignerPhoto, saveDesignerPhoto } from '../utils/designerPhoto';
 
 interface LevelsHomePageProps {
   onSelectYear: (level: '1am' | '2am' | '3am' | '4am', subTab?: 'memos' | 'distribution') => void;
@@ -49,6 +53,30 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
   config,
   curriculumBackground,
 }) => {
+  const [designerPhoto, setDesignerPhoto] = useState<string>(() => getDesignerPhoto());
+
+  useEffect(() => {
+    const handleUpdated = (e: any) => {
+      setDesignerPhoto(e.detail || getDesignerPhoto());
+    };
+    window.addEventListener('designer-photo-updated', handleUpdated);
+    return () => window.removeEventListener('designer-photo-updated', handleUpdated);
+  }, []);
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (dataUrl) {
+        saveDesignerPhoto(dataUrl);
+        setDesignerPhoto(dataUrl);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   // تصميم بطاقات المستويات الدراسية وفق الهوية البصرية الجديدة المستوحاة من النموذج اللوحي
   const levelThemes = [
     {
@@ -150,24 +178,43 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-teal-50 rounded-tr-full opacity-60 pointer-events-none" />
           
           <div className="flex items-center gap-4 relative z-10 text-right">
-            <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-emerald-500 p-0.5 shadow-sm bg-white shrink-0">
+            <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-emerald-500 p-0.5 shadow-md bg-white shrink-0 group">
               <img 
-                src="/formal_studio_portrait.jpg" 
+                src={designerPhoto} 
                 alt="مصمم المنصة بغداد الطيب" 
                 className="w-full h-full rounded-full object-cover"
-                onError={(e) => {
-                  const target = e.currentTarget;
-                  if (target.src !== "https://ui-avatars.com/api/?name=بغداد+الطيب&background=047857&color=fff&size=128&bold=true") {
-                    target.src = "https://ui-avatars.com/api/?name=بغداد+الطيب&background=047857&color=fff&size=128&bold=true";
-                  }
-                }}
+                referrerPolicy="no-referrer"
               />
+              <label
+                htmlFor="upload-designer-photo-banner"
+                className="absolute -bottom-1 -left-1 w-7 h-7 bg-emerald-700 hover:bg-emerald-800 text-white rounded-full flex items-center justify-center cursor-pointer shadow-md transition border-2 border-white hover:scale-110"
+                title="رفع وتثبيت صورتك الأصلية بملامحك الحقيقية 100%"
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <input
+                  type="file"
+                  id="upload-designer-photo-banner"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handlePhotoUpload}
+                />
+              </label>
             </div>
             <div>
               <div className="text-[12px] sm:text-[13px] text-gray-500 font-bold mb-0.5 flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-emerald-500" /> تصميم وتطوير المنصة
               </div>
-              <h2 className="text-xl sm:text-2xl font-black text-gray-900 leading-tight">بغداد الطيب</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl sm:text-2xl font-black text-gray-900 leading-tight">بغداد الطيب</h2>
+                <label
+                  htmlFor="upload-designer-photo-banner"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold border border-emerald-200/70 cursor-pointer transition shadow-2xs"
+                  title="رفع صورتك الأصلية بجودتها الكاملة"
+                >
+                  <Upload className="w-3 h-3" />
+                  <span>تغيير / رفع الصورة الأصلية</span>
+                </label>
+              </div>
               <div className="text-[12px] font-extrabold text-emerald-800 bg-emerald-100/80 px-3 py-1 rounded-full inline-flex items-center gap-1.5 mt-1.5 border border-emerald-200/50">
                 <UserCog className="w-3.5 h-3.5" /> منصة المذكرة البيداغوجية لعلوم الطبيعة والحياة
               </div>

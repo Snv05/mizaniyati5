@@ -17,9 +17,11 @@ import {
   Clock,
   Layers,
   GraduationCap,
+  Camera,
 } from 'lucide-react';
 import { MemoConfig } from '../types';
 import { TeacherOfficialStamp } from './TeacherOfficialStamp';
+import { getDesignerPhoto, saveDesignerPhoto, resetDesignerPhoto } from '../utils/designerPhoto';
 
 interface AccountSettingsProps {
   config: MemoConfig;
@@ -35,6 +37,36 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
   const [formData, setFormData] = useState<MemoConfig>({ ...config });
   const [stampColor, setStampColor] = useState<'blue' | 'purple' | 'red' | 'teal'>('blue');
   const [isSaved, setIsSaved] = useState(false);
+  const [designerPhoto, setDesignerPhoto] = useState<string>(() => getDesignerPhoto());
+
+  React.useEffect(() => {
+    const handleUpdated = (e: any) => {
+      setDesignerPhoto(e.detail || getDesignerPhoto());
+    };
+    window.addEventListener('designer-photo-updated', handleUpdated);
+    return () => window.removeEventListener('designer-photo-updated', handleUpdated);
+  }, []);
+
+  const handleDesignerPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      if (result) {
+        saveDesignerPhoto(result);
+        setDesignerPhoto(result);
+        showToast('تم تحديث وتثبيت صورتك الأصلية بملامحك الحقيقية 100% بنجاح');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleResetDesignerPhoto = () => {
+    resetDesignerPhoto();
+    setDesignerPhoto(getDesignerPhoto());
+    showToast('تمت استعادة الصورة الافتراضية');
+  };
 
   const handleChange = (field: keyof MemoConfig, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -407,6 +439,67 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
                     </button>
                   )}
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Designer & Teacher Portrait Photo Section */}
+        <div className="bg-white rounded-3xl border border-gray-200 p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <Camera className="w-5 h-5 text-emerald-700" />
+              <h3 className="font-black text-gray-900 text-[15px]">
+                صورة المصمم والملف التعريفي (الأستاذ بغداد الطيب)
+              </h3>
+            </div>
+            <span className="text-[11.5px] font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+              ملامحك الحقيقية 100%
+            </span>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center gap-6 p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80">
+            <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-emerald-500 shadow-md bg-white overflow-hidden shrink-0 group">
+              <img
+                src={designerPhoto}
+                alt="صورتك الأصلية"
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+            </div>
+
+            <div className="flex-1 space-y-2 text-center sm:text-right">
+              <h4 className="font-black text-gray-900 text-[15px]">
+                تثبيت صورتك الأصلية بملامحك الدقيقة
+              </h4>
+              <p className="text-[12.5px] text-gray-600 leading-relaxed font-medium">
+                قم برفع صورتك الحقيقية بدون أي توليد أو تعديل آلي لتظهر ملامح وجهك وعينيك الأصلية 100% في الواجهة الرئيسية، الشريط العلوي، القائمة الجانبية، وبطاقة التعريف.
+              </p>
+
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
+                <label
+                  htmlFor="settings-designer-photo-upload"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-[12.5px] font-black cursor-pointer shadow-xs transition"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>رفع صورتك الأصلية الآن</span>
+                  <input
+                    type="file"
+                    id="settings-designer-photo-upload"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleDesignerPhotoUpload}
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  onClick={handleResetDesignerPhoto}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-300 text-gray-700 text-[12px] font-bold hover:bg-white transition cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>استعادة الافتراضي</span>
+                </button>
               </div>
             </div>
           </div>

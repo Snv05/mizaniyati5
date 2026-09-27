@@ -40,6 +40,8 @@ import { UserProfile } from './components/UserProfile';
 import { FirebaseDataSync } from './components/FirebaseDataSync';
 import { CurriculumDatabaseManager } from './components/CurriculumDatabaseManager';
 import { loadCurriculumDatabase } from './data/curriculumDb';
+import designerPortraitImg from './assets/images/designer_portrait_1790463396414.jpg';
+import { getDesignerPhoto } from './utils/designerPhoto';
 
 export type MainSectionType = 'home' | '1am' | '2am' | '3am' | '4am' | 'logbook' | 'settings' | 'database';
 
@@ -55,6 +57,16 @@ export const App: React.FC = () => {
   const [isAssistantOpen, setIsAssistantOpen] = useState<boolean>(false);
   const [isCorrectionMemoOpen, setIsCorrectionMemoOpen] = useState<boolean>(false);
   const [infoModalTab, setInfoModalTab] = useState<'about' | 'contact' | 'guide' | null>(null);
+
+  const [designerPhoto, setDesignerPhoto] = useState<string>(() => getDesignerPhoto());
+
+  useEffect(() => {
+    const handleUpdated = (e: any) => {
+      setDesignerPhoto(e.detail || getDesignerPhoto());
+    };
+    window.addEventListener('designer-photo-updated', handleUpdated);
+    return () => window.removeEventListener('designer-photo-updated', handleUpdated);
+  }, []);
 
   // Is current section a school year?
   const isYearSection = activeSection === '1am' || activeSection === '2am' || activeSection === '3am' || activeSection === '4am';
@@ -537,21 +549,16 @@ export const App: React.FC = () => {
           {/* Left Section: Action Buttons + AI Assistant */}
           <div className="flex items-center gap-2">
             {/* Designer Badge - Always Visible */}
-            <div className="flex items-center gap-1.5 sm:gap-2 bg-emerald-50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl border border-emerald-200 shadow-sm transition-all hover:shadow-md hover:bg-emerald-100" title="تصميم وتطوير المنصة: بغداد الطيب">
+            <div className="flex items-center gap-1.5 sm:gap-2 bg-emerald-50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl border border-emerald-200 shadow-xs transition-all hover:shadow-md hover:bg-emerald-100" title="تصميم وتطوير المنصة: بغداد الطيب">
               <img 
-                src="/formal_studio_portrait.jpg" 
+                src={designerPhoto} 
                 alt="مصمم المنصة بغداد الطيب" 
-                className="w-6 h-6 rounded-full border border-emerald-500 object-cover"
-                onError={(e) => {
-                  const target = e.currentTarget;
-                  if (target.src !== "https://ui-avatars.com/api/?name=بغداد+الطيب&background=047857&color=fff&size=128&bold=true") {
-                    target.src = "https://ui-avatars.com/api/?name=بغداد+الطيب&background=047857&color=fff&size=128&bold=true";
-                  }
-                }}
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-emerald-500 object-cover shadow-2xs shrink-0"
+                referrerPolicy="no-referrer"
               />
               <div className="hidden sm:flex flex-col text-right">
-                <span className="text-[9px] text-emerald-600 font-bold leading-none mb-0.5">تصميم وتطوير</span>
-                <span className="text-[11px] font-black text-emerald-900 leading-none">بغداد الطيب</span>
+                <span className="text-[9.5px] text-emerald-700 font-bold leading-none mb-0.5">تصميم وتطوير</span>
+                <span className="text-[11.5px] font-black text-emerald-950 leading-none">بغداد الطيب</span>
               </div>
             </div>
 
@@ -827,6 +834,7 @@ export const App: React.FC = () => {
             selectedLevel={selectedLevel}
             setSelectedLevel={(lvl) => setActiveSection(lvl)}
             config={config}
+            setConfig={setConfig}
             showToast={showToast}
             curriculumLessons={curriculumLessons}
             curriculumBackground={curriculumBackground}

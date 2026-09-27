@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   GraduationCap,
   BookOpen,
@@ -20,6 +20,8 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { MemoConfig } from '../types';
+import designerPortraitImg from '../assets/images/designer_portrait_1790463396414.jpg';
+import { getDesignerPhoto } from '../utils/designerPhoto';
 
 interface PlatformNavigationDrawerProps {
   isOpen: boolean;
@@ -40,6 +42,16 @@ export const PlatformNavigationDrawer: React.FC<PlatformNavigationDrawerProps> =
   onOpenInfoModal,
   config,
 }) => {
+  const [designerPhoto, setDesignerPhoto] = useState<string>(() => getDesignerPhoto());
+
+  useEffect(() => {
+    const handleUpdated = (e: any) => {
+      setDesignerPhoto(e.detail || getDesignerPhoto());
+    };
+    window.addEventListener('designer-photo-updated', handleUpdated);
+    return () => window.removeEventListener('designer-photo-updated', handleUpdated);
+  }, []);
+
   if (!isOpen) return null;
 
   const levels = [
@@ -299,12 +311,26 @@ export const PlatformNavigationDrawer: React.FC<PlatformNavigationDrawerProps> =
           </div>
         </div>
 
-        {/* Footer info */}
-        <div className="p-4 border-t border-slate-200 bg-slate-50/90 text-center text-[11px] text-gray-500 space-y-1">
-          <p className="font-bold text-gray-700">
-            المنصة الوطنية لأساتذة علوم الطبيعة والحياة
-          </p>
-          <p>مرحلة التعليم المتوسط — الجمهورية الجزائرية</p>
+        {/* Footer info & Designer */}
+        <div className="p-3.5 border-t border-slate-200 bg-slate-50/90 space-y-2.5">
+          <div className="flex items-center gap-3 bg-white p-2.5 rounded-2xl border border-emerald-100 shadow-2xs">
+            <img 
+              src={designerPhoto} 
+              alt="مصمم المنصة بغداد الطيب" 
+              className="w-10 h-10 rounded-full object-cover border-2 border-emerald-500 shadow-2xs shrink-0" 
+              referrerPolicy="no-referrer"
+            />
+            <div className="text-right">
+              <span className="text-[10px] text-emerald-700 font-bold block leading-none mb-0.5">تصميم وتطوير المنصة</span>
+              <strong className="text-gray-900 text-[12.5px] block font-black leading-tight">الأستاذ بغداد الطيب</strong>
+            </div>
+          </div>
+          <div className="text-center text-[10.5px] text-gray-500 space-y-0.5">
+            <p className="font-bold text-gray-700">
+              المنصة الوطنية لأساتذة علوم الطبيعة والحياة
+            </p>
+            <p className="text-gray-400">مرحلة التعليم المتوسط — الجمهورية الجزائرية</p>
+          </div>
         </div>
       </div>
     </div>

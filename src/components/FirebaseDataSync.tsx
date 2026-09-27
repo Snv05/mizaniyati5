@@ -17,7 +17,7 @@ export const FirebaseDataSync: React.FC = () => {
       try {
         const documents = [
           ['config', 'algeria_sciences_config', 'config'],
-          ['annualDist', 'algeria_sciences_annual_dist_v5', 'items'],
+          ['annualDist', 'algeria_sciences_annual_dist_v6', 'items'],
           ['curriculum', 'mizaniyati_curriculum_db_v1', 'lessons'],
           ['logbook', 'daftar_table_v2027', 'data'],
         ] as const;

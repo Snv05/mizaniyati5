@@ -147,24 +147,25 @@ export const generateDistributionDocx = async (
 
       const rows: TableRow[] = [];
 
-      // Header row: exactly mirrors the seven-column on-screen table.
-      if (level !== '3am' && pageTitle) {
+      // Header row: exactly mirrors the on-screen table.
+      if (level !== '3am' && pageTitle && level !== '4am') {
         rows.push(new TableRow({
           children: [
-            createCell(`الميدان: ${pageTitle}`, true, "ECFDF5", 7, 1, 24)
+            createCell(`الميدان: ${pageTitle}`, true, "ECFDF5", 8, 1, 24)
           ]
         }));
       }
 
       rows.push(new TableRow({
         children: [
-          new TableCell({ width: { size: 8, type: WidthType.PERCENTAGE }, shading: { fill: "F8F8F8", type: ShadingType.CLEAR, color: "auto" }, children: [createParagraph("الشهر", true, "000000", 20)] }),
-          new TableCell({ width: { size: 11, type: WidthType.PERCENTAGE }, shading: { fill: "F8F8F8", type: ShadingType.CLEAR, color: "auto" }, children: [createParagraph("التاريخ", true, "000000", 20)] }),
-          new TableCell({ width: { size: 13, type: WidthType.PERCENTAGE }, shading: { fill: "ECFDF5", type: ShadingType.CLEAR, color: "auto" }, children: [createParagraph("الميدان", true, "065F46", 20)] }),
-          new TableCell({ width: { size: 17, type: WidthType.PERCENTAGE }, shading: { fill: "FFFBEB", type: ShadingType.CLEAR, color: "auto" }, children: [createParagraph("المقطع التعلمي", true, "92400E", 20)] }),
-          new TableCell({ width: { size: 15, type: WidthType.PERCENTAGE }, shading: { fill: "F8F8F8", type: ShadingType.CLEAR, color: "auto" }, children: [createParagraph("المورد المعرفي", true, "000000", 20)] }),
+          new TableCell({ width: { size: 7, type: WidthType.PERCENTAGE }, shading: { fill: "F8F8F8", type: ShadingType.CLEAR, color: "auto" }, children: [createParagraph("الشهر", true, "000000", 20)] }),
+          new TableCell({ width: { size: 10, type: WidthType.PERCENTAGE }, shading: { fill: "F8F8F8", type: ShadingType.CLEAR, color: "auto" }, children: [createParagraph("الأسابيع", true, "000000", 20)] }),
+          new TableCell({ width: { size: 12, type: WidthType.PERCENTAGE }, shading: { fill: "ECFDF5", type: ShadingType.CLEAR, color: "auto" }, children: [createParagraph("الميدان", true, "065F46", 20)] }),
+          new TableCell({ width: { size: 14, type: WidthType.PERCENTAGE }, shading: { fill: "FFFBEB", type: ShadingType.CLEAR, color: "auto" }, children: [createParagraph("المقطع التعلمي", true, "92400E", 20)] }),
+          new TableCell({ width: { size: 14, type: WidthType.PERCENTAGE }, shading: { fill: "F8F8F8", type: ShadingType.CLEAR, color: "auto" }, children: [createParagraph(level === '4am' ? "المقطع البيداغوجي" : "المورد المعرفي", true, "000000", 20)] }),
           new TableCell({ width: { size: 18, type: WidthType.PERCENTAGE }, shading: { fill: "F8F8F8", type: ShadingType.CLEAR, color: "auto" }, children: [createParagraph("الحصة الأولى", true, "000000", 20)] }),
           new TableCell({ width: { size: 18, type: WidthType.PERCENTAGE }, shading: { fill: "F8F8F8", type: ShadingType.CLEAR, color: "auto" }, children: [createParagraph("الحصة الثانية", true, "000000", 20)] }),
+          new TableCell({ width: { size: 7, type: WidthType.PERCENTAGE }, shading: { fill: "F8F8F8", type: ShadingType.CLEAR, color: "auto" }, children: [createParagraph("النسبة", true, "000000", 20)] }),
         ]
       }));
 
@@ -173,25 +174,40 @@ export const generateDistributionDocx = async (
         const previous = page[rowIndex - 1];
         const sameMidan = !!previous && previous.midan === item.midan;
         const sameMaqta = sameMidan && previous.maqta === item.maqta;
+        const weekDisplay = item.week ? `${item.week} (${item.dates})` : (item.dates || '—');
 
         if (item.isHoliday) {
-          rows.push(new TableRow({
-            children: [
-              createCell(item.month, true, "DCFCE7"),
-              createCell(item.dates, true, "DCFCE7"),
-              createCell(item.holidayLabel || 'عطلة', true, "DCFCE7", 5)
-            ]
-          }));
+          const isFull = item.session1 === 'عطلة الشتاء' || item.session1 === 'عطلة الربيع' || !item.session1 || item.session1 === item.session2;
+          if (isFull) {
+            rows.push(new TableRow({
+              children: [
+                createCell(item.month, true, "DCFCE7"),
+                createCell(weekDisplay, true, "DCFCE7"),
+                createCell(item.holidayLabel || item.session1 || 'عطلة', true, "DCFCE7", 5),
+                createCell((item as any).percent || '', true, "DCFCE7")
+              ]
+            }));
+          } else {
+            rows.push(new TableRow({
+              children: [
+                createCell(item.month, false, "FFFFFF"),
+                createCell(weekDisplay, false, "FFFFFF"),
+                createCell(item.midan || '', true, "ECFDF5"),
+                createCell(item.maqta || '', true, "FFFBEB"),
+                createCell(item.mawrid || '', true, "FFFFFF"),
+                createCell(item.session1 || '', false, "FFFFFF", 1, 1, 20, AlignmentType.RIGHT),
+                createCell(item.session2 || item.holidayLabel || 'عطلة', true, "DCFCE7", 1, 1, 20, AlignmentType.CENTER),
+                createCell((item as any).percent || '', true, "FFFFFF")
+              ]
+            }));
+          }
         } else if (item.isExam) {
           rows.push(new TableRow({
             children: [
               createCell(item.month, true, "FDF2F8"),
-              createCell(item.dates, true, "FDF2F8"),
-              createCell(item.midan || '', true, "FDF2F8"),
-              createCell(item.maqta || '', true, "FDF2F8"),
-              createCell(item.mawrid || '', true, "FDF2F8"),
-              createCell(item.session1 || 'اختبار / فرض', true, "FEF08A"),
-              createCell(item.session2 || '', true, "FEF08A")
+              createCell(weekDisplay, true, "FDF2F8"),
+              createCell(item.session1 || item.mawrid || 'إختبارات الفصل', true, "DCFCE7", 5),
+              createCell((item as any).percent || '', true, "FDF2F8")
             ]
           }));
         } else {
@@ -199,12 +215,13 @@ export const generateDistributionDocx = async (
           rows.push(new TableRow({
             children: [
               createCell(item.month, false, rowBg),
-              createCell(item.dates, false, rowBg),
-              createCell(sameMidan ? '' : (item.midan || ''), true, "ECFDF5"),
-              createCell(sameMaqta ? '' : (item.maqta || ''), true, "FFFBEB"),
+              createCell(weekDisplay, false, rowBg),
+              createCell(item.midan || '', true, "ECFDF5"),
+              createCell(item.maqta || '', true, "FFFBEB"),
               createCell(item.mawrid || '', true, rowBg),
               createCell(item.session1 || '', false, rowBg, 1, 1, 20, AlignmentType.RIGHT),
               createCell(item.session2 || '', false, rowBg, 1, 1, 20, AlignmentType.RIGHT),
+              createCell((item as any).percent || '', true, rowBg)
             ]
           }));
         }

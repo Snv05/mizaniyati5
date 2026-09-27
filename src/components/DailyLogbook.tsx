@@ -32,6 +32,12 @@ import {
 } from 'lucide-react';
 import { LessonMemo, MemoConfig, Activity } from '../types';
 import { TeacherOfficialStamp } from './TeacherOfficialStamp';
+import { 
+  deriveDefaultSchoolEntryDate, 
+  deriveSchoolYearFromDate, 
+  getDefaultCalendarSettings, 
+  syncCalendarToDailyLogbook 
+} from '../utils/annualDistributionDateUtils';
 import { LESSONS_1AM } from '../data/lessons1am';
 import { LESSONS_2AM } from '../data/lessons2am';
 import { LESSONS_3AM } from '../data/lessons3am';
@@ -266,7 +272,7 @@ type AnnualStoredItem = { id?: string; level?: string; lessonType?: string; mida
 
 const getStoredAnnualSchedule = (level: '1م' | '2م' | '3م' | '4م'): { startDate: string; items: AnnualStoredItem[] } | null => {
   try {
-    const raw = JSON.parse(localStorage.getItem('algeria_sciences_annual_dist_v5') || '{}');
+    const raw = JSON.parse(localStorage.getItem('algeria_sciences_annual_dist_v6') || '{}');
     const key = level.replace('م', 'am') as '1am' | '2am' | '3am' | '4am';
     const value = raw?.[key];
     if (!value?.startDate || !Array.isArray(value.items)) return null;
@@ -448,7 +454,7 @@ const AUTO_FILLED_TIMETABLE_ROWS: TimetableGridRow[] = EMPTY_TIMETABLE_ROWS.map(
 }));
 
 const LOGBOOK_DATA_VERSION = '2026-09-26-official-v19';
-const ANNUAL_SCHEDULE_DATA_VERSION = '2026-09-26-official-v18';
+const ANNUAL_SCHEDULE_DATA_VERSION = '2026-09-27-official-v22-clean-4am';
 const ROWS_PER_PAGE = 12;
 const getPageDimensions = (orientation: 'portrait' | 'landscape') => orientation === 'landscape' ? { w: 297, h: 210 } : { w: 210, h: 297 };
 const PRINT_MARGIN = '14mm';
@@ -776,19 +782,28 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
   const [period, setPeriod] = useState<string>('شهر');
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
   const pageDimensions = getPageDimensions(orientation);
-  // تاريخ الدخول الافتراضي يُشتق من السنة الدراسية، لكنه ليس ثابتاً:
-  // يمكن للأستاذ تغييره من حقل «تاريخ بداية الدفتر» حسب القرار الرسمي للسنة المعنية.
-  const deriveSchoolEntryDate = (schoolYear: string): string => {
-    const match = String(schoolYear || '').match(/(20\d{2})/);
-    if (!match) return '';
-    const year = Number(match[1]);
-    return `${year}-09-22`;
-  };
-
   const [startDate, setStartDate] = useState<string>(() => {
-    const automaticDate = deriveSchoolEntryDate(config.schoolYear);
-    return automaticDate || formatDateToIsoString(new Date());
+    let initialDate = '';
+    try {
+      const item = localStorage.getItem('daftar_table_v2027');
+      if (item) {
+        const parsed = JSON.parse(item);
+        if (parsed.startDate) initialDate = parsed.startDate;
+      }
+    } catch {}
+    return initialDate || deriveDefaultSchoolEntryDate(config.schoolYear) || formatDateToIsoString(new Date());
   });
+
+  // عند تغيير السنة الدراسية في الإعدادات، تحديث تاريخ بداية الدفتر والعطل الرسمية تلقائياً
+  useEffect(() => {
+    if (!config.schoolYear) return;
+    const newEntry = deriveDefaultSchoolEntryDate(config.schoolYear);
+    if (newEntry) {
+      setStartDate(newEntry);
+      const settings = getDefaultCalendarSettings(config.schoolYear, newEntry);
+      syncCalendarToDailyLogbook(newEntry, settings);
+    }
+  }, [config.schoolYear]);
 
   // Generated Daily Log Entries
   const [rows, setRows] = useState<LogEntry[]>([]);
