@@ -852,21 +852,20 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, set
             <RotateCcw size={15} /> استعادة الأصلي
           </button>
 
-          <button onClick={() => setShowPreview(true)} className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 shadow-sm transition cursor-pointer">
-            <Eye size={17} /> معاينة
-          </button>
-
-          <button onClick={handleExportPdf} className="flex items-center gap-1.5 px-3 py-2 bg-[#159a8c] text-white rounded-xl font-bold hover:bg-[#0f7f74] shadow-sm transition cursor-pointer">
-            <FileDown size={17} /> PDF
-          </button>
-
-          <button onClick={handleExportWord} className="flex items-center gap-1.5 px-3 py-2 bg-[#4f86c6] text-white rounded-xl font-bold hover:bg-blue-700 shadow-sm transition cursor-pointer">
-            <FileDown size={17} /> Word
-          </button>
-
-          <button onClick={handlePrint} className="flex items-center gap-1.5 px-3 py-2 bg-[#d46a91] text-white rounded-xl font-bold hover:bg-[#b65377] shadow-sm transition cursor-pointer">
-            <Printer size={17} /> طباعة
-          </button>
+          <div className="flex items-center gap-1.5 rounded-xl bg-gray-50 border border-gray-200 p-1.5">
+            <button onClick={() => setShowPreview(true)} className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 shadow-sm transition cursor-pointer">
+              <Eye size={17} /> معاينة
+            </button>
+            <button onClick={handlePrint} className="flex items-center gap-1.5 px-3 py-2 bg-gray-900 text-white rounded-lg font-bold hover:bg-gray-800 shadow-sm transition cursor-pointer">
+              <Printer size={17} /> طباعة
+            </button>
+            <button onClick={handleExportPdf} className="flex items-center gap-1.5 px-3 py-2 bg-[#159a8c] text-white rounded-lg font-bold hover:bg-[#0f7f74] shadow-sm transition cursor-pointer">
+              <FileDown size={17} /> PDF
+            </button>
+            <button onClick={handleExportWord} className="flex items-center gap-1.5 px-3 py-2 bg-[#4f86c6] text-white rounded-lg font-bold hover:bg-blue-700 shadow-sm transition cursor-pointer">
+              <FileDown size={17} /> Word
+            </button>
+          </div>
         </div>
       </div>
 
