@@ -34,6 +34,7 @@ import { LevelsHomePage } from './components/LevelsHomePage';
 import { PlatformNavigationDrawer } from './components/PlatformNavigationDrawer';
 import { AIAssistantDrawer } from './components/AIAssistantDrawer';
 import { CorrectionMemoDrawer } from './components/CorrectionMemoDrawer';
+import { PedagogicalNoteModal } from './components/PedagogicalNoteModal';
 import { PlatformInfoModal } from './components/PlatformInfoModal';
 import { InteractiveMaqta1 } from './components/InteractiveMaqta1';
 import { UserProfile } from './components/UserProfile';
@@ -56,6 +57,7 @@ export const App: React.FC = () => {
   const [isNavDrawerOpen, setIsNavDrawerOpen] = useState<boolean>(false);
   const [isAssistantOpen, setIsAssistantOpen] = useState<boolean>(false);
   const [isCorrectionMemoOpen, setIsCorrectionMemoOpen] = useState<boolean>(false);
+  const [isPedagogicalModalOpen, setIsPedagogicalModalOpen] = useState<boolean>(false);
   const [infoModalTab, setInfoModalTab] = useState<'about' | 'contact' | 'guide' | null>(null);
 
   const [designerPhoto, setDesignerPhoto] = useState<string>(() => getDesignerPhoto());
@@ -549,16 +551,16 @@ export const App: React.FC = () => {
           {/* Left Section: Action Buttons + AI Assistant */}
           <div className="flex items-center gap-2">
             {/* Designer Badge - Always Visible */}
-            <div className="flex items-center gap-1.5 sm:gap-2 bg-emerald-50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl border border-emerald-200 shadow-xs transition-all hover:shadow-md hover:bg-emerald-100" title="تصميم وتطوير المنصة: بغداد الطيب">
+            <div className="flex items-center gap-2 sm:gap-2.5 bg-emerald-50/90 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-2xl border border-emerald-300 shadow-xs transition-all hover:shadow-md hover:bg-emerald-100" title="تصميم وتطوير المنصة: الأستاذ بغداد الطيب">
               <img 
                 src={designerPhoto} 
-                alt="مصمم المنصة بغداد الطيب" 
-                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-emerald-500 object-cover shadow-2xs shrink-0"
+                alt="مصمم المنصة الأستاذ بغداد الطيب" 
+                className="w-12 h-12 sm:w-13 sm:h-13 rounded-2xl border-2 border-emerald-600 object-cover shadow-sm ring-2 ring-emerald-300/70 shrink-0"
                 referrerPolicy="no-referrer"
               />
               <div className="hidden sm:flex flex-col text-right">
-                <span className="text-[9.5px] text-emerald-700 font-bold leading-none mb-0.5">تصميم وتطوير</span>
-                <span className="text-[11.5px] font-black text-emerald-950 leading-none">بغداد الطيب</span>
+                <span className="text-[10.5px] text-emerald-700 font-bold leading-none mb-0.5">تصميم وتطوير المنصة</span>
+                <span className="text-[13px] font-black text-emerald-950 leading-none">الأستاذ بغداد الطيب</span>
               </div>
             </div>
 
@@ -584,6 +586,18 @@ export const App: React.FC = () => {
               <Bot className="w-4 h-4 text-emerald-200" />
               <span className="hidden sm:inline">المساعد الذكي</span>
               <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+            </button>
+
+            {/* Quick Gemini Pedagogical Note Trigger */}
+            <button
+              type="button"
+              id="header-btn-pedagogical-note"
+              onClick={() => setIsPedagogicalModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-l from-amber-600 via-emerald-700 to-teal-800 text-white text-[12px] font-black hover:opacity-95 shadow-xs transition cursor-pointer"
+              title="توليد مذكرة بيداغوجية رسمية بالذكاء الاصطناعي (منهاج الجيل الثاني)"
+            >
+              <Sparkles className="w-4 h-4 text-amber-300" />
+              <span className="hidden md:inline">مذكرة AI رسمية</span>
             </button>
 
             {activeSection === 'home' ? (
@@ -903,6 +917,17 @@ export const App: React.FC = () => {
         selectedLevel={selectedLevel}
         currentLesson={currentLesson}
         curriculumLessons={curriculumLessons}
+        onOpenPedagogicalModal={() => setIsPedagogicalModalOpen(true)}
+      />
+
+      {/* Official AI Pedagogical Note Modal (Second Generation) */}
+      <PedagogicalNoteModal
+        isOpen={isPedagogicalModalOpen}
+        onClose={() => setIsPedagogicalModalOpen(false)}
+        defaultLevel={selectedLevel}
+        defaultTopic={currentLesson?.ta3alom || currentLesson?.mawrid || ''}
+        config={config}
+        showToast={showToast}
       />
 
       {/* Platform Info and Contact Modal */}

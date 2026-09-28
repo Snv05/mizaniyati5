@@ -1,5 +1,8 @@
 import { OfficialAnnualDistributionRow } from '../data/officialAnnualDistributionData';
 
+export const ANNUAL_SCHEDULE_DATA_VERSION = '2026-09-28-official-v24-perfect-sync';
+export const ANNUAL_STORAGE_KEY = 'algeria_sciences_annual_dist_v6';
+
 export const ARABIC_MONTH_NAMES = [
   'جانفي', 'فيفري', 'مارس', 'أفريل', 'ماي', 'جوان',
   'جويلية', 'أوت', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
@@ -96,10 +99,22 @@ export function getDefaultCalendarSettings(schoolYear: string, customStartDate?:
  * محاذاة أي تاريخ إلى يوم الأحد المقابل في الأسبوع الدراسي الجزائري
  */
 export function alignToSunday(dateStr: string): Date {
-  const d = new Date(`${dateStr}T12:00:00`);
-  if (Number.isNaN(d.getTime())) return new Date();
-  const day = d.getDay(); // 0 is Sunday
-  if (day !== 0) {
+  if (!dateStr) return new Date();
+  const match = String(dateStr).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return new Date();
+  const year = Number(match[1]);
+  const month = Number(match[2]) - 1;
+  const dayOfMonth = Number(match[3]);
+  const d = new Date(year, month, dayOfMonth, 12, 0, 0);
+  const day = d.getDay(); // 0 is Sunday, 6 is Saturday
+  if (day === 6) {
+    // السبت: عشية الدخول المدرسي في الجزائر، يبدأ الأسبوع غداً الأحد (+1)
+    d.setDate(d.getDate() + 1);
+  } else if (day === 5) {
+    // الجمعة: عطلة أسبوعية، يُحاذى للأحد الموالي (+2)
+    d.setDate(d.getDate() + 2);
+  } else if (day > 0) {
+    // الاثنين إلى الخميس: ضمن نفس الأسبوع الدراسي، يحاذى لأحد هذا الأسبوع
     d.setDate(d.getDate() - day);
   }
   return d;
@@ -113,8 +128,9 @@ export function computeWeekRange(
   weekIndex: number,
   dateFormat: SchoolCalendarSettings['dateFormat'] = 'short'
 ) {
-  const sunday = new Date(startSunday.getTime() + weekIndex * 7 * 24 * 3600 * 1000);
-  const thursday = new Date(sunday.getTime() + 4 * 24 * 3600 * 1000);
+  // حساب الأحد والخميس بحساب الأيام الصريح لتفادي فروقات التوقيت الصيفي/الشتوي
+  const sunday = new Date(startSunday.getFullYear(), startSunday.getMonth(), startSunday.getDate() + weekIndex * 7, 12, 0, 0);
+  const thursday = new Date(sunday.getFullYear(), sunday.getMonth(), sunday.getDate() + 4, 12, 0, 0);
 
   const sunDayStr = String(sunday.getDate()).padStart(2, '0');
   const thuDayStr = String(thursday.getDate()).padStart(2, '0');
@@ -145,6 +161,10 @@ export function computeWeekRange(
     datesStr = `${sunDayStr}/${sMonth} - ${thuDayStr}/${tMonth}`;
   }
 
+  const pad2 = (n: number) => String(n).padStart(2, '0');
+  const isoStart = `${sunday.getFullYear()}-${pad2(sunday.getMonth() + 1)}-${pad2(sunday.getDate())}`;
+  const isoEnd = `${thursday.getFullYear()}-${pad2(thursday.getMonth() + 1)}-${pad2(thursday.getDate())}`;
+
   return {
     sunday,
     thursday,
@@ -152,8 +172,8 @@ export function computeWeekRange(
     thuDayStr,
     monthName,
     datesStr,
-    isoStart: sunday.toISOString().split('T')[0],
-    isoEnd: thursday.toISOString().split('T')[0],
+    isoStart,
+    isoEnd,
   };
 }
 
@@ -292,9 +312,70 @@ export function syncCalendarToDailyLogbook(startDate: string, settings: SchoolCa
 
     logbook.holidays = [...generatedHolidays, ...nonOfficialHolidays];
     localStorage.setItem('daftar_table_v2027', JSON.stringify(logbook));
+
+    // إشعار كافة المكونات في الصفحة بتحديث الرزنامة فورياً
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('school-calendar-updated', {
+        detail: { startDate, settings }
+      }));
+    }
     return true;
   } catch (err) {
     console.error('فشل مزامنة الرزنامة مع دفتر النصوص:', err);
     return false;
   }
 }
+
+/**
+ * مزامنة تاريخ الدخول المدرسي والرزنامة الوزارية عبر كافة المستويات (1م، 2م، 3م، 4م) وفي التخزين المحلي
+ */
+export function syncCalendarToAllLevels(
+  newSettings: SchoolCalendarSettings,
+  levelBaseRowsProvider?: (level: '1am' | '2am' | '3am' | '4am') => OfficialAnnualDistributionRow[]
+): boolean {
+  try {
+    const ANNUAL_STORAGE_KEY = 'annual_distribution_custom_v3';
+    const existing = JSON.parse(localStorage.getItem(ANNUAL_STORAGE_KEY) || '{}');
+    
+    // حفظ الإعدادات العالمية الموحدة لكامل المؤسسة
+    existing.globalCalendarSettings = newSettings;
+
+    const levels: ('1am' | '2am' | '3am' | '4am')[] = ['1am', '2am', '3am', '4am'];
+    for (const lvl of levels) {
+      const prevData = existing[lvl] || {};
+      const baseRows = (Array.isArray(prevData.items) && prevData.items.length > 0)
+        ? prevData.items
+        : (levelBaseRowsProvider ? levelBaseRowsProvider(lvl) : []);
+
+      if (baseRows && baseRows.length > 0) {
+        const recalculated = recalculateDistributionRows(baseRows, newSettings);
+        existing[lvl] = {
+          ...prevData,
+          startDate: newSettings.startDate,
+          calendarSettings: newSettings,
+          items: recalculated,
+          updatedAt: new Date().toISOString(),
+        };
+      }
+    }
+
+    localStorage.setItem(ANNUAL_STORAGE_KEY, JSON.stringify(existing));
+
+    // مزامنة دفتر النصوص اليومي أيضاً
+    syncCalendarToDailyLogbook(newSettings.startDate, newSettings);
+
+    if (typeof window !== 'undefined') {
+      if ((window as any).syncToCloud) {
+        (window as any).syncToCloud('annualDist', existing);
+      }
+      window.dispatchEvent(new CustomEvent('school-calendar-updated', {
+        detail: { startDate: newSettings.startDate, settings: newSettings }
+      }));
+    }
+    return true;
+  } catch (error) {
+    console.error('فشل تطبيق الرزنامة على كافة المستويات:', error);
+    return false;
+  }
+}
+

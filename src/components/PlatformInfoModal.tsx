@@ -164,20 +164,20 @@ export const PlatformInfoModal: React.FC<PlatformInfoModalProps> = ({
               </div>
 
               {/* بطاقة المصمم والمطور */}
-              <div className="p-4.5 rounded-2xl bg-gradient-to-l from-emerald-50 via-white to-teal-50/60 border border-emerald-200/90 shadow-xs flex flex-col sm:flex-row items-center sm:items-start gap-4">
-                <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-sm shrink-0 group">
+              <div className="p-5 rounded-3xl bg-gradient-to-l from-emerald-50 via-white to-teal-50/60 border border-emerald-300 shadow-sm flex flex-col sm:flex-row items-center sm:items-start gap-5">
+                <div className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-3xl overflow-hidden border-4 border-emerald-600 shadow-xl ring-4 ring-emerald-200/70 shrink-0 group">
                   <img
                     src={designerPhoto}
-                    alt="مصمم ومطور المنصة بغداد الطيب"
+                    alt="مصمم ومطور المنصة الأستاذ بغداد الطيب"
                     className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"
                   />
                   <label
                     htmlFor="upload-designer-photo-modal"
-                    className="absolute -bottom-1 -left-1 w-7 h-7 bg-emerald-700 hover:bg-emerald-800 text-white rounded-full flex items-center justify-center cursor-pointer shadow-md transition border-2 border-white hover:scale-110"
-                    title="رفع صورتك الأصلية بملامحك الحقيقية 100%"
+                    className="absolute -bottom-1 -left-1 w-9 h-9 bg-emerald-700 hover:bg-emerald-800 text-white rounded-full flex items-center justify-center cursor-pointer shadow-md transition border-2 border-white hover:scale-110"
+                    title="تحديث صورة المصمم الأصلية"
                   >
-                    <Camera className="w-3.5 h-3.5" />
+                    <Camera className="w-4 h-4" />
                     <input
                       type="file"
                       id="upload-designer-photo-modal"

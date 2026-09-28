@@ -313,16 +313,16 @@ export const PlatformNavigationDrawer: React.FC<PlatformNavigationDrawerProps> =
 
         {/* Footer info & Designer */}
         <div className="p-3.5 border-t border-slate-200 bg-slate-50/90 space-y-2.5">
-          <div className="flex items-center gap-3 bg-white p-2.5 rounded-2xl border border-emerald-100 shadow-2xs">
+          <div className="flex items-center gap-3 bg-white p-3 rounded-2xl border border-emerald-200 shadow-xs">
             <img 
               src={designerPhoto} 
-              alt="مصمم المنصة بغداد الطيب" 
-              className="w-10 h-10 rounded-full object-cover border-2 border-emerald-500 shadow-2xs shrink-0" 
+              alt="مصمم المنصة الأستاذ بغداد الطيب" 
+              className="w-20 h-20 rounded-2xl object-cover border-2 border-emerald-600 shadow-md ring-2 ring-emerald-200 shrink-0" 
               referrerPolicy="no-referrer"
             />
             <div className="text-right">
-              <span className="text-[10px] text-emerald-700 font-bold block leading-none mb-0.5">تصميم وتطوير المنصة</span>
-              <strong className="text-gray-900 text-[12.5px] block font-black leading-tight">الأستاذ بغداد الطيب</strong>
+              <span className="text-[11px] text-emerald-700 font-bold block leading-none mb-1">تصميم وتطوير المنصة</span>
+              <strong className="text-gray-900 text-[15px] block font-black leading-tight">الأستاذ بغداد الطيب</strong>
             </div>
           </div>
           <div className="text-center text-[10.5px] text-gray-500 space-y-0.5">

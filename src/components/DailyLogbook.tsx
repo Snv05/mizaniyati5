@@ -36,7 +36,10 @@ import {
   deriveDefaultSchoolEntryDate, 
   deriveSchoolYearFromDate, 
   getDefaultCalendarSettings, 
-  syncCalendarToDailyLogbook 
+  syncCalendarToDailyLogbook,
+  syncCalendarToAllLevels,
+  ANNUAL_SCHEDULE_DATA_VERSION,
+  ANNUAL_STORAGE_KEY
 } from '../utils/annualDistributionDateUtils';
 import { LESSONS_1AM } from '../data/lessons1am';
 import { LESSONS_2AM } from '../data/lessons2am';
@@ -454,7 +457,6 @@ const AUTO_FILLED_TIMETABLE_ROWS: TimetableGridRow[] = EMPTY_TIMETABLE_ROWS.map(
 }));
 
 const LOGBOOK_DATA_VERSION = '2026-09-26-official-v19';
-const ANNUAL_SCHEDULE_DATA_VERSION = '2026-09-27-official-v22-clean-4am';
 const ROWS_PER_PAGE = 12;
 const getPageDimensions = (orientation: 'portrait' | 'landscape') => orientation === 'landscape' ? { w: 297, h: 210 } : { w: 210, h: 297 };
 const PRINT_MARGIN = '14mm';
@@ -785,14 +787,37 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
   const [startDate, setStartDate] = useState<string>(() => {
     let initialDate = '';
     try {
-      const item = localStorage.getItem('daftar_table_v2027');
-      if (item) {
-        const parsed = JSON.parse(item);
-        if (parsed.startDate) initialDate = parsed.startDate;
+      const annual = JSON.parse(localStorage.getItem(ANNUAL_STORAGE_KEY) || '{}');
+      if (annual.globalCalendarSettings?.startDate) {
+        initialDate = annual.globalCalendarSettings.startDate;
       }
     } catch {}
+
+    if (!initialDate) {
+      try {
+        const item = localStorage.getItem('daftar_table_v2027');
+        if (item) {
+          const parsed = JSON.parse(item);
+          if (parsed.startDate) initialDate = parsed.startDate;
+        }
+      } catch {}
+    }
+
     return initialDate || deriveDefaultSchoolEntryDate(config.schoolYear) || formatDateToIsoString(new Date());
   });
+
+  // الاستماع لحدث تحديث الرزنامة من التدرج السنوي أو الإعدادات
+  useEffect(() => {
+    const handleCalendarUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent<{ startDate?: string; settings?: any }>;
+      const updatedStart = customEvent.detail?.startDate;
+      if (updatedStart && updatedStart !== startDate) {
+        setStartDate(updatedStart);
+      }
+    };
+    window.addEventListener('school-calendar-updated', handleCalendarUpdated);
+    return () => window.removeEventListener('school-calendar-updated', handleCalendarUpdated);
+  }, [startDate]);
 
   // عند تغيير السنة الدراسية في الإعدادات، تحديث تاريخ بداية الدفتر والعطل الرسمية تلقائياً
   useEffect(() => {
@@ -802,6 +827,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
       setStartDate(newEntry);
       const settings = getDefaultCalendarSettings(config.schoolYear, newEntry);
       syncCalendarToDailyLogbook(newEntry, settings);
+      syncCalendarToAllLevels(settings);
     }
   }, [config.schoolYear]);
 
@@ -2566,12 +2592,21 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                     </p>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-zinc-600 mb-1">تاريخ بداية الدفتر</label>
+                    <label className="block text-[10px] font-bold text-zinc-600 mb-1">تاريخ بداية الدفتر (الدخول المدرسي)</label>
                     <input
                       type="date"
                       value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="w-full border border-zinc-200 rounded-lg px-2 py-2 text-[12px] bg-white outline-none font-medium"
+                      onChange={(e) => {
+                        const newStart = e.target.value;
+                        setStartDate(newStart);
+                        if (newStart) {
+                          const derivedYear = deriveSchoolYearFromDate(newStart);
+                          const newSettings = getDefaultCalendarSettings(derivedYear, newStart);
+                          syncCalendarToDailyLogbook(newStart, newSettings);
+                          syncCalendarToAllLevels(newSettings);
+                        }
+                      }}
+                      className="w-full border border-zinc-200 rounded-lg px-2 py-2 text-[12px] bg-white outline-none font-medium focus:border-emerald-600"
                     />
                   </div>
                   <div>

@@ -1,7 +1,14 @@
-import React, { useRef, useState } from 'react';
-import { Calendar, Hash, Stamp, Upload, GraduationCap, Building2, Layers, Columns, BookmarkCheck, Copy, Check } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
+import { Calendar, Hash, Stamp, Upload, GraduationCap, Building2, Layers, Columns, BookmarkCheck, Copy, Check, CalendarDays } from 'lucide-react';
 import { LessonMemo, MemoConfig } from '../types';
 import { LEVELS, MAQATI_BY_LEVEL } from '../data/lessonsData';
+import { 
+  deriveDefaultSchoolEntryDate, 
+  deriveSchoolYearFromDate, 
+  getDefaultCalendarSettings, 
+  syncCalendarToAllLevels,
+  ANNUAL_STORAGE_KEY 
+} from '../utils/annualDistributionDateUtils';
 
 interface SidebarControlsProps {
   selectedLevel: '1am' | '2am' | '3am' | '4am';
@@ -444,7 +451,15 @@ export const SidebarControls: React.FC<SidebarControlsProps> = ({
                 id="input-school-year"
                 type="text"
                 value={config.schoolYear}
-                onChange={(e) => setConfig((prev) => ({ ...prev, schoolYear: e.target.value }))}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setConfig((prev) => ({ ...prev, schoolYear: val }));
+                  if (val && /(20\d{2})/.test(val)) {
+                    const derivedStart = deriveDefaultSchoolEntryDate(val);
+                    const newSettings = getDefaultCalendarSettings(val, derivedStart);
+                    syncCalendarToAllLevels(newSettings);
+                  }
+                }}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-[12.5px] bg-white focus:outline-none focus:border-[#c2185b]"
                 placeholder="2025 - 2026"
               />
@@ -461,6 +476,30 @@ export const SidebarControls: React.FC<SidebarControlsProps> = ({
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-[12.5px] bg-[#fff0f5] border-[#c2185b]/30 focus:outline-none focus:border-[#c2185b]"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold mb-1 text-gray-600 flex items-center justify-between">
+              <span className="flex items-center gap-1">
+                <CalendarDays className="w-3 h-3 text-emerald-700" /> تاريخ الدخول المدرسي
+              </span>
+              <span className="text-[10px] text-emerald-800 font-normal">تطبيق فوري على التدرج</span>
+            </label>
+            <input
+              type="date"
+              defaultValue={deriveDefaultSchoolEntryDate(config.schoolYear)}
+              onChange={(e) => {
+                const newDate = e.target.value;
+                if (newDate) {
+                  const derivedYear = deriveSchoolYearFromDate(newDate);
+                  setConfig((prev) => ({ ...prev, schoolYear: derivedYear }));
+                  const newSettings = getDefaultCalendarSettings(derivedYear, newDate);
+                  syncCalendarToAllLevels(newSettings);
+                  showToast(`تم اعتماد تاريخ الدخول ${newDate} وتطبيقه على كامل التدرج ودفتر النصوص 📅`);
+                }
+              }}
+              className="w-full border border-emerald-300 rounded-lg px-3 py-1.5 text-[12.5px] bg-emerald-50/50 font-bold text-emerald-950 focus:outline-none focus:border-emerald-600"
+            />
           </div>
 
           <div>

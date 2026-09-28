@@ -1,5 +1,6 @@
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
+import { sanitizeOklchForHtml2Canvas } from "./html2canvasSanitizer";
 
 export type LogbookOrientation = "portrait" | "landscape";
 
@@ -89,6 +90,7 @@ export const generatePreviewMatchPdf = async (
         imageTimeout: 10000,
         scrollX: 0,
         scrollY: 0,
+        onclone: sanitizeOklchForHtml2Canvas,
         width: prepared.page.scrollWidth,
         height: prepared.page.scrollHeight,
         windowWidth: Math.max(document.documentElement.clientWidth, prepared.page.scrollWidth),

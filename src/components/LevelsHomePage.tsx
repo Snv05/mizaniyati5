@@ -177,20 +177,20 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
           <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-100 rounded-bl-full opacity-50 pointer-events-none" />
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-teal-50 rounded-tr-full opacity-60 pointer-events-none" />
           
-          <div className="flex items-center gap-4 relative z-10 text-right">
-            <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-emerald-500 p-0.5 shadow-md bg-white shrink-0 group">
+          <div className="flex items-center gap-4 sm:gap-6 relative z-10 text-right">
+            <div className="relative w-32 h-32 sm:w-44 sm:h-44 md:w-48 md:h-48 rounded-3xl border-4 border-emerald-600 p-1 shadow-2xl ring-4 ring-emerald-300/80 bg-white shrink-0 group">
               <img 
                 src={designerPhoto} 
-                alt="مصمم المنصة بغداد الطيب" 
-                className="w-full h-full rounded-full object-cover"
+                alt="مصمم المنصة الأستاذ بغداد الطيب" 
+                className="w-full h-full rounded-2xl object-cover shadow-inner"
                 referrerPolicy="no-referrer"
               />
               <label
                 htmlFor="upload-designer-photo-banner"
-                className="absolute -bottom-1 -left-1 w-7 h-7 bg-emerald-700 hover:bg-emerald-800 text-white rounded-full flex items-center justify-center cursor-pointer shadow-md transition border-2 border-white hover:scale-110"
-                title="رفع وتثبيت صورتك الأصلية بملامحك الحقيقية 100%"
+                className="absolute -bottom-2 -left-2 w-10 h-10 bg-emerald-700 hover:bg-emerald-800 text-white rounded-full flex items-center justify-center cursor-pointer shadow-lg transition border-2 border-white hover:scale-110"
+                title="تحديث صورة المصمم الأصلية"
               >
-                <Camera className="w-3.5 h-3.5" />
+                <Camera className="w-5 h-5" />
                 <input
                   type="file"
                   id="upload-designer-photo-banner"
@@ -201,22 +201,22 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
               </label>
             </div>
             <div>
-              <div className="text-[12px] sm:text-[13px] text-gray-500 font-bold mb-0.5 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-emerald-500" /> تصميم وتطوير المنصة
+              <div className="text-[12px] sm:text-[13.5px] text-gray-500 font-bold mb-1 flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-emerald-600" /> تصميم وتطوير المنصة
               </div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl sm:text-2xl font-black text-gray-900 leading-tight">بغداد الطيب</h2>
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-2xl sm:text-3xl font-black text-gray-900 leading-tight">الأستاذ بغداد الطيب</h2>
                 <label
                   htmlFor="upload-designer-photo-banner"
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11px] font-bold border border-emerald-200/70 cursor-pointer transition shadow-2xs"
-                  title="رفع صورتك الأصلية بجودتها الكاملة"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11.5px] font-bold border border-emerald-200/80 cursor-pointer transition shadow-2xs"
+                  title="رفع صورتك بجودتها الكاملة"
                 >
-                  <Upload className="w-3 h-3" />
-                  <span>تغيير / رفع الصورة الأصلية</span>
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>تغيير / تحديث الصورة</span>
                 </label>
               </div>
-              <div className="text-[12px] font-extrabold text-emerald-800 bg-emerald-100/80 px-3 py-1 rounded-full inline-flex items-center gap-1.5 mt-1.5 border border-emerald-200/50">
-                <UserCog className="w-3.5 h-3.5" /> منصة المذكرة البيداغوجية لعلوم الطبيعة والحياة
+              <div className="text-[12px] sm:text-[13px] font-extrabold text-emerald-800 bg-emerald-100/90 px-3.5 py-1.5 rounded-full inline-flex items-center gap-1.5 mt-2 border border-emerald-300/60">
+                <UserCog className="w-4 h-4" /> منصة المذكرة البيداغوجية لعلوم الطبيعة والحياة
               </div>
             </div>
           </div>

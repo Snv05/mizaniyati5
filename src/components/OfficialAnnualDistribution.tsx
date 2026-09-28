@@ -21,8 +21,11 @@ import {
   getDefaultCalendarSettings, 
   recalculateDistributionRows, 
   syncCalendarToDailyLogbook,
+  syncCalendarToAllLevels,
   deriveDefaultSchoolEntryDate,
-  deriveSchoolYearFromDate
+  deriveSchoolYearFromDate,
+  ANNUAL_SCHEDULE_DATA_VERSION,
+  ANNUAL_STORAGE_KEY
 } from '../utils/annualDistributionDateUtils';
 
 import { Printer, FileDown, Eye, X, RotateCcw, Sparkles, CalendarDays, Clock, Settings2, CalendarCheck, Check } from 'lucide-react';
@@ -35,9 +38,6 @@ interface Props {
   curriculumLessons?: LessonMemo[];
   curriculumBackground?: string;
 }
-
-const ANNUAL_SCHEDULE_DATA_VERSION = '2026-09-27-official-v23-calendar-sync';
-const ANNUAL_STORAGE_KEY = 'algeria_sciences_annual_dist_v6';
 
 export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, setConfig, showToast, curriculumLessons, curriculumBackground }) => {
   const [showPreview, setShowPreview] = useState(false);
@@ -94,13 +94,13 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, set
   // إعدادات الرزنامة وتاريخ الدخول المدرسي والعطل والاختبارات
   const [calendarSettings, setCalendarSettings] = useState<SchoolCalendarSettings>(() => {
     let initialStart = '';
-    try {
-      const logbook = JSON.parse(localStorage.getItem('daftar_table_v2027') || '{}');
-      if (logbook.startDate) initialStart = logbook.startDate;
-    } catch {}
+    let initialYear = config.schoolYear;
 
     try {
       const stored = JSON.parse(localStorage.getItem(ANNUAL_STORAGE_KEY) || '{}');
+      if (stored.globalCalendarSettings) {
+        return stored.globalCalendarSettings;
+      }
       if (stored[level]?.calendarSettings) {
         return stored[level].calendarSettings;
       }
@@ -109,50 +109,187 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, set
       }
     } catch {}
 
-    return getDefaultCalendarSettings(config.schoolYear, initialStart);
+    try {
+      const logbook = JSON.parse(localStorage.getItem('daftar_table_v2027') || '{}');
+      if (logbook.startDate && !initialStart) {
+        initialStart = logbook.startDate;
+      }
+    } catch {}
+
+    if (initialStart && !initialYear) {
+      initialYear = deriveSchoolYearFromDate(initialStart);
+    }
+
+    return getDefaultCalendarSettings(initialYear, initialStart);
   });
 
-  // الصفوف النشطة للتدرج (تشمل أي تعديل تواريخ حسب الدخول والعطل والاختبارات)
+  // الصفوف النشطة للتدرج: تُحسب فورياً بناءً على تاريخ الدخول المدرسي لضمان التطابق التام 100%
   const [customRows, setCustomRows] = useState<OfficialAnnualDistributionRow[]>(() => {
     try {
       const stored = JSON.parse(localStorage.getItem(ANNUAL_STORAGE_KEY) || '{}');
-      if (stored[level]?.items && Array.isArray(stored[level].items) && stored[level].items.length > 0) {
-        return stored[level].items;
-      }
+      const base = (stored[level]?.items && Array.isArray(stored[level].items) && stored[level].items.length > 0)
+        ? stored[level].items
+        : officialBaseRows;
+      const initialSettings = stored.globalCalendarSettings || stored[level]?.calendarSettings || getDefaultCalendarSettings(config.schoolYear);
+      return recalculateDistributionRows(base, initialSettings);
     } catch {}
-    return officialBaseRows;
+    return recalculateDistributionRows(officialBaseRows, getDefaultCalendarSettings(config.schoolYear));
   });
 
-  // عند تغيير المستوى الدراسي، تحميل التدرج الخاص به
+  // عند تغيير المستوى الدراسي، تحميل التدرج الخاص به ومحاذاته مع الرزنامة الحالية
   useEffect(() => {
     try {
       const stored = JSON.parse(localStorage.getItem(ANNUAL_STORAGE_KEY) || '{}');
-      if (stored[level]?.items && Array.isArray(stored[level].items) && stored[level].items.length > 0) {
-        setCustomRows(stored[level].items);
-        if (stored[level]?.calendarSettings) {
-          setCalendarSettings(stored[level].calendarSettings);
-        }
-        return;
+      const base = (stored[level]?.items && Array.isArray(stored[level].items) && stored[level].items.length > 0)
+        ? stored[level].items
+        : officialBaseRows;
+      const recalculated = recalculateDistributionRows(base, calendarSettings);
+      setCustomRows(recalculated);
+    } catch {
+      setCustomRows(recalculateDistributionRows(officialBaseRows, calendarSettings));
+    }
+  }, [level, officialBaseRows, calendarSettings]);
+
+  // الاستماع لحدث تحديث الرزنامة من أي مكان في التطبيق (دفتر النصوص، الشريط الجانبي، أو نافذة الضبط)
+  useEffect(() => {
+    const handleCalendarUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent<{ startDate?: string; settings?: SchoolCalendarSettings }>;
+      const newSettings = customEvent.detail?.settings;
+      if (newSettings && newSettings.startDate) {
+        setCalendarSettings(newSettings);
+        setCustomRows(prev => {
+          const base = prev.length > 0 ? prev : officialBaseRows;
+          return recalculateDistributionRows(base, newSettings);
+        });
       }
-    } catch {}
-    setCustomRows(officialBaseRows);
-  }, [level, officialBaseRows]);
+    };
+    window.addEventListener('school-calendar-updated', handleCalendarUpdated);
+    return () => window.removeEventListener('school-calendar-updated', handleCalendarUpdated);
+  }, [officialBaseRows]);
 
   // عند تغيير السنة الدراسية خارجياً (الشريط الجانبي / إعدادات الحساب)، إعادة حساب وتحديث التدرج فورياً
   useEffect(() => {
     if (!config.schoolYear) return;
-    const cleanYear = config.schoolYear.trim();
-    const currentClean = (calendarSettings.schoolYear || '').trim();
+    const cleanYear = config.schoolYear.replace(/\s+/g, '');
+    const currentClean = (calendarSettings.schoolYear || '').replace(/\s+/g, '');
     if (cleanYear && cleanYear !== currentClean) {
       const derivedStart = deriveDefaultSchoolEntryDate(cleanYear);
       const newSettings = getDefaultCalendarSettings(cleanYear, derivedStart);
       setCalendarSettings(newSettings);
-      const recalculated = recalculateDistributionRows(officialBaseRows, newSettings);
+      const currentBase = customRows.length > 0 ? customRows : officialBaseRows;
+      const recalculated = recalculateDistributionRows(currentBase, newSettings);
       setCustomRows(recalculated);
       persistRows(recalculated, newSettings);
-      syncCalendarToDailyLogbook(derivedStart, newSettings);
+      syncCalendarToAllLevels(newSettings, getLevelBaseRows);
     }
   }, [config.schoolYear, officialBaseRows]);
+
+  // دالة مساعدة لتوفير التدرج الوزاري الأصلي لأي مستوى
+  const getLevelBaseRows = (lvl: '1am' | '2am' | '3am' | '4am'): OfficialAnnualDistributionRow[] => {
+    if (lvl === '1am') return OFFICIAL_1AM_DISTRIBUTION;
+    if (lvl === '2am') return OFFICIAL_2AM_DISTRIBUTION;
+    if (lvl === '3am') return OFFICIAL_3AM_DISTRIBUTION;
+    return OFFICIAL_4AM_DISTRIBUTION;
+  };
+
+  // حفظ التدرج المحدث في التخزين المحلي والمزامنة
+  const persistRows = (rowsToSave: OfficialAnnualDistributionRow[], currentCal: SchoolCalendarSettings) => {
+    try {
+      const existing = JSON.parse(localStorage.getItem(ANNUAL_STORAGE_KEY) || '{}');
+      existing.globalCalendarSettings = currentCal;
+      existing[level] = {
+        startDate: currentCal.startDate,
+        orientation,
+        items: rowsToSave,
+        calendarSettings: currentCal,
+        generatedFromCurriculum: true,
+        curriculumDataVersion: ANNUAL_SCHEDULE_DATA_VERSION,
+        updatedAt: new Date().toISOString()
+      };
+      localStorage.setItem(ANNUAL_STORAGE_KEY, JSON.stringify(existing));
+      if ((window as any).syncToCloud) {
+        (window as any).syncToCloud('annualDist', existing);
+      }
+    } catch (error) {
+      console.error('تعذر حفظ التدرج السنوي للربط الذكي:', error);
+    }
+  };
+
+  // تغيير فوري وسريع للسنة الدراسية مع إعادة حساب التدرج والرزنامة كلياً عبر كل المستويات
+  const handleQuickSchoolYearChange = (newYear: string) => {
+    if (!newYear) return;
+    const derivedStart = deriveDefaultSchoolEntryDate(newYear);
+    const newSettings: SchoolCalendarSettings = {
+      ...calendarSettings,
+      schoolYear: newYear,
+      startDate: derivedStart,
+    };
+    setCalendarSettings(newSettings);
+    if (setConfig) {
+      setConfig(prev => ({ ...prev, schoolYear: newYear }));
+    }
+    const currentBase = customRows.length > 0 ? customRows : officialBaseRows;
+    const recalculated = recalculateDistributionRows(currentBase, newSettings);
+    setCustomRows(recalculated);
+    persistRows(recalculated, newSettings);
+    syncCalendarToAllLevels(newSettings, getLevelBaseRows);
+    showToast(`تم تغيير الموسم الدراسي إلى ${newYear} وتحديث كافة التواريخ والعطل تلقائياً 📅`);
+  };
+
+  // تغيير فوري لتاريخ الدخول المدرسي مع إعادة حساب التدرج وتحديث السنة الدراسية
+  const handleQuickStartDateChange = (newStartDate: string) => {
+    if (!newStartDate) return;
+    const derivedYear = deriveSchoolYearFromDate(newStartDate);
+    const newSettings: SchoolCalendarSettings = {
+      ...calendarSettings,
+      startDate: newStartDate,
+      schoolYear: derivedYear || calendarSettings.schoolYear,
+    };
+    setCalendarSettings(newSettings);
+    if (setConfig && derivedYear) {
+      setConfig(prev => ({ ...prev, schoolYear: derivedYear }));
+    }
+    const currentBase = customRows.length > 0 ? customRows : officialBaseRows;
+    const recalculated = recalculateDistributionRows(currentBase, newSettings);
+    setCustomRows(recalculated);
+    persistRows(recalculated, newSettings);
+    syncCalendarToAllLevels(newSettings, getLevelBaseRows);
+    showToast(`تم اعتماد تاريخ الدخول ${newStartDate} وتحديث مواعيد كافة الأسابيع والعطل في التدرج 📅`);
+  };
+
+  // تغيير صيغة عرض التاريخ في التدرج
+  const handleDateFormatChange = (fmt: SchoolCalendarSettings['dateFormat']) => {
+    const newSettings: SchoolCalendarSettings = { ...calendarSettings, dateFormat: fmt };
+    setCalendarSettings(newSettings);
+    const currentBase = customRows.length > 0 ? customRows : officialBaseRows;
+    const recalculated = recalculateDistributionRows(currentBase, newSettings);
+    setCustomRows(recalculated);
+    persistRows(recalculated, newSettings);
+    syncCalendarToAllLevels(newSettings, getLevelBaseRows);
+    showToast(`تم تحديث صيغة عرض التواريخ في التدرج`);
+  };
+
+  // تطبيق تعديلات التواريخ بناءً على الدخول المدرسي والعطل والاختبارات
+  const handleApplyCalendarSettings = (newSettings: SchoolCalendarSettings, syncWithLogbook: boolean) => {
+    setCalendarSettings(newSettings);
+    if (setConfig && newSettings.schoolYear) {
+      setConfig(prev => ({ ...prev, schoolYear: newSettings.schoolYear }));
+    }
+
+    // إعادة حساب تواريخ وأشهر التدرج السنوي بدقة
+    const currentBase = customRows.length > 0 ? customRows : officialBaseRows;
+    const recalculated = recalculateDistributionRows(currentBase, newSettings);
+    
+    setCustomRows(recalculated);
+    persistRows(recalculated, newSettings);
+    syncCalendarToAllLevels(newSettings, getLevelBaseRows);
+
+    if (syncWithLogbook) {
+      syncCalendarToDailyLogbook(newSettings.startDate, newSettings);
+    }
+
+    showToast(`تم تعديل وحساب تواريخ التدرج السنوي (${newSettings.schoolYear}) بنجاح وفق الدخول والعطل والاختبارات 📅`);
+  };
 
   // مصدر موحّد للمنهاج: يُستخدم نفسه في التدرج والإحصائيات حتى لا يحدث اختلاف بينهما
   const baseLessons = useMemo<LessonMemo[]>(() => {
@@ -202,99 +339,6 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, set
 
     return { maqtaCount, resourceCount, ta3alomCount, activityCount };
   }, [customRows, officialBaseRows, baseLessons]);
-
-  // حفظ التدرج المحدث في التخزين المحلي والمزامنة
-  const persistRows = (rowsToSave: OfficialAnnualDistributionRow[], currentCal: SchoolCalendarSettings) => {
-    try {
-      const existing = JSON.parse(localStorage.getItem(ANNUAL_STORAGE_KEY) || '{}');
-      existing[level] = {
-        startDate: currentCal.startDate,
-        orientation,
-        items: rowsToSave,
-        calendarSettings: currentCal,
-        generatedFromCurriculum: true,
-        curriculumDataVersion: ANNUAL_SCHEDULE_DATA_VERSION,
-        updatedAt: new Date().toISOString()
-      };
-      localStorage.setItem(ANNUAL_STORAGE_KEY, JSON.stringify(existing));
-      if ((window as any).syncToCloud) {
-        (window as any).syncToCloud('annualDist', existing);
-      }
-    } catch (error) {
-      console.error('تعذر حفظ التدرج السنوي للربط الذكي:', error);
-    }
-  };
-
-  // تغيير فوري وسريع للسنة الدراسية مع إعادة حساب التدرج والرزنامة كلياً
-  const handleQuickSchoolYearChange = (newYear: string) => {
-    if (!newYear) return;
-    const derivedStart = deriveDefaultSchoolEntryDate(newYear);
-    const newSettings: SchoolCalendarSettings = {
-      ...calendarSettings,
-      schoolYear: newYear,
-      startDate: derivedStart,
-    };
-    setCalendarSettings(newSettings);
-    if (setConfig) {
-      setConfig(prev => ({ ...prev, schoolYear: newYear }));
-    }
-    const recalculated = recalculateDistributionRows(officialBaseRows, newSettings);
-    setCustomRows(recalculated);
-    persistRows(recalculated, newSettings);
-    syncCalendarToDailyLogbook(derivedStart, newSettings);
-    showToast(`تم تغيير الموسم الدراسي إلى ${newYear} وتحديث كافة التواريخ والعطل تلقائياً 📅`);
-  };
-
-  // تغيير فوري لتاريخ الدخول المدرسي مع إعادة حساب التدرج وتحديث السنة الدراسية
-  const handleQuickStartDateChange = (newStartDate: string) => {
-    if (!newStartDate) return;
-    const derivedYear = deriveSchoolYearFromDate(newStartDate);
-    const newSettings: SchoolCalendarSettings = {
-      ...calendarSettings,
-      startDate: newStartDate,
-      schoolYear: derivedYear || calendarSettings.schoolYear,
-    };
-    setCalendarSettings(newSettings);
-    if (setConfig && derivedYear) {
-      setConfig(prev => ({ ...prev, schoolYear: derivedYear }));
-    }
-    const recalculated = recalculateDistributionRows(officialBaseRows, newSettings);
-    setCustomRows(recalculated);
-    persistRows(recalculated, newSettings);
-    syncCalendarToDailyLogbook(newStartDate, newSettings);
-    showToast(`تم اعتماد تاريخ الدخول ${newStartDate} وتحديث مواعيد كافة الأسابيع والعطل 📅`);
-  };
-
-  // تغيير صيغة عرض التاريخ في التدرج
-  const handleDateFormatChange = (fmt: SchoolCalendarSettings['dateFormat']) => {
-    const newSettings: SchoolCalendarSettings = { ...calendarSettings, dateFormat: fmt };
-    setCalendarSettings(newSettings);
-    const recalculated = recalculateDistributionRows(officialBaseRows, newSettings);
-    setCustomRows(recalculated);
-    persistRows(recalculated, newSettings);
-    showToast(`تم تحديث صيغة عرض التواريخ في التدرج`);
-  };
-
-  // تطبيق تعديلات التواريخ بناءً على الدخول المدرسي والعطل والاختبارات
-  const handleApplyCalendarSettings = (newSettings: SchoolCalendarSettings, syncWithLogbook: boolean) => {
-    setCalendarSettings(newSettings);
-    if (setConfig && newSettings.schoolYear) {
-      setConfig(prev => ({ ...prev, schoolYear: newSettings.schoolYear }));
-    }
-
-    // إعادة حساب تواريخ وأشهر التدرج السنوي بدقة
-    const baseToUse = officialBaseRows;
-    const recalculated = recalculateDistributionRows(baseToUse, newSettings);
-    
-    setCustomRows(recalculated);
-    persistRows(recalculated, newSettings);
-
-    if (syncWithLogbook) {
-      syncCalendarToDailyLogbook(newSettings.startDate, newSettings);
-    }
-
-    showToast(`تم تعديل وحساب تواريخ التدرج السنوي (${newSettings.schoolYear}) بنجاح وفق الدخول والعطل والاختبارات 📅`);
-  };
 
   // تعديل مباشر لمحتوى الخلية من قبل الأستاذ
   const handleCellBlur = (rowId: string | undefined, field: keyof OfficialAnnualDistributionRow, value: string) => {

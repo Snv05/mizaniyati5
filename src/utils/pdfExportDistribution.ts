@@ -1,5 +1,6 @@
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
+import { sanitizeOklchForHtml2Canvas } from "./html2canvasSanitizer";
 
 export type DistributionOrientation = "portrait" | "landscape";
 
@@ -78,6 +79,7 @@ export const generateDistributionPdf = async (
         allowTaint: false,
         backgroundColor: "#ffffff",
         logging: false,
+        onclone: sanitizeOklchForHtml2Canvas,
         width: page.scrollWidth,
         height: page.scrollHeight,
         windowWidth: page.scrollWidth,

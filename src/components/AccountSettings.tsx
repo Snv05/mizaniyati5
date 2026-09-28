@@ -458,11 +458,11 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
             </span>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center gap-6 p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80">
-            <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-emerald-500 shadow-md bg-white overflow-hidden shrink-0 group">
+          <div className="flex flex-col sm:flex-row items-center gap-6 p-5 rounded-3xl bg-slate-50/80 border border-slate-200/80">
+            <div className="relative w-32 h-32 sm:w-36 sm:h-36 rounded-3xl border-4 border-emerald-600 shadow-xl ring-4 ring-emerald-200/70 bg-white overflow-hidden shrink-0 group">
               <img
                 src={designerPhoto}
-                alt="صورتك الأصلية"
+                alt="صورة المصمم الأصلية"
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
               />

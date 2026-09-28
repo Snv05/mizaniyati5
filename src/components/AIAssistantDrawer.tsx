@@ -36,7 +36,8 @@ export const AIAssistantDrawer: React.FC<{
   selectedLevel?: string;
   currentLesson?: LessonMemo | null;
   curriculumLessons?: LessonMemo[];
-}> = ({ isOpen, onClose, selectedLevel, currentLesson, curriculumLessons = [] }) => {
+  onOpenPedagogicalModal?: () => void;
+}> = ({ isOpen, onClose, selectedLevel, currentLesson, curriculumLessons = [], onOpenPedagogicalModal }) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
@@ -181,6 +182,32 @@ export const AIAssistantDrawer: React.FC<{
             </button>
           </div>
         </div>
+
+        {/* Action Banner to Generate Official Pedagogical Note */}
+        {onOpenPedagogicalModal && (
+          <div className="p-3 bg-gradient-to-r from-amber-500/10 via-emerald-500/10 to-teal-500/10 border-b border-emerald-200/80 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-700 flex items-center justify-center shrink-0">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-xs font-black text-emerald-950 block">
+                  توليد مذكرة بيداغوجية رسمية بالذكاء الاصطناعي
+                </span>
+                <span className="text-[10.5px] text-gray-600 block">
+                  منهاج الجيل الثاني: الثلاثية، المراحل الأربع، بطاقة العمل، وشبكة BEM
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onOpenPedagogicalModal}
+              className="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white text-xs font-black rounded-xl shadow-xs transition cursor-pointer shrink-0"
+            >
+              فتح الأداة ✨
+            </button>
+          </div>
+        )}
 
         {/* Message Thread */}
         <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-gray-50/50">

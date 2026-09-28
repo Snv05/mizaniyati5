@@ -1,6 +1,7 @@
 import { Document, Packer, Paragraph, TextRun, AlignmentType, PageOrientation } from 'docx';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { sanitizeOklchForHtml2Canvas } from './html2canvasSanitizer';
 import { MemoConfig } from '../types';
 
 const safe = (s: string) => (s || 'مذكرة_تصحيح').replace(/[^\u0600-\u06FFa-zA-Z0-9_-]+/g, '_').slice(0, 80);
@@ -26,7 +27,7 @@ export async function exportCorrectionMemoToDocx(args: {
 }
 
 export async function exportCorrectionMemoToPdf(element: HTMLElement, title: string) {
-  const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#fff' });
+  const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#fff', onclone: sanitizeOklchForHtml2Canvas });
   const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
   const pageW = 210, pageH = 297;
   const pxPerMm = canvas.width / pageW;
