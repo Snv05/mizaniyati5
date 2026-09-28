@@ -22,10 +22,38 @@ app.post('/api/gemini/generate', async (req, res) => {
     if (!apiKey) {
       return res.status(503).json({ error: 'GEMINI_API_KEY is not configured on server' });
     }
-    const { prompt, question } = req.body;
+    const { prompt, question, attachments = [] } = req.body;
     const finalPrompt = prompt || question;
     if (!finalPrompt) {
       return res.status(400).json({ error: 'Missing prompt in request' });
+    }
+
+    const allowedAttachmentTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf']);
+    if (!Array.isArray(attachments) || attachments.length > 6) {
+      return res.status(400).json({ error: 'Too many attachments' });
+    }
+
+    const attachmentParts: any[] = [];
+    let attachmentSize = 0;
+    for (const item of attachments) {
+      if (!item || !allowedAttachmentTypes.has(item.mimeType)) {
+        return res.status(400).json({ error: 'Unsupported attachment type' });
+      }
+      const dataUrl = String(item.dataUrl || '');
+      const prefix = `data:${item.mimeType};base64,`;
+      if (!dataUrl.startsWith(prefix)) {
+        return res.status(400).json({ error: 'Invalid attachment data' });
+      }
+      attachmentSize += dataUrl.length;
+      if (dataUrl.length > 8_500_000 || attachmentSize > 13_000_000) {
+        return res.status(400).json({ error: 'Attachments are too large' });
+      }
+      attachmentParts.push({
+        inlineData: {
+          mimeType: item.mimeType,
+          data: dataUrl.slice(prefix.length),
+        },
+      });
     }
 
     const ai = new GoogleGenAI({
@@ -40,7 +68,9 @@ app.post('/api/gemini/generate', async (req, res) => {
     const model = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
     const response = await ai.models.generateContent({
       model,
-      contents: finalPrompt,
+      contents: attachmentParts.length
+        ? [{ role: 'user', parts: [{ text: finalPrompt }, ...attachmentParts] }]
+        : finalPrompt,
     });
     return res.json({ text: response.text || '' });
   } catch (error: unknown) {
