@@ -80,6 +80,63 @@ app.post('/api/gemini/generate', async (req, res) => {
   }
 });
 
+// تحليل ورقة الفرض/الاختبار قبل بناء مذكرة التصحيح
+app.post('/api/gemini/analyze-correction-source', async (req, res) => {
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return res.status(503).json({ error: 'GEMINI_API_KEY is not configured on server' });
+
+    const { examType, examText = '', attachments = [] } = req.body;
+    if (!examType || (!String(examText).trim() && (!Array.isArray(attachments) || attachments.length === 0))) {
+      return res.status(400).json({ error: 'مصدر التصحيح مطلوب' });
+    }
+
+    const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf']);
+    if (!Array.isArray(attachments) || attachments.length > 6) {
+      return res.status(400).json({ error: 'عدد المرفقات غير مسموح' });
+    }
+
+    let totalLength = 0;
+    const parts: any[] = [];
+    for (const item of attachments) {
+      if (!item || !allowedTypes.has(item.mimeType)) return res.status(400).json({ error: 'نوع مرفق غير مسموح' });
+      const dataUrl = String(item.dataUrl || '');
+      const prefix = `data:${item.mimeType};base64,`;
+      if (!dataUrl.startsWith(prefix) || dataUrl.length > 8_000_000) {
+        return res.status(400).json({ error: 'مرفق غير صالح أو كبير جداً' });
+      }
+      totalLength += dataUrl.length;
+      if (totalLength > 10_000_000) return res.status(400).json({ error: 'إجمالي المرفقات كبير جداً' });
+      parts.push({ inlineData: { mimeType: item.mimeType, data: dataUrl.slice(prefix.length) } });
+    }
+
+    const ai = new GoogleGenAI({ apiKey, httpOptions: { headers: { 'User-Agent': 'aistudio-build' } } });
+    const model = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+    const response = await ai.models.generateContent({
+      model,
+      contents: [{
+        role: 'user',
+        parts: [{
+          text: [
+            'حلل ورقة التقييم التالية كمصدر فقط ولا تحل الأسئلة.',
+            'استخرج ما يمكن قراءته حرفياً من الورقة، مع الحفاظ على الترتيب.',
+            'أعد JSON فقط بالشكل: {title, exercises:[{number, title, questions:[{number,text,points,documentRefs}]}], totalPoints, documents:[{id,description}], ambiguities:[]}.',
+            'إذا لم تستطع قراءة عنصر اتركه فارغاً وأضفه إلى ambiguities. لا تخترع أي سؤال أو نقطة.',
+            `نوع التقييم: ${examType}`,
+            `النص المتاح: ${String(examText).slice(0, 30000)}`,
+          ].join('\\n'),
+        }, ...parts],
+      }],
+      config: { responseMimeType: 'application/json' },
+    });
+    return res.json({ json: response.text || '' });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[Correction source analysis error]:', message);
+    return res.status(500).json({ error: message });
+  }
+});
+
 // نقطة نهاية لتوليد المذكرة البيداغوجية الرسمية وفق منهاج الجيل الثاني (JSON منظم)
 app.post('/api/gemini/generate-pedagogical-note', async (req, res) => {
   try {
