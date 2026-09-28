@@ -43,6 +43,7 @@ export const CorrectionMemoDrawer: React.FC<{
         });
         await saveMemoAttachment(attachment);
         setSavedAttachments(await listMemoAttachments());
+        setExamText(prev => prev.trim() ? prev : '[ورقة التقييم مرفقة كمصدر بصري/PDF]');
       } catch (error: any) {
         setCorrection(error?.message || 'تعذر إضافة المرفق.');
       }
