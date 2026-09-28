@@ -185,7 +185,8 @@ export function recalculateDistributionRows(
   settings: SchoolCalendarSettings
 ): OfficialAnnualDistributionRow[] {
   if (!baseRows || baseRows.length === 0) return [];
-  const startSunday = alignToSunday(settings.startDate);
+  // تاريخ الدخول هو مرساة الأسبوع الأول، حتى لو كان الدخول يوم الإثنين–الخميس.
+  const startSunday = new Date(`${settings.startDate}T12:00:00`);
 
   return baseRows.map((row, index) => {
     // رقم الأسبوع يبدأ من 1
