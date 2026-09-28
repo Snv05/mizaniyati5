@@ -98,15 +98,54 @@ const createParagraph = (text: string, bold = false, color = "000000", size = 20
   });
 };
 
-const createCell = (text: string, bold = false, bgColor?: string, columnSpan?: number, rowSpan?: number, size = 20, alignment: any = AlignmentType.CENTER) => {
+const createCell = (text: string, bold = false, bgColor?: string, columnSpan?: number, rowSpan?: number, size = 20, alignment: any = AlignmentType.CENTER, vertical = false) => {
   return new TableCell({
     columnSpan,
     rowSpan,
     shading: bgColor ? { fill: bgColor, type: ShadingType.CLEAR, color: "auto" } : undefined,
     margins: { top: 100, bottom: 100, left: 100, right: 100 },
     verticalAlign: VerticalAlign.CENTER,
+    textDirection: vertical ? ("tbRl" as any) : undefined,
     children: [createParagraph(text, bold, "000000", size, alignment)]
   });
+};
+
+const normalized = (value: unknown) => String(value ?? "").trim();
+
+const isMergeableDistributionRow = (row: CurriculumSession | undefined) =>
+  !!row && !row.isHoliday && !row.isExam;
+
+const mergedSpan = (page: CurriculumSession[], index: number, field: "midan" | "maqta" | "mawrid") => {
+  const current = page[index];
+  if (!isMergeableDistributionRow(current)) return 1;
+  const value = normalized((current as any)[field]);
+  if (!value) return 1;
+
+  let span = 1;
+  for (let j = index + 1; j < page.length; j++) {
+    const next = page[j];
+    if (!isMergeableDistributionRow(next)) break;
+    const sameHierarchy =
+      field === "midan"
+        ? true
+        : field === "maqta"
+          ? normalized(next.midan) === normalized(current.midan)
+          : normalized(next.midan) === normalized(current.midan) &&
+            normalized(next.maqta) === normalized(current.maqta);
+    if (!sameHierarchy || normalized((next as any)[field]) !== value) break;
+    span++;
+  }
+  return span;
+};
+
+const samePreviousMerged = (page: CurriculumSession[], index: number, field: "midan" | "maqta" | "mawrid") => {
+  const current = page[index];
+  const previous = page[index - 1];
+  if (!isMergeableDistributionRow(current) || !isMergeableDistributionRow(previous)) return false;
+  if (!normalized((current as any)[field]) || normalized((current as any)[field]) !== normalized((previous as any)[field])) return false;
+  if (field === "midan") return true;
+  if (field === "maqta") return normalized(current.midan) === normalized(previous.midan);
+  return normalized(current.midan) === normalized(previous.midan) && normalized(current.maqta) === normalized(previous.maqta);
 };
 
 export const generateDistributionDocx = async (
@@ -216,9 +255,9 @@ export const generateDistributionDocx = async (
             children: [
               createCell(item.month, false, rowBg),
               createCell(weekDisplay, false, rowBg),
-              createCell(item.midan || '', true, "ECFDF5"),
-              createCell(item.maqta || '', true, "FFFBEB"),
-              createCell(item.mawrid || '', true, rowBg),
+              ...(!samePreviousMerged(page, rowIndex, "midan") ? [createCell(item.midan || '', true, "ECFDF5", undefined, mergedSpan(page, rowIndex, "midan"), 20, AlignmentType.CENTER, true)] : []),
+              ...(!samePreviousMerged(page, rowIndex, "maqta") ? [createCell(item.maqta || '', true, "FFFBEB", undefined, mergedSpan(page, rowIndex, "maqta"), 20, AlignmentType.CENTER, true)] : []),
+              ...(!samePreviousMerged(page, rowIndex, "mawrid") ? [createCell(item.mawrid || '', true, rowBg, undefined, mergedSpan(page, rowIndex, "mawrid"), 20, AlignmentType.CENTER, true)] : []),
               createCell(item.session1 || '', false, rowBg, 1, 1, 20, AlignmentType.RIGHT),
               createCell(item.session2 || '', false, rowBg, 1, 1, 20, AlignmentType.RIGHT),
               createCell((item as any).percent || '', true, rowBg)
