@@ -1,8 +1,9 @@
-import React, { useMemo, useRef, useState } from 'react';
-import { ClipboardCheck, FileDown, Printer, Sparkles, X } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { ClipboardCheck, FileDown, Printer, Sparkles, X, Paperclip, FileUp, RotateCcw, XCircle, Trash2 } from 'lucide-react';
 import { LessonMemo, MemoConfig } from '../types';
 import { generateCorrectionMemo } from '../services/correctionMemoAi';
 import { exportCorrectionMemoToDocx, exportCorrectionMemoToPdf, printCorrectionMemo } from '../utils/correctionMemoExport';
+import { MemoAttachment, fileToMemoAttachment, listMemoAttachments, saveMemoAttachment, deleteMemoAttachment, MAX_TOTAL_ATTACHMENT_BYTES } from '../services/memoAttachmentStore';
 
 export const CorrectionMemoDrawer: React.FC<{
   isOpen: boolean;
@@ -16,7 +17,58 @@ export const CorrectionMemoDrawer: React.FC<{
   const [examText, setExamText] = useState('');
   const [correction, setCorrection] = useState('');
   const [busy, setBusy] = useState(false);
+  const [attachments, setAttachments] = useState<MemoAttachment[]>([]);
+  const [savedAttachments, setSavedAttachments] = useState<MemoAttachment[]>([]);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    listMemoAttachments().then(setSavedAttachments).catch(() => undefined);
+  }, [isOpen]);
+
+  const addFiles = async (files: FileList | File[]) => {
+    for (const file of Array.from(files)) {
+      try {
+        const attachment = await fileToMemoAttachment(file);
+        if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'].includes(attachment.mimeType)) {
+          setCorrection('المرفق يجب أن يكون صورة أو PDF.');
+          continue;
+        }
+        setAttachments(prev => {
+          const total = prev.reduce((sum, item) => sum + item.size, 0) + attachment.size;
+          if (total > MAX_TOTAL_ATTACHMENT_BYTES) return prev;
+          return [...prev, attachment].slice(0, 6);
+        });
+        await saveMemoAttachment(attachment);
+        setSavedAttachments(await listMemoAttachments());
+      } catch (error: any) {
+        setCorrection(error?.message || 'تعذر إضافة المرفق.');
+      }
+    }
+  };
+
+  const restoreSaved = async () => {
+    const saved = await listMemoAttachments();
+    setSavedAttachments(saved);
+    setAttachments(saved.filter(item => ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'].includes(item.mimeType)).slice(0, 6));
+  };
+
+  const removeAttachment = (id: string) => setAttachments(prev => prev.filter(item => item.id !== id));
+
+  const removeSaved = async (id: string) => {
+    await deleteMemoAttachment(id);
+    setSavedAttachments(prev => prev.filter(item => item.id !== id));
+    removeAttachment(id);
+  };
+
+  const handlePaste = async (event: React.ClipboardEvent<HTMLElement>) => {
+    const item = Array.from(event.clipboardData.items).find(x => x.type.startsWith('image/'));
+    if (!item) return;
+    event.preventDefault();
+    const blob = item.getAsFile();
+    if (blob) await addFiles([new File([blob], `صورة-التصحيح-${Date.now()}.png`, { type: blob.type || 'image/png' })]);
+  };
 
   const context = useMemo(() => currentLesson
     ? [
@@ -45,6 +97,7 @@ export const CorrectionMemoDrawer: React.FC<{
         examText: examText.trim(),
         lesson: currentLesson,
         curriculum: curriculumLessons,
+        attachments: attachments.map(({ name, mimeType, size, dataUrl }) => ({ name, mimeType, size, dataUrl })),
       });
       setCorrection(result || 'تعذر إنشاء مذكرة التصحيح. تحقق من خدمة التوليد ثم أعد المحاولة.');
     } catch {
@@ -61,7 +114,12 @@ export const CorrectionMemoDrawer: React.FC<{
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/45 flex justify-end" onClick={onClose}>
-      <aside className="w-full max-w-5xl h-full bg-[#edf9f6] shadow-2xl overflow-y-auto" dir="rtl" onClick={e => e.stopPropagation()}>
+      <aside
+          className="w-full max-w-5xl h-full bg-[#edf9f6] shadow-2xl overflow-y-auto"
+          dir="rtl"
+          onClick={e => e.stopPropagation()}
+          onPaste={handlePaste}
+        >
         <header className="sticky top-0 z-10 px-5 py-4 bg-gradient-to-l from-teal-900 to-emerald-700 text-white flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-2xl bg-white/15 flex items-center justify-center"><ClipboardCheck /></div>
@@ -97,6 +155,50 @@ export const CorrectionMemoDrawer: React.FC<{
             <div className="rounded-xl bg-teal-50/70 border border-teal-100 p-3 text-sm leading-7">
               <div className="font-black text-teal-900 mb-1">المصدر المرتبط بالتصحيح</div>
               <div>{context}</div>
+            </div>
+
+            <div className="rounded-xl border border-dashed border-teal-200 bg-teal-50/40 p-3 space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-xs font-black text-teal-900">
+                  <Paperclip size={15} /> مصادر التصحيح
+                  <span className="text-[10px] text-slate-500 font-medium">صور/PDF + لصق Ctrl+V + استرداد محفوظ</span>
+                </div>
+                <div className="flex gap-1.5">
+                  <button type="button" onClick={() => fileInputRef.current?.click()} className="px-2.5 py-1.5 rounded-lg bg-teal-700 text-white text-[11px] font-black">
+                    <FileUp className="inline w-3.5 h-3.5 ml-1" />إضافة ملف
+                  </button>
+                  <button type="button" onClick={restoreSaved} className="px-2.5 py-1.5 rounded-lg bg-white border border-teal-200 text-teal-800 text-[11px] font-black">
+                    <RotateCcw className="inline w-3.5 h-3.5 ml-1" />استرداد
+                  </button>
+                  <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,application/pdf" multiple hidden onChange={e => { if (e.target.files) addFiles(e.target.files); e.currentTarget.value=''; }} />
+                </div>
+              </div>
+              <div className="text-[10.5px] text-slate-500">يمكنك سحب الملف إلى هنا أو نسخ صورة من جهازك ولصقها مباشرة داخل الأداة.</div>
+              {attachments.length > 0 && (
+                <div className="grid sm:grid-cols-2 gap-2">
+                  {attachments.map(item => (
+                    <div key={item.id} className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg p-2">
+                      {item.mimeType.startsWith('image/') ? <img src={item.dataUrl} alt="" className="w-12 h-12 rounded object-cover border" /> : <div className="w-12 h-12 rounded bg-red-50 text-red-700 flex items-center justify-center text-[10px] font-black">PDF</div>}
+                      <span className="truncate flex-1 text-[11px] font-bold">{item.name}</span>
+                      <button type="button" onClick={() => removeAttachment(item.id)}><XCircle size={15} className="text-slate-400 hover:text-red-600" /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {savedAttachments.length > 0 && (
+                <details className="text-[10px]">
+                  <summary className="cursor-pointer font-bold text-slate-600">المحفوظ على الجهاز ({savedAttachments.length})</summary>
+                  <div className="mt-1 space-y-1">
+                    {savedAttachments.slice(0, 10).map(item => (
+                      <div key={item.id} className="flex gap-2 items-center">
+                        <span className="truncate flex-1">{item.name}</span>
+                        <button type="button" onClick={() => setAttachments(prev => prev.some(x => x.id === item.id) ? prev : [...prev, item].slice(0, 6)} className="text-teal-700 font-black">استرداد</button>
+                        <button type="button" onClick={() => removeSaved(item.id)}><Trash2 size={13} className="text-red-500" /></button>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              )}
             </div>
 
             <label className="block space-y-1">
