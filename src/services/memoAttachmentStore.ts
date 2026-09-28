@@ -16,7 +16,7 @@ const STORE = localforage.createInstance({
 });
 
 export const MAX_ATTACHMENT_BYTES = 6 * 1024 * 1024;
-export const MAX_TOTAL_ATTACHMENT_BYTES = 12 * 1024 * 1024;
+export const MAX_TOTAL_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 
 export const ALLOWED_ATTACHMENT_TYPES = new Set([
   'image/jpeg',
