@@ -38,6 +38,9 @@ const QUICK_PROMPTS = [
   'اقتراح تجارب علمية بسيطة للكشف عن النشا والغلوكوز',
   'كيف أوزع التوقيت البيداغوجي لدرس مدته ساعتان؟',
   'معايير ومؤشرات تقويم كفاءة ختامية في علوم الطبيعة',
+  'أنشئ تجربة علمية مدرسية آمنة: الهدف، الفرضية، الأدوات، الخطوات، النتائج المتوقعة، والتفسير.',
+  'أنشئ رسماً تخطيطياً تعليمياً للدرس مع العناصر والأسهم ووصف جاهز للرسم.',
+  'اقترح صوراً ووثائق تعليمية مناسبة للدرس، مع كلمات بحث ومصادر موثوقة.',
 ];
 
 export const AIAssistantDrawer: React.FC<{
@@ -60,6 +63,7 @@ export const AIAssistantDrawer: React.FC<{
   const [isTyping, setIsTyping] = useState(false);
   const [attachments, setAttachments] = useState<AssistantAttachment[]>([]);
   const [useWeb, setUseWeb] = useState(true);
+  const [expertMode, setExpertMode] = useState(true);
   const [showKnowledge, setShowKnowledge] = useState(false);
   const [knowledgeDetails, setKnowledgeDetails] = useState<{ sources: { label: string; url: string; priority?: string }[]; updates: { title: string; summary: string; date: string; sourceTitle?: string; sourceUrl?: string; confidence?: string }[] } | null>(null);
   const [knowledgeStatus, setKnowledgeStatus] = useState<{ updatedAt: string | null; updateCount: number; lastRefresh?: { at?: string; resultCount?: number; searchUsed?: boolean } | null } | null>(null);
@@ -159,6 +163,7 @@ export const AIAssistantDrawer: React.FC<{
         attachments,
         useWeb,
         level: selectedLevel,
+        expertMode,
       });
       const reply = liveReply?.text || '';
       if (reply) {
@@ -454,6 +459,14 @@ export const AIAssistantDrawer: React.FC<{
             >
               <Globe2 className="w-3.5 h-3.5" />
               الإنترنت {useWeb ? 'مفعل' : 'متوقف'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setExpertMode(v => !v)}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[11px] font-bold transition ${expertMode ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-gray-100 border-gray-200 text-gray-500'}`}
+            >
+              <FlaskConical className="w-3.5 h-3.5" />
+              نمط الأستاذ الخبير {expertMode ? 'مفعل' : 'متوقف'}
             </button>
           </div>
 
