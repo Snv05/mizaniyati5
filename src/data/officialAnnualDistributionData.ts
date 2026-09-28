@@ -351,8 +351,6 @@ export const OFFICIAL_2AM_DISTRIBUTION: OfficialAnnualDistributionRow[] = [
     "id": "2am-official-1",
     "month": "سبتمبـر",
     "dates": "22-26",
-    "midan": "",
-    "maqta": "",
     "midan": "الانسان و المحيط",
     "maqta": "الوســــــــــــــــــــــط الحــــــــــــــــــــــي",
     "mawrid": "خصائص الوسط الحي",
