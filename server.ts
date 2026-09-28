@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenAI, createPartFromUri } from '@google/genai';
 import { Buffer } from 'node:buffer';
+import fs from 'node:fs';
 import { buildGeminiSystemPrompt } from './src/services/geminiPrompts';
 
 dotenv.config();
@@ -13,6 +14,15 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+const getKnowledgeSnapshot = () => {
+  try {
+    const file = path.join(__dirname, 'data', 'aiKnowledge.json');
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch {
+    return { updatedAt: null, updates: [], sources: [] };
+  }
+};
 
 app.use(express.json({ limit: '40mb' }));
 
@@ -198,8 +208,14 @@ app.post('/api/gemini/smart-assistant', async (req, res) => {
       'لا تنتج درساً كاملاً عشوائياً عندما يطلب الأستاذ معلومة محددة؛ أجب مباشرة وبنية واضحة.',
     ].join('\n');
 
+    const knowledgeSnapshot = getKnowledgeSnapshot();
     const context = [
       sourcePolicy,
+      'لقطة المعرفة المحدثة من زيارات الويب المجدولة:',
+      JSON.stringify({
+        updatedAt: knowledgeSnapshot.updatedAt,
+        updates: Array.isArray(knowledgeSnapshot.updates) ? knowledgeSnapshot.updates.slice(0, 30) : [],
+      }, null, 2),
       `المستوى المطلوب: ${level || compactLesson?.level || 'غير محدد'}`,
       'المورد/المذكرة الحالية:',
       JSON.stringify(compactLesson, null, 2),
@@ -265,6 +281,17 @@ app.post('/api/gemini/smart-assistant', async (req, res) => {
     console.error('[Smart Assistant Error]:', message);
     return res.status(500).json({ error: message });
   }
+});
+
+// حالة قاعدة المعرفة المستمرة للمساعد الذكي
+app.get('/api/gemini/knowledge-status', (_req, res) => {
+  const snapshot = getKnowledgeSnapshot();
+  res.json({
+    updatedAt: snapshot.updatedAt || null,
+    updateCount: Array.isArray(snapshot.updates) ? snapshot.updates.length : 0,
+    sources: Array.isArray(snapshot.sources) ? snapshot.sources : [],
+    lastRefresh: snapshot.lastRefresh || null,
+  });
 });
 
 // تحليل ورقة الفرض/الاختبار قبل بناء مذكرة التصحيح
