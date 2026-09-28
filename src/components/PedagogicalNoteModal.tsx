@@ -436,7 +436,7 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
           )}
 
           {note && !isLoading && (
-            <div className="bg-white p-6 sm:p-8 rounded-2xl border border-gray-200 shadow-sm space-y-6 text-gray-900 print:border-none print:shadow-none print:p-0">
+            <div className="print-document bg-white p-6 sm:p-8 rounded-2xl border border-gray-200 shadow-sm space-y-6 text-gray-900 print:border-none print:shadow-none print:p-0">
               
               {/* TAB 1: Complete Pedagogical Note */}
               {activeTab === 'note' && (
