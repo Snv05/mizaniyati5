@@ -70,6 +70,7 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
   const [attachments, setAttachments] = useState<MemoAttachment[]>([]);
   const [savedAttachments, setSavedAttachments] = useState<MemoAttachment[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [useWebResearch, setUseWebResearch] = useState(true);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -156,7 +157,8 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
       const generated = await generatePedagogicalNote(
         selectedGrade,
         topic.trim(),
-        attachments.map(({ name, mimeType, size, dataUrl }) => ({ name, mimeType, size, dataUrl }))
+        attachments.map(({ name, mimeType, size, dataUrl }) => ({ name, mimeType, size, dataUrl })),
+        useWebResearch
       );
       setNote(generated);
       showToast('تم توليد المذكرة البيداغوجية الرسمية بنجاح 🌟');
@@ -304,7 +306,7 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
             </div>
 
             <div className="border border-dashed border-emerald-200 rounded-lg p-2 text-center text-[10.5px] text-gray-500 bg-emerald-50/30">
-              اسحب الملفات هنا أو اضغط <b>Ctrl + V</b> للصق صورة من الحافظة. المرفقات تحفظ محليًا في جهازك لاسترجاعها بعد إعادة فتح الأداة.
+              اسحب الملفات هنا أو اضغط <b>Ctrl + V</b>، أو استخدم زر <b>استيراد ملف</b> للصق صورة من الحافظة. المرفقات تحفظ محليًا في جهازك لاسترجاعها بعد إعادة فتح الأداة.
             </div>
 
             {attachments.length > 0 && (

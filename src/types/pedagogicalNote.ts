@@ -26,6 +26,9 @@ export interface StudentWorksheet {
   questionsToAnswer: string[];
 }
 
+export interface ResearchSource { title: string; url: string; purpose: string; }
+export interface VisualPlan { diagramType: string; description: string; imageSuggestions: string[]; }
+
 export interface BemEvaluationGrid {
   relevance: string;
   correctUseOfTools: string;
@@ -55,5 +58,7 @@ export interface PedagogicalNote {
   experiments: ExperimentItem[];
   sequence: LessonSequenceStage[];
   studentWorksheet: StudentWorksheet;
+  researchSources: ResearchSource[];
+  visualPlan: VisualPlan;
   bemEvaluationGrid: BemEvaluationGrid;
 }

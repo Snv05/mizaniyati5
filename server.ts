@@ -397,7 +397,7 @@ app.post('/api/gemini/generate-pedagogical-note', async (req, res) => {
     if (!apiKey) {
       return res.status(503).json({ error: 'مفتاح واجهة برمجة تطبيقات Gemini غير متوفر في الخادم' });
     }
-    const { gradeLevel, topic, attachments = [] } = req.body;
+    const { gradeLevel, topic, attachments = [], useWebResearch = true } = req.body;
     if (!gradeLevel || !topic) {
       return res.status(400).json({ error: 'المستوى والموضوع مطلوبان لتوليد المذكرة' });
     }
@@ -442,7 +442,7 @@ app.post('/api/gemini/generate-pedagogical-note', async (req, res) => {
       },
     });
 
-    const systemPrompt = buildGeminiSystemPrompt(gradeLevel, topic);
+    const systemPrompt = buildGeminiSystemPrompt(gradeLevel, topic) + `\n\nقاعدة المعرفة الداخلية الحالية:\n${JSON.stringify(getKnowledgeSnapshot(), null, 2).slice(0, 30000)}`;
     const model = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
 
     const response = await ai.models.generateContent({
@@ -457,6 +457,7 @@ app.post('/api/gemini/generate-pedagogical-note', async (req, res) => {
       config: {
         systemInstruction: systemPrompt,
         responseMimeType: 'application/json',
+        tools: useWebResearch ? [{ googleSearch: {} }] : undefined,
       },
     });
 
