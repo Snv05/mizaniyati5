@@ -32,7 +32,7 @@ export const CorrectionMemoDrawer: React.FC<{
     for (const file of Array.from(files)) {
       try {
         const attachment = await fileToMemoAttachment(file);
-        if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'].includes(attachment.mimeType)) {
+        if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf', 'text/plain'].includes(attachment.mimeType)) {
           setCorrection('المرفق يجب أن يكون صورة أو PDF.');
           continue;
         }
@@ -53,7 +53,7 @@ export const CorrectionMemoDrawer: React.FC<{
   const restoreSaved = async () => {
     const saved = await listMemoAttachments();
     setSavedAttachments(saved);
-    setAttachments(saved.filter(item => ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'].includes(item.mimeType)).slice(0, 6));
+    setAttachments(saved.filter(item => ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf', 'text/plain'].includes(item.mimeType)).slice(0, 6));
   };
 
   const removeAttachment = (id: string) => setAttachments(prev => prev.filter(item => item.id !== id));
@@ -131,6 +131,8 @@ export const CorrectionMemoDrawer: React.FC<{
           dir="rtl"
           onClick={e => e.stopPropagation()}
           onPaste={handlePaste}
+          onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }}
+          onDrop={e => { e.preventDefault(); if (e.dataTransfer.files?.length) void addFiles(e.dataTransfer.files); }}
         >
         <header className="sticky top-0 z-10 px-5 py-4 bg-gradient-to-l from-teal-900 to-emerald-700 text-white flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -185,7 +187,7 @@ export const CorrectionMemoDrawer: React.FC<{
                   <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,application/pdf" multiple hidden onChange={e => { if (e.target.files) addFiles(e.target.files); e.currentTarget.value=''; }} />
                 </div>
               </div>
-              <div className="text-[10.5px] text-slate-500">يمكنك سحب الملف إلى هنا أو نسخ صورة من جهازك ولصقها مباشرة داخل الأداة.</div>
+              <div className="text-[10.5px] text-slate-500">يمكنك سحب الملف إلى هنا، اختيار ملف من الهاتف/الحاسوب، أو نسخ صورة ولصقها مباشرة داخل الأداة. الحد الأقصى 15MB للملف و24MB للمرفقات المحفوظة.</div>
               {attachments.length > 0 && (
                 <div className="grid sm:grid-cols-2 gap-2">
                   {attachments.map(item => (

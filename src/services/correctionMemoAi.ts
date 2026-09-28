@@ -7,6 +7,7 @@ export interface CorrectionMemoRequest {
   lesson?: LessonMemo | null;
   curriculum: LessonMemo[];
   attachments?: PedagogicalAttachmentInput[];
+  sourceAnalysis?: CorrectionSourceAnalysis;
 }
 
 const compact = (value: unknown, max = 1200): string => {
@@ -100,7 +101,11 @@ export async function generateCorrectionMemo(request: CorrectionMemoRequest): Pr
     request.examText.trim() || 'لا يوجد نص ملصوق؛ ورقة التقييم موجودة في المرفقات ويجب استخراج الأسئلة والنقاط والوثائق منها دون تخمين.',
     '',
     'نتيجة تحليل المصدر الأولي (إن وُجدت):',
-    JSON.stringify(request.attachments?.length ? 'تم إرفاق مصدر بصري/ملف ويجب الاعتماد عليه في القراءة.' : 'لا يوجد مصدر بصري مرفق.'),
+    request.sourceAnalysis
+      ? JSON.stringify(request.sourceAnalysis, null, 2)
+      : (request.attachments?.length
+        ? 'فشل التحليل الأولي، لذلك اقرأ المصدر المرفق مباشرة ولا توقف التوليد.'
+        : 'لا يوجد مصدر بصري مرفق.'),
   ].join('\n');
 
   try {

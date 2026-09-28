@@ -15,8 +15,8 @@ const STORE = localforage.createInstance({
   storeName: 'memo_attachments',
 });
 
-export const MAX_ATTACHMENT_BYTES = 6 * 1024 * 1024;
-export const MAX_TOTAL_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+export const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;
+export const MAX_TOTAL_ATTACHMENT_BYTES = 24 * 1024 * 1024;
 
 export const ALLOWED_ATTACHMENT_TYPES = new Set([
   'image/jpeg',
@@ -40,8 +40,12 @@ function extensionForMime(mime: string): string {
 }
 
 export function validateMemoAttachment(file: File): void {
-  if (!ALLOWED_ATTACHMENT_TYPES.has(file.type)) {
-    throw new Error('نوع الملف غير مسموح. الأنواع المدعومة: صور، PDF، TXT.');
+  const normalizedType = file.type || (() => {
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    return ({ jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', gif: 'image/gif', pdf: 'application/pdf', txt: 'text/plain' } as Record<string,string>)[ext] || '';
+  })();
+  if (!ALLOWED_ATTACHMENT_TYPES.has(normalizedType)) {
+    throw new Error('نوع الملف غير مسموح. المدعوم: JPG/PNG/WEBP/GIF/PDF/TXT.');
   }
   if (file.size > MAX_ATTACHMENT_BYTES) {
     throw new Error('حجم الملف يتجاوز 6MB.');
@@ -50,6 +54,10 @@ export function validateMemoAttachment(file: File): void {
 
 export async function fileToMemoAttachment(file: File, source: 'file' | 'paste' = 'file'): Promise<MemoAttachment> {
   validateMemoAttachment(file);
+  const normalizedType = file.type || (() => {
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    return ({ jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', gif: 'image/gif', pdf: 'application/pdf', txt: 'text/plain' } as Record<string,string>)[ext] || '';
+  })();
   const dataUrl = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result || ''));
@@ -58,12 +66,12 @@ export async function fileToMemoAttachment(file: File, source: 'file' | 'paste' 
   });
 
   const safeBase = (file.name || 'مرفق').replace(/[^\p{L}\p{N}._-]+/gu, '_').slice(0, 100) || 'مرفق';
-  const name = safeBase.includes('.') ? safeBase : `${safeBase}.${extensionForMime(file.type)}`;
+  const name = safeBase.includes('.') ? safeBase : `${safeBase}.${extensionForMime(normalizedType)}`;
 
   return {
     id: `${Date.now()}-${crypto.randomUUID()}`,
     name,
-    mimeType: file.type,
+    mimeType: normalizedType,
     size: file.size,
     dataUrl,
     source,
