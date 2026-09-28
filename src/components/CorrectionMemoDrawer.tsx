@@ -254,7 +254,7 @@ export const CorrectionMemoDrawer: React.FC<{
 
           {correction && (
             <section className="bg-[#fffdf8] rounded-2xl border border-teal-100 p-3 shadow-sm">
-              <div ref={previewRef} className="bg-white p-6 md:p-8 min-h-[1120px] text-slate-900" dir="rtl">
+              <div ref={previewRef} className="print-document bg-white p-6 md:p-8 min-h-[1120px] text-slate-900" dir="rtl">
                 <div className="text-center border-b-2 border-teal-700 pb-4 mb-5">
                   <div className="font-black">الجمهورية الجزائرية الديمقراطية الشعبية</div>
                   <div className="font-bold">وزارة التربية الوطنية</div>

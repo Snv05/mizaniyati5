@@ -74,6 +74,18 @@ button,input,textarea,select{font-family:inherit;}
     display: table-footer-group;
   }
 
+
+  /* قواعد موحدة لجميع الأقسام القابلة للطباعة */
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  .print-document, .print-document > * { box-sizing: border-box !important; }
+  .print-document h1, .print-document h2, .print-document h3, .print-document h4 { page-break-after: avoid !important; break-after: avoid-page !important; }
+  .print-document .section-block, .print-document .card, .print-document .table-block, .print-document figure, .print-document img { break-inside: avoid !important; page-break-inside: avoid !important; }
+  .print-document table { break-inside: auto !important; page-break-inside: auto !important; }
+  .print-document tr, .print-document td, .print-document th { break-inside: avoid !important; page-break-inside: avoid !important; }
+  .print-document .page-break-before { break-before: page !important; page-break-before: always !important; }
+  .print-document .page-break-after { break-after: page !important; page-break-after: always !important; }
+  .print-toolbar, .export-toolbar, .print-controls { display: none !important; }
+
   /* Header and signatures avoid orphan splits */
   .memo-header,
   .memo-footer {
