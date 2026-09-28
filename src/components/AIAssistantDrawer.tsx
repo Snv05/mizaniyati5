@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { LessonMemo } from '../types';
 import { askSmartAi } from '../services/smartAi';
 import {
@@ -60,6 +60,21 @@ export const AIAssistantDrawer: React.FC<{
   const [isTyping, setIsTyping] = useState(false);
   const [attachments, setAttachments] = useState<AssistantAttachment[]>([]);
   const [useWeb, setUseWeb] = useState(true);
+  const [knowledgeStatus, setKnowledgeStatus] = useState<{ updatedAt: string | null; updateCount: number; lastRefresh?: { at?: string; resultCount?: number; searchUsed?: boolean } | null } | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    fetch('/api/gemini/knowledge-status')
+      .then(async (res) => res.ok ? res.json() : null)
+      .then((data) => { if (!cancelled && data) setKnowledgeStatus(data); })
+      .catch(() => { /* status is optional and must not block the assistant */ });
+    return () => { cancelled = true; };
+  }, [isOpen]);
+
+  const knowledgeLabel = knowledgeStatus?.updatedAt
+    ? `المعرفة: ${new Date(knowledgeStatus.updatedAt).toLocaleDateString('ar-DZ')}`
+    : 'المعرفة: في انتظار أول تحديث';
 
   const smartContext = useMemo(() => currentLesson ? [
     'المستوى: ' + (selectedLevel || currentLesson.level),
@@ -206,10 +221,15 @@ export const AIAssistantDrawer: React.FC<{
                 </span>
               </div>
               <p className="text-[11.5px] text-gray-500 font-medium">
-                استشارات المنهاج، صياغة المشكلات العلمية والتجارب المخبرية
+                استشارات المنهاج، الوثيقة المرافقة، المذكرات، التدرجات والمستجدات العلمية
               </p>
               <div className="mt-1 text-[10px] text-emerald-700 font-bold truncate max-w-[340px]">
                 السياق الذكي: {currentLesson?.ta3alom || 'لا يوجد مورد محدد'}
+              </div>
+              <div className="mt-1 flex items-center gap-2 text-[9.5px] font-bold text-slate-500">
+                <span>{knowledgeLabel}</span>
+                <span>•</span>
+                <span>{knowledgeStatus?.updateCount ?? 0} مستجدات</span>
               </div>
             </div>
           </div>
