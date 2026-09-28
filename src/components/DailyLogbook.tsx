@@ -650,11 +650,12 @@ const normalizeDailyLogbookRows = (
 
     return {
       ...row,
-      midan: clean(resource.midan),
-      maqta: clean(resource.maqta),
-      mawrid: clean(resource.mawrid),
-      ta3alom: clean(resource.ta3alom),
-      activitiesList: activities,
+      // نحافظ على بيانات التدرج التي وُلّد بها الصف؛ المذكرة هنا للربط والتحقق فقط.
+      midan: clean(row.midan) || clean(resource.midan),
+      maqta: clean(row.maqta) || clean(resource.maqta),
+      mawrid: clean(row.mawrid) || clean(resource.mawrid),
+      ta3alom: clean(row.ta3alom) || clean(resource.ta3alom),
+      activitiesList: row.activitiesList?.length ? row.activitiesList.map(clean).filter(Boolean).slice(0, 2) : activities,
       sourceSequenceId: resource.sourceSequenceId || row.sourceSequenceId,
       sourceResourceId: resource.sourceResourceId || row.sourceResourceId,
       sourceLearningUnitId: resource.sourceLearningUnitId || row.sourceLearningUnitId,
