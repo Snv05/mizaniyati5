@@ -434,7 +434,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, set
       `}</style>
 
       {pages.map((page, pageIndex) => (
-        <div key={pageIndex} className={`annual-export-page relative z-10 bg-[#fffdf8]/95 backdrop-blur-[1px] p-[10mm] mb-8 shadow-[0_14px_40px_rgba(20,110,100,0.10)] border border-[#d8eee9] print:bg-white print:border-none print:shadow-none print:m-0 ${orientation === 'portrait' ? 'w-[210mm] min-h-[297mm]' : 'w-[297mm] min-h-[210mm]'}`} style={{ pageBreakAfter: pageIndex < pages.length - 1 ? 'always' : 'auto' }}>
+        <div key={pageIndex} className={`print-document annual-export-page relative z-10 bg-[#fffdf8]/95 backdrop-blur-[1px] p-[10mm] mb-8 shadow-[0_14px_40px_rgba(20,110,100,0.10)] border border-[#d8eee9] print:bg-white print:border-none print:shadow-none print:m-0 ${orientation === 'portrait' ? 'w-[210mm] min-h-[297mm]' : 'w-[297mm] min-h-[210mm]'}`} style={{ pageBreakAfter: pageIndex < pages.length - 1 ? 'always' : 'auto' }}>
           
           {/* Header */}
           <div className="text-center mb-3">
