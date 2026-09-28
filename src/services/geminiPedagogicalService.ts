@@ -40,6 +40,7 @@ export function validateAndRepairPedagogicalNote(rawInput: string, fallbackLevel
   const requirements = parsed.requirements || {};
   const studentWorksheet = parsed.studentWorksheet || {};
   const bemEvaluationGrid = parsed.bemEvaluationGrid || {};
+  const visualPlan = parsed.visualPlan || {};
 
   const validatedNote: PedagogicalNote = {
     meta: {
@@ -125,6 +126,12 @@ export function validateAndRepairPedagogicalNote(rawInput: string, fallbackLevel
         ? studentWorksheet.questionsToAnswer.map(String)
         : ['حلل السندات المقدمة واستخلص النتيجة العلمية المستهدفة'],
     },
+    researchSources: Array.isArray(parsed.researchSources) ? parsed.researchSources.map((x:any)=>({title:String(x.title||''),url:String(x.url||''),purpose:String(x.purpose||'')})).filter((x:any)=>x.title||x.url) : [],
+    visualPlan: {
+      diagramType: String(visualPlan.diagramType || '').trim(),
+      description: String(visualPlan.description || '').trim(),
+      imageSuggestions: Array.isArray(visualPlan.imageSuggestions) ? visualPlan.imageSuggestions.map(String).filter(Boolean) : [],
+    },
     bemEvaluationGrid: {
       relevance: String(bemEvaluationGrid.relevance || 'مؤشر الوجاهة والتقيد بالمهمة المركبة المطلوبة').trim(),
       correctUseOfTools: String(bemEvaluationGrid.correctUseOfTools || 'الاستعمال السليم لمفاهيم علوم الطبيعة والحياة والمصطلحات العلمية').trim(),
@@ -148,8 +155,7 @@ export interface PedagogicalAttachmentInput {
 export async function generatePedagogicalNote(
   gradeLevel: GradeLevel,
   topic: string,
-  attachments: PedagogicalAttachmentInput[] = [],
-  useWebResearch = true
+  attachments: PedagogicalAttachmentInput[] = []
 ): Promise<PedagogicalNote> {
   const cleanTopic = (topic || '').trim();
   if (!cleanTopic) {
@@ -171,7 +177,6 @@ export async function generatePedagogicalNote(
           size,
           dataUrl,
         })),
-        useWebResearch,
       }),
     });
 
