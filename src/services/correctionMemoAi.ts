@@ -97,7 +97,7 @@ export async function generateCorrectionMemo(request: CorrectionMemoRequest): Pr
     '',
     'نوع التقييم: ' + request.examType,
     'نص ورقة التقييم:',
-    request.examText,
+    request.examText.trim() || 'لا يوجد نص ملصوق؛ ورقة التقييم موجودة في المرفقات ويجب استخراج الأسئلة والنقاط والوثائق منها دون تخمين.',
     '',
     'نتيجة تحليل المصدر الأولي (إن وُجدت):',
     JSON.stringify(request.attachments?.length ? 'تم إرفاق مصدر بصري/ملف ويجب الاعتماد عليه في القراءة.' : 'لا يوجد مصدر بصري مرفق.'),
