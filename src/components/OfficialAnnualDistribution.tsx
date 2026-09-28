@@ -414,18 +414,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, set
 
   const DocumentPages = () => (
     <div id="official-distribution-content" className="relative bg-transparent flex flex-col items-center p-4 print:p-0 print:bg-white w-full">
-      {curriculumBackground && (
-        <div
-          className="absolute inset-0 pointer-events-none z-0 rounded-2xl overflow-hidden print:hidden"
-          aria-hidden="true"
-          style={{
-            backgroundImage: "linear-gradient(rgba(255,255,255,0.08), rgba(255,255,255,0.16)), url(" + curriculumBackground + ")",
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-          }}
-        />
-      )}
+      {/* خلفية التدرج أزيلت عمداً: صفحات التدرج تظهر الآن على صفحة بيضاء نظيفة. */}
       <style>{`
         @page { size: A4 ${orientation}; margin: 1cm; }
         .editable-cell:hover { background-color: rgba(0,0,0,0.02); }
@@ -434,7 +423,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, set
       `}</style>
 
       {pages.map((page, pageIndex) => (
-        <div key={pageIndex} className={`print-document annual-export-page relative z-10 bg-[#fffdf8]/95 backdrop-blur-[1px] p-[10mm] mb-8 shadow-[0_14px_40px_rgba(20,110,100,0.10)] border border-[#d8eee9] print:bg-white print:border-none print:shadow-none print:m-0 ${orientation === 'portrait' ? 'w-[210mm] min-h-[297mm]' : 'w-[297mm] min-h-[210mm]'}`} style={{ pageBreakAfter: pageIndex < pages.length - 1 ? 'always' : 'auto' }}>
+        <div key={pageIndex} className={`print-document annual-export-page relative z-10 bg-white p-[10mm] mb-8 border border-gray-200 print:bg-white print:border-none print:shadow-none print:m-0 ${orientation === 'portrait' ? 'w-[210mm] min-h-[297mm]' : 'w-[297mm] min-h-[210mm]'}`} style={{ pageBreakAfter: pageIndex < pages.length - 1 ? 'always' : 'auto' }}>
           
           {/* Header */}
           <div className="text-center mb-3">
