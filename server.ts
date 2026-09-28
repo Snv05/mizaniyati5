@@ -117,8 +117,8 @@ app.post('/api/gemini/analyze-correction-source', async (req, res) => {
       return res.status(400).json({ error: 'عدد المرفقات غير مسموح' });
     }
 
+    const attachmentInputs: Array<{ mimeType: string; base64: string; displayName: string }> = [];
     let totalLength = 0;
-    const parts: any[] = [];
     for (const item of attachments) {
       if (!item || !allowedTypes.has(item.mimeType)) return res.status(400).json({ error: 'نوع مرفق غير مسموح' });
       const dataUrl = String(item.dataUrl || '');
@@ -128,29 +128,53 @@ app.post('/api/gemini/analyze-correction-source', async (req, res) => {
       }
       totalLength += dataUrl.length;
       if (totalLength > 32_000_000) return res.status(400).json({ error: 'إجمالي المرفقات كبير جداً' });
-      parts.push({ inlineData: { mimeType: item.mimeType, data: dataUrl.slice(prefix.length) } });
+      attachmentInputs.push({
+        mimeType: item.mimeType,
+        base64: dataUrl.slice(prefix.length),
+        displayName: String(item.name || `correction-analysis-${attachmentInputs.length + 1}`),
+      });
     }
 
     const ai = new GoogleGenAI({ apiKey, httpOptions: { headers: { 'User-Agent': 'aistudio-build' } } });
-    const model = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
-    const response = await ai.models.generateContent({
-      model,
-      contents: [{
-        role: 'user',
-        parts: [{
-          text: [
-            'حلل ورقة التقييم التالية كمصدر فقط ولا تحل الأسئلة.',
-            'استخرج ما يمكن قراءته حرفياً من الورقة، مع الحفاظ على الترتيب.',
-            'أعد JSON فقط بالشكل: {title, exercises:[{number, title, questions:[{number,text,points,documentRefs}]}], totalPoints, documents:[{id,description}], ambiguities:[]}.',
-            'إذا لم تستطع قراءة عنصر اتركه فارغاً وأضفه إلى ambiguities. لا تخترع أي سؤال أو نقطة.',
-            `نوع التقييم: ${examType}`,
-            `النص المتاح: ${String(examText).slice(0, 30000)}`,
-          ].join('\\n'),
-        }, ...parts],
-      }],
-      config: { responseMimeType: 'application/json' },
-    });
-    return res.json({ json: response.text || '' });
+    const uploadedFiles: any[] = [];
+    try {
+      for (const item of attachmentInputs) {
+        const file = await ai.files.upload({
+          file: new Blob([Buffer.from(item.base64, 'base64')], { type: item.mimeType }),
+          config: { mimeType: item.mimeType, displayName: item.displayName },
+        });
+        let info = file;
+        for (let attempt = 0; attempt < 20 && info.state === 'PROCESSING'; attempt++) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          info = await ai.files.get({ name: file.name });
+        }
+        if (info.state === 'FAILED') throw new Error(`فشل تجهيز المرفق: ${item.displayName}`);
+        uploadedFiles.push(info);
+      }
+
+      const fileParts = uploadedFiles.map((file) => createPartFromUri(file.uri, file.mimeType));
+      const model = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+      const response = await ai.models.generateContent({
+        model,
+        contents: [{
+          role: 'user',
+          parts: [{
+            text: [
+              'حلل ورقة التقييم التالية كمصدر فقط ولا تحل الأسئلة.',
+              'استخرج ما يمكن قراءته حرفياً من الورقة، مع الحفاظ على الترتيب.',
+              'أعد JSON فقط بالشكل: {title, exercises:[{number, title, questions:[{number,text,points,documentRefs}]}], totalPoints, documents:[{id,description}], ambiguities:[]}.',
+              'إذا لم تستطع قراءة عنصر اتركه فارغاً وأضفه إلى ambiguities. لا تخترع أي سؤال أو نقطة.',
+              `نوع التقييم: ${examType}`,
+              `النص المتاح: ${String(examText).slice(0, 30000)}`,
+            ].join('\\n'),
+          }, ...fileParts],
+        }],
+        config: { responseMimeType: 'application/json' },
+      });
+      return res.json({ json: response.text || '' });
+    } finally {
+      await Promise.allSettled(uploadedFiles.map((file) => ai.files.delete({ name: file.name })));
+    }
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('[Correction source analysis error]:', message);
