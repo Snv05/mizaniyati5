@@ -2,7 +2,8 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, createPartFromUri } from '@google/genai';
+import { Buffer } from 'node:buffer';
 import { buildGeminiSystemPrompt } from './src/services/geminiPrompts';
 
 dotenv.config();
@@ -33,7 +34,7 @@ app.post('/api/gemini/generate', async (req, res) => {
       return res.status(400).json({ error: 'Too many attachments' });
     }
 
-    const attachmentParts: any[] = [];
+    const attachmentInputs: Array<{ mimeType: string; base64: string; displayName: string }> = [];
     let attachmentSize = 0;
     for (const item of attachments) {
       if (!item || !allowedAttachmentTypes.has(item.mimeType)) {
@@ -48,11 +49,10 @@ app.post('/api/gemini/generate', async (req, res) => {
       if (dataUrl.length > 20_000_000 || attachmentSize > 32_000_000) {
         return res.status(400).json({ error: 'Attachments are too large' });
       }
-      attachmentParts.push({
-        inlineData: {
-          mimeType: item.mimeType,
-          data: dataUrl.slice(prefix.length),
-        },
+      attachmentInputs.push({
+        mimeType: item.mimeType,
+        base64: dataUrl.slice(prefix.length),
+        displayName: String(item.name || `correction-source-${attachmentInputs.length + 1}`),
       });
     }
 
@@ -64,14 +64,36 @@ app.post('/api/gemini/generate', async (req, res) => {
         },
       },
     });
-    // استخدام النموذج المعتمد gemini-3.8-flash
-    const model = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
-    const response = await ai.models.generateContent({
-      model,
-      contents: attachmentParts.length
-        ? [{ role: 'user', parts: [{ text: finalPrompt }, ...attachmentParts] }]
-        : finalPrompt,
-    });
+    // ارفع المرفقات إلى Gemini Files API بدل إرسال Base64 في كل طلب.
+    // هذا يقلل حجم طلبات التوليد ويجعل ملفات PDF الكبيرة أكثر استقراراً.
+    const uploadedFiles: any[] = [];
+    try {
+      for (const item of attachmentInputs) {
+        const file = await ai.files.upload({
+          file: new Blob([Buffer.from(item.base64, 'base64')], { type: item.mimeType }),
+          config: { mimeType: item.mimeType, displayName: item.displayName },
+        });
+        let info = file;
+        for (let attempt = 0; attempt < 20 && info.state === 'PROCESSING'; attempt++) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          info = await ai.files.get({ name: file.name });
+        }
+        if (info.state === 'FAILED') throw new Error(`فشل تجهيز المرفق: ${item.displayName}`);
+        uploadedFiles.push(info);
+      }
+
+      const fileParts = uploadedFiles.map((file) => createPartFromUri(file.uri, file.mimeType));
+      const model = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+      const response = await ai.models.generateContent({
+        model,
+        contents: fileParts.length
+          ? [{ role: 'user', parts: [{ text: finalPrompt }, ...fileParts] }]
+          : finalPrompt,
+      });
+      return res.json({ text: response.text || '' });
+    } finally {
+      await Promise.allSettled(uploadedFiles.map((file) => ai.files.delete({ name: file.name })));
+    }
     return res.json({ text: response.text || '' });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
