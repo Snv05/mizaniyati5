@@ -138,9 +138,17 @@ export function validateAndRepairPedagogicalNote(rawInput: string, fallbackLevel
 /**
  * استدعاء Gemini API لتوليد مذكرة بيداغوجية متكاملة وفق المنهاج الجزائري
  */
+export interface PedagogicalAttachmentInput {
+  name: string;
+  mimeType: string;
+  size: number;
+  dataUrl: string;
+}
+
 export async function generatePedagogicalNote(
   gradeLevel: GradeLevel,
-  topic: string
+  topic: string,
+  attachments: PedagogicalAttachmentInput[] = []
 ): Promise<PedagogicalNote> {
   const cleanTopic = (topic || '').trim();
   if (!cleanTopic) {
@@ -156,6 +164,12 @@ export async function generatePedagogicalNote(
       body: JSON.stringify({
         gradeLevel,
         topic: cleanTopic,
+        attachments: attachments.map(({ name, mimeType, size, dataUrl }) => ({
+          name,
+          mimeType,
+          size,
+          dataUrl,
+        })),
       }),
     });
 
