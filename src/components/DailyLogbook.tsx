@@ -1608,6 +1608,19 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
     setShowEmptyWarning(false);
   };
 
+  // طباعة الدفتر مباشرة من المعاينة مع احترام صفحة التعريف والغلاف وباقي الصفحات.
+  const handlePrintLogbook = () => {
+    if (!paginatedPages.length) {
+      displayUserAlert('يرجى توليد الدفتر أولاً قبل الطباعة');
+      return;
+    }
+    setPreviewMode('all');
+    setPreviewZoom(100);
+    setIsPreviewModalOpen(true);
+    setShowEmptyWarning(false);
+    window.setTimeout(() => window.print(), 250);
+  };
+
   const previewPagesToDisplay = useMemo(() => {
     if (previewMode === 'single') return paginatedPages.slice(0, 1);
     return paginatedPages;
@@ -1635,7 +1648,68 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
     </tr>
   );
 
-  // مكون بطاقة/صفحة الغلاف واستعمال الزمن (الصفحة الأولى عند الطباعة)
+  // صفحة تعريفية مستقلة للدفتر: أول صفحة في المعاينة والطباعة، بدون مربعات الكتابة.
+  const renderNotebookIntroPage = (isPreview = false) => (
+    <div
+      data-preview-export-page="true"
+      className={isPreview ? "print-page notebook-intro-page shadow-[0_25px_80px_rgba(0,0,0,0.5)] bg-white overflow-hidden mx-auto mb-8 flex flex-col" : "print-page notebook-intro-page shadow-[0_20px_60px_rgba(0,0,0,0.12)] bg-white overflow-hidden mx-auto mb-8 flex flex-col"}
+      style={{ width: pageDimensions.w + 'mm', height: pageDimensions.h + 'mm', minHeight: pageDimensions.h + 'mm' }}
+      dir="rtl"
+    >
+      <div className="h-2 flex shrink-0">
+        <div className="flex-1 bg-[#006233]" />
+        <div className="flex-1 bg-[#D21034]" />
+      </div>
+      <div className="flex-1 flex flex-col justify-between px-12 py-12">
+        <div className="text-center">
+          <div className="text-[13px] font-bold text-zinc-700 mb-3">الجمهورية الجزائرية الديمقراطية الشعبية</div>
+          <div className="text-[12px] font-semibold text-zinc-600">وزارة التربية الوطنية</div>
+          <div className="mx-auto mt-8 w-28 h-1 rounded-full bg-[#064e3b]" />
+          <h1 className="mt-8 text-[30px] font-black text-[#064e3b]">الدفتر اليومي للأستاذ</h1>
+          <div className="mt-3 text-[15px] font-bold text-zinc-700">علوم الطبيعة والحياة — التعليم المتوسط</div>
+          <div className="mt-5 text-[12px] text-zinc-500">صفحة تعريفية</div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 max-w-[155mm] mx-auto w-full text-[12px]">
+          <div className="rounded-2xl border border-zinc-200 bg-zinc-50 px-5 py-4">
+            <div className="font-bold text-zinc-500 mb-1">الأستاذ(ة)</div>
+            <div className="font-extrabold text-zinc-900 min-h-[22px]">{teacher || '........................................'}</div>
+          </div>
+          <div className="rounded-2xl border border-zinc-200 bg-zinc-50 px-5 py-4">
+            <div className="font-bold text-zinc-500 mb-1">المؤسسة</div>
+            <div className="font-extrabold text-zinc-900 min-h-[22px]">{school || '........................................'}</div>
+          </div>
+          <div className="rounded-2xl border border-zinc-200 bg-zinc-50 px-5 py-4">
+            <div className="font-bold text-zinc-500 mb-1">المديرية</div>
+            <div className="font-extrabold text-zinc-900 min-h-[22px]">{wilaya || '........................................'}</div>
+          </div>
+          <div className="rounded-2xl border border-zinc-200 bg-zinc-50 px-5 py-4">
+            <div className="font-bold text-zinc-500 mb-1">السنة الدراسية</div>
+            <div className="font-extrabold text-zinc-900 min-h-[22px]">{config.schoolYear || '........................................'}</div>
+          </div>
+          <div className="col-span-2 rounded-2xl border border-emerald-200 bg-emerald-50/50 px-5 py-4 text-center">
+            <div className="font-bold text-[#064e3b] mb-1">المستويات المسندة</div>
+            <div className="font-extrabold text-zinc-900 text-[14px]">{assignedLevels.join(' • ') || 'لم تُحدد بعد'}</div>
+          </div>
+          <div className="col-span-2 rounded-2xl border border-zinc-200 bg-white px-5 py-4 text-center">
+            <div className="font-bold text-zinc-500 mb-1">تاريخ الدخول المدرسي / بداية الدفتر</div>
+            <div className="font-extrabold text-zinc-900">{startDate || '........................................'}</div>
+          </div>
+        </div>
+
+        <div className="text-center text-[10px] text-zinc-500 leading-5">
+          <div>دفتر لتدوين محتوى الدرس وسير الحصص اليومية وفق التدرج الرسمي.</div>
+          <div className="mt-2 font-bold text-zinc-700">صفحة 1</div>
+        </div>
+      </div>
+      <div className="h-2 flex shrink-0">
+        <div className="flex-1 bg-[#006233]" />
+        <div className="flex-1 bg-[#D21034]" />
+      </div>
+    </div>
+  );
+
+  // مكون بطاقة/صفحة الغلاف واستعمال الزمن (بعد الصفحة التعريفية)
   const renderCoverFirstPage = () => (
     <div
       className="print-page cover-page shadow-[0_20px_60px_rgba(0,0,0,0.12)] rounded-[2px] border border-zinc-200 overflow-hidden mx-auto mb-8"
@@ -3116,7 +3190,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
               </div>
               <div>
                 <div className="text-white font-extrabold text-[13px] md:text-[14px] leading-none flex items-center gap-2">
-                  <span>معاينة الطباعة الرسمية - {paginatedPages.length + 1} صفحات</span>
+                  <span>معاينة الطباعة الرسمية - {paginatedPages.length + 2} صفحات</span>
                   {previewMode === 'single' && (
                     <span className="bg-emerald-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
                       صفحة واحدة (عينة)
@@ -3139,6 +3213,15 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
               >
                 <FileText className="w-3.5 h-3.5" />
                 <span>تصدير Word</span>
+              </button>
+              <button
+                type="button"
+                onClick={handlePrintLogbook}
+                className="inline-flex items-center gap-1.5 bg-white hover:bg-zinc-100 text-[#064e3b] px-3 py-1.5 rounded-full text-[11px] font-bold transition shadow-sm cursor-pointer"
+                title="طباعة الدفتر مباشرة"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>طباعة</span>
               </button>
               <button
                 type="button"
@@ -3203,6 +3286,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                 className="flex flex-col items-center gap-8 md:gap-10 w-full"
                 style={{ transform: `scale(${previewZoom / 100})`, transformOrigin: 'top center' }}
               >
+                {renderNotebookIntroPage(true)}
                 {React.cloneElement(renderCoverFirstPage(), { 'data-preview-export-page': 'true' })}
                 {previewPagesToDisplay.map((pageRows, pageIdx) => (
                   <div
