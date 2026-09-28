@@ -1413,11 +1413,12 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
       if (document.fonts?.ready) await document.fonts.ready;
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
-      // PDF يبدأ من أول صفحة فعلية للدفتر، لا من الغلاف، حتى يكون
-      // أول تاريخ ظاهر هو تاريخ دخول المدرسة/بداية الدفتر.
+      // التصدير يجب أن يكون مطابقاً للمعاينة ويبدأ دائماً بالصفحة التعريفية
+      // (الغلاف + استعمال الزمن)، ثم صفحات الدفتر حسب الترتيب الزمني.
+      // لا نستبعد .cover-page: هذه الصفحة جزء رسمي من الدفتر وليست صفحة زائدة.
       const pages = Array.from(
         document.querySelectorAll<HTMLElement>(
-          '[data-preview-export-page="true"]:not(.cover-page)'
+          '[data-preview-export-page="true"]'
         )
       );
       if (!pages.length) throw new Error('تعذر العثور على صفحات الحصص للتصدير');
