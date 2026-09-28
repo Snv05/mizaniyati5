@@ -1379,6 +1379,26 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
     }
   };
 
+  const handlePrintLogbook = async () => {
+    try {
+      if (rows.length === 0) {
+        showToast('ولّد الدفتر أولاً قبل الطباعة');
+        return;
+      }
+      if (!isPreviewModalOpen || previewMode !== 'all') {
+        setPreviewMode('all');
+        setIsPreviewModalOpen(true);
+        await new Promise(resolve => setTimeout(resolve, 250));
+      }
+      if (document.fonts?.ready) await document.fonts.ready;
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      window.print();
+    } catch (error) {
+      console.error(error);
+      showToast('تعذر فتح الطباعة');
+    }
+  };
+
   const handleExportPdf = async () => {
     try {
       if (rows.length === 0) {
@@ -2629,44 +2649,36 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={handleGenerateSmartLogbook}
-                      className="bg-[#064e3b] hover:bg-[#042f24] text-white rounded-xl py-2.5 text-[13px] font-extrabold flex items-center justify-center gap-2 shadow-sm transition cursor-pointer"
-                    >
-                      <Sparkles className="w-4 h-4" />
-                      <span>توليد الدفتر الذكي</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleOpenPreview('all')}
-                      className="bg-[#16a34a] hover:bg-[#15803d] text-white rounded-xl py-2.5 text-[13px] font-extrabold flex items-center justify-center gap-2 shadow-md ring-1 ring-emerald-300/50 transition cursor-pointer"
-                    >
-                      <Eye className="w-4 h-4" />
-                      <span>👁️ معاينة الطباعة</span>
-                    </button>
+                <div className="rounded-xl border border-emerald-200 bg-white p-2.5 space-y-2">
+                  <div className="text-[11px] font-extrabold text-[#064e3b] px-1 flex items-center gap-1.5">
+                    <FileStack className="w-3.5 h-3.5" />
+                    <span>إجراءات الدفتر</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleOpenPreview('single')}
-                      className="bg-white hover:bg-zinc-50 border-2 border-zinc-900/10 rounded-xl py-2.5 text-[12px] font-bold flex items-center justify-center gap-2 transition cursor-pointer"
-                    >
-                      <FileText className="w-4 h-4" />
-                      <span>📄 صفحة واحدة (عينة)</span>
+                    <button type="button" onClick={handleGenerateSmartLogbook} className="bg-[#064e3b] hover:bg-[#042f24] text-white rounded-lg py-2.5 text-[12px] font-extrabold flex items-center justify-center gap-2 shadow-sm transition cursor-pointer">
+                      <Sparkles className="w-4 h-4" /><span>توليد الدفتر</span>
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setRows([]);
-                        showToast('تم مسح سجلات الدفتر اليومي');
-                      }}
-                      className="bg-white border border-zinc-200 hover:bg-zinc-50 rounded-xl py-2.5 text-[12px] font-bold flex items-center justify-center gap-2 transition cursor-pointer"
-                    >
-                      <Eraser className="w-4 h-4 text-zinc-600" />
-                      <span>مسح الدفتر</span>
+                    <button type="button" onClick={() => handleOpenPreview('all')} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg py-2.5 text-[12px] font-extrabold flex items-center justify-center gap-2 shadow-sm transition cursor-pointer">
+                      <Eye className="w-4 h-4" /><span>المعاينة</span>
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button type="button" onClick={handlePrintLogbook} className="bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg py-2 text-[11px] font-bold flex items-center justify-center gap-1.5 transition cursor-pointer">
+                      <Printer className="w-3.5 h-3.5" /><span>طباعة</span>
+                    </button>
+                    <button type="button" onClick={handleExportPdf} className="bg-[#006233] hover:bg-[#0f7f74] text-white rounded-lg py-2 text-[11px] font-bold flex items-center justify-center gap-1.5 transition cursor-pointer">
+                      <FileText className="w-3.5 h-3.5" /><span>PDF</span>
+                    </button>
+                    <button type="button" onClick={handleExportWord} className="bg-blue-700 hover:bg-blue-800 text-white rounded-lg py-2 text-[11px] font-bold flex items-center justify-center gap-1.5 transition cursor-pointer">
+                      <FileText className="w-3.5 h-3.5" /><span>Word</span>
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-zinc-100">
+                    <button type="button" onClick={() => handleOpenPreview('single')} className="bg-white hover:bg-zinc-50 border border-zinc-200 rounded-lg py-2 text-[11px] font-bold flex items-center justify-center gap-1.5 transition cursor-pointer">
+                      <FileText className="w-3.5 h-3.5 text-zinc-500" /><span>صفحة عينة</span>
+                    </button>
+                    <button type="button" onClick={() => { setRows([]); showToast('تم مسح سجلات الدفتر اليومي'); }} className="bg-white border border-zinc-200 hover:bg-zinc-50 rounded-lg py-2 text-[11px] font-bold flex items-center justify-center gap-1.5 transition cursor-pointer">
+                      <Eraser className="w-3.5 h-3.5 text-zinc-500" /><span>مسح الدفتر</span>
                     </button>
                   </div>
                 </div>
