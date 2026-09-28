@@ -275,7 +275,7 @@ type AnnualStoredItem = { id?: string; level?: string; lessonType?: string; mida
 
 const getStoredAnnualSchedule = (level: '1م' | '2م' | '3م' | '4م'): { startDate: string; items: AnnualStoredItem[] } | null => {
   try {
-    const raw = JSON.parse(localStorage.getItem('algeria_sciences_annual_dist_v6') || '{}');
+    const raw = JSON.parse(localStorage.getItem(ANNUAL_STORAGE_KEY) || '{}');
     const key = level.replace('م', 'am') as '1am' | '2am' | '3am' | '4am';
     const value = raw?.[key];
     if (!value?.startDate || !Array.isArray(value.items)) return null;
@@ -1009,11 +1009,18 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           if (!sec) return;
           const level = detectLevelFromSection(sec);
           const baseSection = sec.replace(/\s*\(?(?:فوج|ف|فـ|g|grp|group)\s*\d+\)?\s*/gi, '').trim() || sec;
-          const key = row.time + '|' + (level || '') + '|' + baseSection;
-          const existing = grouped[day].get(key);
+          const groupMatches = Array.from(sec.matchAll(/(?:فوج|ف|فـ|g|grp|group)\s*(\d+)/gi)).map(m => m[1]);
+          const existing = grouped[day].get(row.time + '|' + (level || '') + '|' + baseSection);
           if (existing) {
-            if (!existing.section.includes(sec)) existing.section = existing.section + ' / ' + sec;
+            const currentGroups = Array.from(existing.section.matchAll(/(?:فوج|ف|فـ|g|grp|group)\s*(\d+)/gi)).map(m => m[1]);
+            const allGroups = Array.from(new Set([...currentGroups, ...groupMatches])).sort((a, b) => Number(a) - Number(b));
+            existing.section = allGroups.length
+              ? `${baseSection} — فوج ${allGroups.join(' + فوج ')}`
+              : baseSection;
           } else {
+            grouped[day].set(row.time + '|' + (level || '') + '|' + baseSection, { id: row.id + '-' + day, time: row.time, section: groupMatches.length ? `${baseSection} — فوج ${Array.from(new Set(groupMatches)).join(' + فوج ')}` : sec, level });
+            continue;
+          }
             grouped[day].set(key, { id: row.id + '-' + day, time: row.time, section: sec, level });
           }
         });
