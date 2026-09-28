@@ -42,11 +42,45 @@ const buildCurriculumContext = ({ lesson, curriculum }: CorrectionMemoRequest) =
   return JSON.stringify(relevant, null, 2);
 };
 
+export interface CorrectionSourceAnalysis {
+  title?: string;
+  exercises: Array<{
+    number: string;
+    title?: string;
+    questions: Array<{ number: string; text: string; points?: number | string; documentRefs?: string[] }>;
+  }>;
+  totalPoints?: number | string;
+  documents: Array<{ id: string; description: string }>;
+  ambiguities: string[];
+}
+
+export async function analyzeCorrectionSource(request: CorrectionMemoRequest): Promise<CorrectionSourceAnalysis | null> {
+  try {
+    const response = await fetch('/api/gemini/analyze-correction-source', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        examType: request.examType,
+        examText: request.examText,
+        attachments: (request.attachments || []).map(({ name, mimeType, size, dataUrl }) => ({ name, mimeType, size, dataUrl })),
+      }),
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    if (typeof data.json !== 'string') return null;
+    return JSON.parse(data.json) as CorrectionSourceAnalysis;
+  } catch (error) {
+    console.error('[correction-source-analysis] failed', error);
+    return null;
+  }
+}
+
 export async function generateCorrectionMemo(request: CorrectionMemoRequest): Promise<string | null> {
   const prompt = [
     'أنت أداة مستقلة متخصصة فقط في إعداد مذكرة تصحيح لأساتذة علوم الطبيعة والحياة في التعليم المتوسط بالجزائر.',
     'هذه الأداة ليست المساعد الذكي العام ولا تستعمل طلباته أو واجهته.',
-    'المصدر الأول هو نص الفرض/الاختبار الذي يقدمه الأستاذ، ثم بيانات المنصة الرسمية للسياق العلمي.',
+    'المصدر الأول هو ورقة الفرض/الاختبار نفسها (النص والتحليل المرفق)، ثم بيانات المنصة الرسمية للسياق العلمي.',
+    'إذا تعارض سياق المنصة مع نص الورقة فلا تغيّر نص الورقة؛ نبّه إلى التعارض فقط.',
     '',
     'قواعد صارمة:',
     '1. حافظ على ترتيب التمارين والأسئلة كما وردت في الورقة.',
@@ -64,6 +98,9 @@ export async function generateCorrectionMemo(request: CorrectionMemoRequest): Pr
     'نوع التقييم: ' + request.examType,
     'نص ورقة التقييم:',
     request.examText,
+    '',
+    'نتيجة تحليل المصدر الأولي (إن وُجدت):',
+    JSON.stringify(request.attachments?.length ? 'تم إرفاق مصدر بصري/ملف ويجب الاعتماد عليه في القراءة.' : 'لا يوجد مصدر بصري مرفق.'),
   ].join('\n');
 
   try {
