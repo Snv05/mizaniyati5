@@ -1649,7 +1649,29 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
   );
 
   // صفحة تعريفية مستقلة للدفتر: أول صفحة في المعاينة والطباعة، بدون مربعات الكتابة.
-  const renderNotebookIntroPage = (isPreview = false) => (
+  const renderNotebookIntroPage = (isPreview = false) => {
+    const levelColors: Record<string, string> = {
+      '1م': 'border-emerald-200 bg-emerald-50 text-emerald-800',
+      '2م': 'border-blue-200 bg-blue-50 text-blue-800',
+      '3م': 'border-amber-200 bg-amber-50 text-amber-800',
+      '4م': 'border-rose-200 bg-rose-50 text-rose-800',
+    };
+    const levelStats = assignedLevels.map((level) => {
+      const slots = gridRows.reduce((sum, row) =>
+        sum + WEEK_DAYS.filter((day) => detectLevelFromSection(row.cells[day] || '') === level).length, 0
+      );
+      const sections = new Set<string>();
+      gridRows.forEach((row) => WEEK_DAYS.forEach((day) => {
+        const value = row.cells[day] || '';
+        if (detectLevelFromSection(value) === level && value.trim()) {
+          sections.add(value.trim().replace(/\s*\(?(?:فوج|ف|فـ|g|grp|group)\s*\d+\)?\s*/gi, '').trim());
+        }
+      }));
+      return { level, slots, sections: sections.size };
+    });
+    const totalAssignedHours = levelStats.reduce((sum, item) => sum + item.slots, 0);
+
+    return (
     <div
       data-preview-export-page="true"
       className={isPreview ? "print-page notebook-intro-page shadow-[0_25px_80px_rgba(0,0,0,0.5)] bg-white overflow-hidden mx-auto mb-8 flex flex-col" : "print-page notebook-intro-page shadow-[0_20px_60px_rgba(0,0,0,0.12)] bg-white overflow-hidden mx-auto mb-8 flex flex-col"}
@@ -1697,6 +1719,38 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           </div>
         </div>
 
+        <div className="w-full max-w-[170mm] mx-auto mt-5">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-[12px] font-black text-zinc-800">ملخص الاستعمال الزمني للمستويات المسندة</div>
+            <div className="text-[10px] font-bold text-[#064e3b] bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-full">
+              {totalAssignedHours} حصة/ساعة أسبوعياً
+            </div>
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            {levelStats.map((item) => (
+              <div key={item.level} className={`rounded-xl border px-2 py-2 text-center ${levelColors[item.level] || 'border-zinc-200 bg-zinc-50 text-zinc-700'}`}>
+                <div className="text-[15px] font-black">{item.level}</div>
+                <div className="text-[10px] font-bold mt-1">{item.slots} ساعة/أسبوع</div>
+                <div className="text-[9px] mt-0.5">{item.sections} قسم</div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 rounded-xl border border-zinc-200 bg-white overflow-hidden">
+            <div className="bg-[#064e3b] text-white px-3 py-1.5 text-[10px] font-extrabold text-center">استعمال الزمن الأسبوعي — المستويات المسندة</div>
+            <div className="grid grid-cols-5 text-[9px] text-center">
+              {WEEK_DAYS.map((day) => (
+                <div key={day} className="border-l border-b border-zinc-200 px-1 py-1 font-bold text-zinc-700">{day}</div>
+              ))}
+            </div>
+            <div className="grid grid-cols-5 text-[8px] text-center">
+              {WEEK_DAYS.map((day) => {
+                const count = gridRows.reduce((sum, row) => sum + (row.cells[day] ? 1 : 0), 0);
+                return <div key={day} className="border-l border-zinc-200 px-1 py-1.5 text-zinc-600">{count} حصة</div>;
+              })}
+            </div>
+          </div>
+        </div>
+
         <div className="text-center text-[10px] text-zinc-500 leading-5">
           <div>دفتر لتدوين محتوى الدرس وسير الحصص اليومية وفق التدرج الرسمي.</div>
           <div className="mt-2 font-bold text-zinc-700">صفحة 1</div>
@@ -1707,7 +1761,8 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
         <div className="flex-1 bg-[#D21034]" />
       </div>
     </div>
-  );
+    );
+  };
 
   // مكون بطاقة/صفحة الغلاف واستعمال الزمن (بعد الصفحة التعريفية)
   const renderCoverFirstPage = () => (
