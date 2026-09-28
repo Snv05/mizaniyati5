@@ -147,15 +147,16 @@ export const CorrectionMemoDrawer: React.FC<{
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-2 p-3 no-print">
-                <button onClick={() => previewRef.current && printCorrectionMemo(previewRef.current, title)} className="px-4 py-2 rounded-xl bg-slate-900 text-white font-bold">
+              <div className="flex flex-wrap items-center gap-1.5 p-2.5 no-print rounded-xl border border-slate-200 bg-slate-50">
+                <span className="text-[11px] font-extrabold text-slate-600 px-1.5">إخراج المذكرة</span>
+                <button onClick={() => previewRef.current && printCorrectionMemo(previewRef.current, title)} className="px-3.5 py-2 rounded-lg bg-slate-900 text-white font-bold hover:bg-slate-800">
                   <Printer className="inline w-4 h-4 ml-1" />طباعة
                 </button>
-                <button onClick={() => exportCorrectionMemoToDocx({ title, text: correction, config, level: currentLesson?.level })} className="px-4 py-2 rounded-xl bg-blue-600 text-white font-bold">
-                  <FileDown className="inline w-4 h-4 ml-1" />Word قابل للتعديل
-                </button>
-                <button onClick={() => previewRef.current && exportCorrectionMemoToPdf(previewRef.current, title)} className="px-4 py-2 rounded-xl bg-teal-700 text-white font-bold">
+                <button onClick={() => previewRef.current && exportCorrectionMemoToPdf(previewRef.current, title)} className="px-3.5 py-2 rounded-lg bg-teal-700 text-white font-bold hover:bg-teal-800">
                   <FileDown className="inline w-4 h-4 ml-1" />PDF
+                </button>
+                <button onClick={() => exportCorrectionMemoToDocx({ title, text: correction, config, level: currentLesson?.level })} className="px-3.5 py-2 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700">
+                  <FileDown className="inline w-4 h-4 ml-1" />Word قابل للتعديل
                 </button>
               </div>
             </section>
