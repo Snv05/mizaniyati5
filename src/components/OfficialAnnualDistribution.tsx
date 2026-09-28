@@ -430,6 +430,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, set
         @page { size: A4 ${orientation}; margin: 1cm; }
         .editable-cell:hover { background-color: rgba(0,0,0,0.02); }
         .editable-cell:focus { outline: 1px dashed #c2185b; background-color: rgba(255,255,255,0.9); }
+        .distribution-merged-vertical { writing-mode: vertical-rl; transform: rotate(180deg); min-width: 34px; white-space: normal; text-align: center; }
       `}</style>
 
       {pages.map((page, pageIndex) => (
@@ -656,6 +657,44 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, set
                   );
                 }
 
+                const isNormalRow = !row.isHoliday && !row.isExam;
+                const isMergeable = (idx: number) => {
+                  const candidate = page[idx];
+                  return !!candidate && !candidate.isHoliday && !candidate.isExam;
+                };
+                const normalized = (value: unknown) => String(value ?? '').trim();
+                const mergedSpan = (field: 'midan' | 'maqta' | 'mawrid', idx: number) => {
+                  if (!isMergeable(idx)) return 1;
+                  const current = normalized((page[idx] as any)[field]);
+                  if (!current) return 1;
+                  let span = 1;
+                  for (let j = idx + 1; j < page.length; j++) {
+                    if (!isMergeable(j)) break;
+                    const sameHierarchy =
+                      field === 'midan'
+                        ? true
+                        : field === 'maqta'
+                          ? normalized((page[j] as any).midan) === normalized((page[idx] as any).midan)
+                          : normalized((page[j] as any).midan) === normalized((page[idx] as any).midan) &&
+                            normalized((page[j] as any).maqta) === normalized((page[idx] as any).maqta);
+                    if (!sameHierarchy || normalized((page[j] as any)[field]) !== current) break;
+                    span++;
+                  }
+                  return span;
+                };
+                const samePrevious = (field: 'midan' | 'maqta' | 'mawrid') => {
+                  if (!isNormalRow || i === 0 || !isMergeable(i - 1)) return false;
+                  const currentValue = normalized((row as any)[field]);
+                  const previousValue = normalized((page[i - 1] as any)[field]);
+                  if (!currentValue || currentValue !== previousValue) return false;
+                  if (field === 'midan') return true;
+                  if (field === 'maqta') {
+                    return normalized(row.midan) === normalized(page[i - 1].midan);
+                  }
+                  return normalized(row.midan) === normalized(page[i - 1].midan) &&
+                    normalized(row.maqta) === normalized(page[i - 1].maqta);
+                };
+
                 return (
                   <tr key={row.id || i} className="hover:bg-gray-50 print:bg-transparent">
                     <td className="border border-black p-1 font-black whitespace-nowrap align-middle">
@@ -682,30 +721,45 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, set
                         </span>
                       </div>
                     </td>
-                    <td 
-                      contentEditable 
-                      suppressContentEditableWarning 
-                      onBlur={(e) => handleCellBlur(row.id, 'midan', e.currentTarget.textContent || '')}
-                      className="border border-black p-1 font-bold align-middle editable-cell outline-none bg-[#e5f7f3]/70 text-[#075e57]"
-                    >
-                      {row.midan}
-                    </td>
-                    <td 
-                      contentEditable 
-                      suppressContentEditableWarning 
-                      onBlur={(e) => handleCellBlur(row.id, 'maqta', e.currentTarget.textContent || '')}
-                      className="border border-black p-1 font-bold align-middle editable-cell outline-none bg-[#fff1d6]/70 text-[#8a5a00]"
-                    >
-                      {row.maqta}
-                    </td>
-                    <td 
-                      contentEditable 
-                      suppressContentEditableWarning 
-                      onBlur={(e) => handleCellBlur(row.id, 'mawrid', e.currentTarget.textContent || '')}
-                      className="border border-black p-1 font-bold align-middle editable-cell outline-none text-gray-900"
-                    >
-                      {row.mawrid}
-                    </td>
+                    {!samePrevious('midan') && (
+                      <td
+                        rowSpan={mergedSpan('midan', i)}
+                        contentEditable
+                        suppressContentEditableWarning
+                        onBlur={(e) => handleCellBlur(row.id, 'midan', e.currentTarget.textContent || '')}
+                        className="border border-black p-1 font-bold align-middle editable-cell outline-none bg-[#e5f7f3]/70 text-[#075e57] text-center"
+                        style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', minWidth: '34px', whiteSpace: 'normal' }}
+                        title="الميدان المدمج حسب تتابع الأسابيع"
+                      >
+                        {row.midan}
+                      </td>
+                    )}
+                    {!samePrevious('maqta') && (
+                      <td
+                        rowSpan={mergedSpan('maqta', i)}
+                        contentEditable
+                        suppressContentEditableWarning
+                        onBlur={(e) => handleCellBlur(row.id, 'maqta', e.currentTarget.textContent || '')}
+                        className="border border-black p-1 font-bold align-middle editable-cell outline-none bg-[#fff1d6]/70 text-[#8a5a00] text-center"
+                        style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', minWidth: '34px', whiteSpace: 'normal' }}
+                        title="المقطع التعلمي المدمج حسب تتابع الأسابيع"
+                      >
+                        {row.maqta}
+                      </td>
+                    )}
+                    {!samePrevious('mawrid') && (
+                      <td
+                        rowSpan={mergedSpan('mawrid', i)}
+                        contentEditable
+                        suppressContentEditableWarning
+                        onBlur={(e) => handleCellBlur(row.id, 'mawrid', e.currentTarget.textContent || '')}
+                        className="border border-black p-1 font-bold align-middle editable-cell outline-none text-gray-900 text-center"
+                        style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', minWidth: '40px', whiteSpace: 'normal' }}
+                        title="المورد التعلمي المدمج حسب تتابع الأسابيع"
+                      >
+                        {row.mawrid}
+                      </td>
+                    )}
                     <td 
                       contentEditable 
                       suppressContentEditableWarning 
