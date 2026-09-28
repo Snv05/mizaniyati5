@@ -286,11 +286,26 @@ app.post('/api/gemini/smart-assistant', async (req, res) => {
 // حالة قاعدة المعرفة المستمرة للمساعد الذكي
 app.get('/api/gemini/knowledge-status', (_req, res) => {
   const snapshot = getKnowledgeSnapshot();
+  const updates = Array.isArray(snapshot.updates) ? snapshot.updates : [];
+  const sources = Array.isArray(snapshot.sources) ? snapshot.sources : [];
   res.json({
+    version: snapshot.version || 1,
     updatedAt: snapshot.updatedAt || null,
-    updateCount: Array.isArray(snapshot.updates) ? snapshot.updates.length : 0,
-    sources: Array.isArray(snapshot.sources) ? snapshot.sources : [],
+    updateCount: updates.length,
+    sources,
     lastRefresh: snapshot.lastRefresh || null,
+    updates: updates.slice(0, 30).map((item: any) => ({
+      title: item.title,
+      summary: item.summary,
+      date: item.date,
+      level: item.level,
+      topic: item.topic,
+      importance: item.importance,
+      sourceTitle: item.sourceTitle,
+      sourceUrl: item.sourceUrl,
+      sourceType: item.sourceType,
+      confidence: item.confidence,
+    })),
   });
 });
 
