@@ -501,8 +501,9 @@ function buildHierarchicalContent(
     return row.content || '';
   }
 
-  // نحتفظ بكل بيانات المصدر في قاعدة البيانات، لكن العرض يكون هرمياً
-  // حتى لا تتكرر نفس المعلومة في الصفوف المتتالية.
+  // محتوى الدرس يُستخرج من المذكرة الرسمية فقط:
+  // عنوانا النشاطين + التقويم. لا نعرض تفاصيل النشاط ولا الاستنتاج.
+  // أما الميدان/المقطع/المورد/تعلم المورد فتظهر مرة واحدة هرمياً عند تغيرها.
   const clean = (value?: string) => String(value || '').trim();
   const unique = (values: string[] = []) =>
     Array.from(new Set(values.map(clean).filter(Boolean))).slice(0, 2);
@@ -530,8 +531,6 @@ function buildHierarchicalContent(
     parts.push(line);
   };
 
-  // كل عنصر هرمي يقارن مع الصف السابق بشكل مستقل:
-  // الميدان ثم المقطع ثم المورد ثم تعلم المورد.
   const sameMidan = sameSection && clean(previous?.midan) === clean(row.midan);
   const sameMaqta =
     sameSection &&
@@ -554,21 +553,25 @@ function buildHierarchicalContent(
   if (!sameMawrid) addLine('المورد التعلمي', row.mawrid);
   if (!sameTa3alom) addLine('تعلم المورد', row.ta3alom);
 
+  // لا نكرر عناوين الأنشطة إذا كان الصف السابق لنفس القسم والمصدر نفسه.
   const activitiesChanged =
     !sameSection ||
     !sameSource ||
     previousActivities.join('|') !== activities.join('|');
 
-  if (activitiesChanged) {
-    for (const activity of activities) {
-      if (!parts.includes(activity)) parts.push(activity);
-    }
+  if (activitiesChanged && activities.length) {
+    addLine('عناوين الأنشطة', activities.join(' + '));
   }
 
+  // التقويم جزء من محتوى الحصة، ويظهر مرة واحدة لنفس المصدر حتى لا يتكرر.
   const taqwim = clean(row.taqwim);
-  if (taqwim) {
-    const assessmentLine = 'تقويم: ' + taqwim;
-    if (!parts.includes(assessmentLine)) parts.push(assessmentLine);
+  const previousTaqwim = clean(previous?.taqwim);
+  const assessmentChanged =
+    !!taqwim &&
+    (!sameSection || !sameSource || taqwim !== previousTaqwim);
+
+  if (assessmentChanged) {
+    addLine('التقويم', taqwim);
   }
 
   return parts.join('\n');
