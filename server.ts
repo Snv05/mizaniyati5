@@ -94,7 +94,6 @@ app.post('/api/gemini/generate', async (req, res) => {
     } finally {
       await Promise.allSettled(uploadedFiles.map((file) => ai.files.delete({ name: file.name })));
     }
-    return res.json({ text: response.text || '' });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('[Gemini API Server Error]:', message);
