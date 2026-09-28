@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ClipboardCheck, FileDown, Printer, Sparkles, X, Paperclip, FileUp, RotateCcw, XCircle, Trash2 } from 'lucide-react';
 import { LessonMemo, MemoConfig } from '../types';
-import { generateCorrectionMemo } from '../services/correctionMemoAi';
+import { analyzeCorrectionSource, generateCorrectionMemo, CorrectionSourceAnalysis } from '../services/correctionMemoAi';
 import { exportCorrectionMemoToDocx, exportCorrectionMemoToPdf, printCorrectionMemo } from '../utils/correctionMemoExport';
 import { MemoAttachment, fileToMemoAttachment, listMemoAttachments, saveMemoAttachment, deleteMemoAttachment, MAX_TOTAL_ATTACHMENT_BYTES } from '../services/memoAttachmentStore';
 
@@ -17,6 +17,7 @@ export const CorrectionMemoDrawer: React.FC<{
   const [examText, setExamText] = useState('');
   const [correction, setCorrection] = useState('');
   const [busy, setBusy] = useState(false);
+  const [sourceAnalysis, setSourceAnalysis] = useState<CorrectionSourceAnalysis | null>(null);
   const [attachments, setAttachments] = useState<MemoAttachment[]>([]);
   const [savedAttachments, setSavedAttachments] = useState<MemoAttachment[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -91,15 +92,23 @@ export const CorrectionMemoDrawer: React.FC<{
 
     setBusy(true);
     setCorrection('');
+    setSourceAnalysis(null);
     try {
-      const result = await generateCorrectionMemo({
+      const request = {
         examType,
         examText: examText.trim(),
         lesson: currentLesson,
         curriculum: curriculumLessons,
         attachments: attachments.map(({ name, mimeType, size, dataUrl }) => ({ name, mimeType, size, dataUrl })),
-      });
-      setCorrection(result || 'تعذر إنشاء مذكرة التصحيح. تحقق من خدمة التوليد ثم أعد المحاولة.');
+      };
+      const analysis = await analyzeCorrectionSource(request);
+      if (!analysis) {
+        setCorrection('تعذر قراءة مصدر ورقة التقييم. راجع وضوح الصورة/PDF أو أعد المحاولة.');
+        return;
+      }
+      setSourceAnalysis(analysis);
+      const result = await generateCorrectionMemo(request);
+      setCorrection(result || 'تعذر إنشاء مذكرة التصحيح بعد قراءة المصدر. راجع العناصر غير الواضحة ثم أعد المحاولة.');
     } catch {
       setCorrection('تعذر إنشاء مذكرة التصحيح. أعد المحاولة.');
     } finally {
@@ -211,6 +220,22 @@ export const CorrectionMemoDrawer: React.FC<{
                 placeholder="ألصق هنا نص ورقة الفرض أو الاختبار كاملاً، مع النقاط والوثائق والأسئلة..."
               />
             </label>
+
+            {sourceAnalysis && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-xs space-y-2">
+                <div className="font-black text-amber-900">فحص ورقة التقييم قبل التصحيح</div>
+                <div className="grid sm:grid-cols-3 gap-2 text-slate-700">
+                  <span>التمارين: <b>{sourceAnalysis.exercises?.length || 0}</b></span>
+                  <span>الوثائق: <b>{sourceAnalysis.documents?.length || 0}</b></span>
+                  <span>المجموع: <b>{sourceAnalysis.totalPoints ?? 'غير محدد'}</b></span>
+                </div>
+                {!!sourceAnalysis.ambiguities?.length && (
+                  <div className="text-amber-800">
+                    <b>عناصر تحتاج مراجعة:</b> {sourceAnalysis.ambiguities.slice(0, 5).join(' • ')}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="flex flex-wrap gap-2">
               <button onClick={generate} disabled={busy || !examText.trim()} className="flex-1 min-w-[220px] py-3 rounded-xl bg-teal-700 text-white font-black disabled:opacity-40">
