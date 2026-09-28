@@ -18,8 +18,8 @@ export const TeacherOfficialStamp: React.FC<TeacherOfficialStampProps> = ({
   if (config.teacherStamp) {
     const sizeClasses = {
       sm: 'w-20 h-20',
-      md: 'w-28 h-28',
-      lg: 'w-36 h-36',
+      md: 'w-40 h-40',
+      lg: 'w-48 h-48',
     };
     return (
       <div className={`inline-flex items-center justify-center ${sizeClasses[size]} ${className}`}>
@@ -35,8 +35,8 @@ export const TeacherOfficialStamp: React.FC<TeacherOfficialStampProps> = ({
   // Dimension settings for auto-generated vector stamp
   const dimensions = {
     sm: { width: 100, height: 100, outerR: 46, innerR: 36, fontSizeOuter: 6.5, fontSizeCenter: 9, fontSub: 6 },
-    md: { width: 140, height: 140, outerR: 64, innerR: 50, fontSizeOuter: 8.5, fontSizeCenter: 12, fontSub: 7.5 },
-    lg: { width: 180, height: 180, outerR: 84, innerR: 66, fontSizeOuter: 10.5, fontSizeCenter: 15, fontSub: 9 },
+    md: { width: 170, height: 170, outerR: 80, innerR: 62, fontSizeOuter: 10.5, fontSizeCenter: 15, fontSub: 9.5 },
+    lg: { width: 210, height: 210, outerR: 99, innerR: 77, fontSizeOuter: 12.5, fontSizeCenter: 17, fontSub: 10.5 },
   }[size];
 
   const colorStyles = {
@@ -107,7 +107,7 @@ export const TeacherOfficialStamp: React.FC<TeacherOfficialStampProps> = ({
           r={dimensions.outerR}
           fill={colorStyles.bg}
           stroke={colorStyles.border}
-          strokeWidth="2.5"
+          strokeWidth="3"
           strokeDasharray="4 2"
         />
 
@@ -118,15 +118,16 @@ export const TeacherOfficialStamp: React.FC<TeacherOfficialStampProps> = ({
           r={dimensions.innerR}
           fill="none"
           stroke={colorStyles.border}
-          strokeWidth="1.2"
+          strokeWidth="1.8"
         />
 
         {/* Outer Circular Top Text */}
         <text
           fill={colorStyles.text}
           fontSize={dimensions.fontSizeOuter}
-          fontWeight="bold"
-          letterSpacing="0.5"
+          fontWeight="800"
+          letterSpacing="0.35"
+          style={{ fontFamily: 'Arial, Tahoma, sans-serif' }}
         >
           <textPath href={`#top-arc-${size}`} startOffset="50%" textAnchor="middle">
             الجمهورية الجزائرية الديمقراطية الشعبية
@@ -137,7 +138,8 @@ export const TeacherOfficialStamp: React.FC<TeacherOfficialStampProps> = ({
         <text
           fill={colorStyles.text}
           fontSize={dimensions.fontSizeOuter}
-          fontWeight="bold"
+          fontWeight="800"
+          style={{ fontFamily: 'Arial, Tahoma, sans-serif' }}
         >
           <textPath href={`#bottom-arc-${size}`} startOffset="50%" textAnchor="middle">
             ★ وزارة التربية الوطنية ★
@@ -152,7 +154,8 @@ export const TeacherOfficialStamp: React.FC<TeacherOfficialStampProps> = ({
             y={center - dimensions.innerR / 2.2}
             fill={colorStyles.text}
             fontSize={dimensions.fontSub}
-            fontWeight="bold"
+            fontWeight="800"
+            style={{ fontFamily: 'Arial, Tahoma, sans-serif' }}
           >
             علوم الطبيعة والحياة
           </text>
