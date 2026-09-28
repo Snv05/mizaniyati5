@@ -97,6 +97,8 @@ const getExportLessonContent = (log: LogEntry, previous?: LogEntry): string => {
     return log.content || '';
   }
 
+  // Word must match the preview: only memo activity titles + assessment are lesson content.
+  // Hierarchy fields are shown once and repeated values are suppressed.
   const clean = (value?: string) => String(value || '').trim();
   const unique = (values: string[] = []) =>
     Array.from(new Set(values.map(clean).filter(Boolean))).slice(0, 2);
@@ -130,16 +132,18 @@ const getExportLessonContent = (log: LogEntry, previous?: LogEntry): string => {
   if (!sameTa3alom) addLine('تعلم المورد', log.ta3alom);
 
   const activitiesChanged = !sameSection || !sameSource || previousActivities.join('|') !== activities.join('|');
-  if (activitiesChanged) {
-    for (const activity of activities) {
-      if (!lines.includes(activity)) lines.push(activity);
-    }
+  if (activitiesChanged && activities.length) {
+    addLine('عناوين الأنشطة', activities.join(' + '));
   }
 
-  const assessment = clean((log as any).taqwim);
-  if (assessment) {
-    const assessmentLine = 'تقويم: ' + assessment;
-    if (!lines.includes(assessmentLine)) lines.push(assessmentLine);
+  const assessment = clean(log.taqwim);
+  const previousAssessment = clean(previous?.taqwim);
+  const assessmentChanged =
+    !!assessment &&
+    (!sameSection || !sameSource || assessment !== previousAssessment);
+
+  if (assessmentChanged) {
+    addLine('التقويم', assessment);
   }
 
   return lines.join('\n');
