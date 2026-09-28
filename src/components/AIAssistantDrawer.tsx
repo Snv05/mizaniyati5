@@ -60,6 +60,8 @@ export const AIAssistantDrawer: React.FC<{
   const [isTyping, setIsTyping] = useState(false);
   const [attachments, setAttachments] = useState<AssistantAttachment[]>([]);
   const [useWeb, setUseWeb] = useState(true);
+  const [showKnowledge, setShowKnowledge] = useState(false);
+  const [knowledgeDetails, setKnowledgeDetails] = useState<{ sources: { label: string; url: string; priority?: string }[]; updates: { title: string; summary: string; date: string; sourceTitle?: string; sourceUrl?: string; confidence?: string }[] } | null>(null);
   const [knowledgeStatus, setKnowledgeStatus] = useState<{ updatedAt: string | null; updateCount: number; lastRefresh?: { at?: string; resultCount?: number; searchUsed?: boolean } | null } | null>(null);
 
   useEffect(() => {
@@ -75,6 +77,21 @@ export const AIAssistantDrawer: React.FC<{
   const knowledgeLabel = knowledgeStatus?.updatedAt
     ? `المعرفة: ${new Date(knowledgeStatus.updatedAt).toLocaleDateString('ar-DZ')}`
     : 'المعرفة: في انتظار أول تحديث';
+
+  const loadKnowledgeDetails = async () => {
+    try {
+      const res = await fetch('/api/gemini/knowledge-status');
+      if (!res.ok) return;
+      const data = await res.json();
+      setKnowledgeDetails({
+        sources: Array.isArray(data.sources) ? data.sources : [],
+        updates: Array.isArray(data.updates) ? data.updates : [],
+      });
+      setShowKnowledge(true);
+    } catch {
+      setShowKnowledge(true);
+    }
+  };
 
   const smartContext = useMemo(() => currentLesson ? [
     'المستوى: ' + (selectedLevel || currentLesson.level),
@@ -260,6 +277,56 @@ export const AIAssistantDrawer: React.FC<{
             </button>
           </div>
         </div>
+
+        <div className="px-4 py-2 border-b border-gray-200 bg-white flex items-center justify-between gap-2">
+          <div className="text-[10px] font-bold text-slate-600">
+            قاعدة المعرفة المستمرة: المنهاج + الوثائق + المستجدات
+          </div>
+          <button type="button" onClick={() => void loadKnowledgeDetails()} className="text-[10px] font-black text-teal-700 hover:text-teal-900">
+            مركز المعرفة
+          </button>
+        </div>
+
+        {showKnowledge && (
+          <div className="absolute top-[112px] right-0 z-20 w-full max-w-lg max-h-[65vh] overflow-y-auto bg-white border border-gray-200 shadow-2xl rounded-bl-2xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <div className="font-black text-gray-900 text-sm">مركز معرفة المساعد</div>
+                <div className="text-[10px] text-gray-500">المصدر الرسمي لا يُستبدل تلقائياً بمعلومة من الويب.</div>
+              </div>
+              <button type="button" onClick={() => setShowKnowledge(false)} className="text-gray-500 font-black">✕</button>
+            </div>
+            <div className="space-y-3">
+              <section>
+                <div className="text-[10px] font-black text-emerald-700 mb-1.5">المصادر المعتمدة</div>
+                <div className="space-y-1">
+                  {(knowledgeDetails?.sources || []).map((source) => (
+                    <a key={source.url} href={source.url} target="_blank" rel="noreferrer" className="block p-2 rounded-lg bg-emerald-50 border border-emerald-100 text-[10px] text-emerald-900 hover:underline">
+                      {source.label}
+                    </a>
+                  ))}
+                </div>
+              </section>
+              <section>
+                <div className="text-[10px] font-black text-blue-700 mb-1.5">آخر المستجدات</div>
+                {(knowledgeDetails?.updates || []).length === 0 ? (
+                  <div className="text-[10px] text-gray-500 p-2 bg-gray-50 rounded-lg">لا توجد مستجدات محفوظة بعد. سيُملأ السجل عند تشغيل أول تحديث.</div>
+                ) : (
+                  <div className="space-y-2">
+                    {knowledgeDetails?.updates.map((item, index) => (
+                      <article key={item.sourceUrl + item.title + index} className="p-2.5 rounded-lg border border-gray-200 bg-gray-50">
+                        <div className="text-[11px] font-black text-gray-800">{item.title}</div>
+                        <div className="mt-1 text-[10px] leading-relaxed text-gray-600">{item.summary}</div>
+                        <div className="mt-1 text-[9px] text-gray-400">{item.date} • الثقة: {item.confidence || 'متوسطة'}</div>
+                        {item.sourceUrl && <a href={item.sourceUrl} target="_blank" rel="noreferrer" className="text-[9px] text-blue-700 hover:underline">{item.sourceTitle || item.sourceUrl}</a>}
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </section>
+            </div>
+          </div>
+        )}
 
         {/* Action Banner to Generate Official Pedagogical Note */}
         {onOpenPedagogicalModal && (
