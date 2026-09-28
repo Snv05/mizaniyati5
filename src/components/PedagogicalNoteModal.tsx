@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { 
   X, 
   Sparkles, 
@@ -15,12 +15,27 @@ import {
   RefreshCw,
   Clock,
   Layers,
-  FileCheck2
+  FileCheck2,
+  Paperclip,
+  Image as ImageIcon,
+  FileUp,
+  Trash2,
+  RotateCcw,
+  XCircle
 } from 'lucide-react';
 import { PedagogicalNote, GradeLevel } from '../types/pedagogicalNote';
 import { generatePedagogicalNote } from '../services/geminiPedagogicalService';
 import { MemoConfig } from '../types';
 import { TeacherOfficialStamp } from './TeacherOfficialStamp';
+import {
+  MemoAttachment,
+  fileToMemoAttachment,
+  listMemoAttachments,
+  saveMemoAttachment,
+  deleteMemoAttachment,
+  MAX_ATTACHMENT_BYTES,
+  MAX_TOTAL_ATTACHMENT_BYTES,
+} from '../services/memoAttachmentStore';
 
 interface Props {
   isOpen: boolean;
@@ -52,6 +67,81 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
   const [note, setNote] = useState<PedagogicalNote | null>(null);
   const [activeTab, setActiveTab] = useState<'note' | 'worksheet' | 'json'>('note');
   const [copied, setCopied] = useState<boolean>(false);
+  const [attachments, setAttachments] = useState<MemoAttachment[]>([]);
+  const [savedAttachments, setSavedAttachments] = useState<MemoAttachment[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    listMemoAttachments()
+      .then(setSavedAttachments)
+      .catch((error) => console.error('[memo-attachments]', error));
+  }, [isOpen]);
+
+  const addFiles = async (files: FileList | File[]) => {
+    const incoming = Array.from(files);
+    for (const file of incoming) {
+      try {
+        const attachment = await fileToMemoAttachment(file);
+        setAttachments((prev) => {
+          const nextTotal = prev.reduce((sum, item) => sum + item.size, 0) + attachment.size;
+          if (nextTotal > MAX_TOTAL_ATTACHMENT_BYTES) {
+            showToast('إجمالي المرفقات يتجاوز 12MB.');
+            return prev;
+          }
+          if (prev.some((item) => item.name === attachment.name && item.size === attachment.size)) {
+            showToast('هذا المرفق موجود بالفعل.');
+            return prev;
+          }
+          return [...prev, attachment].slice(0, 6);
+        });
+        await saveMemoAttachment(attachment);
+        setSavedAttachments(await listMemoAttachments());
+      } catch (error: any) {
+        showToast(error?.message || 'تعذر إضافة المرفق.');
+      }
+    }
+  };
+
+  const restoreSaved = async () => {
+    try {
+      const saved = await listMemoAttachments();
+      setSavedAttachments(saved);
+      setAttachments(saved.slice(0, 6));
+      showToast(saved.length ? `تم استرداد ${Math.min(saved.length, 6)} مرفقات محفوظة.` : 'لا توجد مرفقات محفوظة للاسترداد.');
+    } catch {
+      showToast('تعذر استرداد المرفقات المحفوظة.');
+    }
+  };
+
+  const removeAttachment = async (id: string) => {
+    setAttachments((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const permanentlyDeleteSaved = async (id: string) => {
+    await deleteMemoAttachment(id);
+    setSavedAttachments((prev) => prev.filter((item) => item.id !== id));
+    setAttachments((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const handlePaste = async (event: React.ClipboardEvent<HTMLDivElement>) => {
+    const imageItem = Array.from(event.clipboardData.items).find((item) => item.type.startsWith('image/'));
+    if (!imageItem) return;
+    event.preventDefault();
+    const blob = imageItem.getAsFile();
+    if (blob) {
+      const pasted = new File([blob], `صورة-ملصقة-${Date.now()}.png`, { type: blob.type || 'image/png' });
+      await addFiles([pasted]);
+      showToast('تم لصق الصورة وإضافتها إلى مصادر المذكرة.');
+    }
+  };
+
+  const handleDrop = async (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDragging(false);
+    await addFiles(event.dataTransfer.files);
+  };
 
   if (!isOpen) return null;
 
@@ -63,7 +153,11 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
 
     setIsLoading(true);
     try {
-      const generated = await generatePedagogicalNote(selectedGrade, topic.trim());
+      const generated = await generatePedagogicalNote(
+        selectedGrade,
+        topic.trim(),
+        attachments.map(({ name, mimeType, size, dataUrl }) => ({ name, mimeType, size, dataUrl }))
+      );
       setNote(generated);
       showToast('تم توليد المذكرة البيداغوجية الرسمية بنجاح 🌟');
     } catch (error: any) {
@@ -87,7 +181,14 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto" dir="rtl">
+    <div
+      className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto"
+      dir="rtl"
+      onPaste={handlePaste}
+      onDragOver={(event) => { event.preventDefault(); setIsDragging(true); }}
+      onDragLeave={() => setIsDragging(false)}
+      onDrop={handleDrop}
+    >
       <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 w-full max-w-5xl my-4 flex flex-col max-h-[94vh] overflow-hidden">
         
         {/* Modal Header */}
@@ -171,6 +272,76 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
                 )}
               </button>
             </div>
+          </div>
+
+          {/* مصادر المذكرة: ملفات، صور، لصق من الحافظة، واسترداد محلي */}
+          <div className={`rounded-xl border p-3 space-y-2 ${isDragging ? 'border-emerald-500 bg-emerald-100/70' : 'border-gray-200 bg-white'}`}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Paperclip size={15} className="text-emerald-700" />
+                <span className="text-xs font-black text-gray-800">مصادر المذكرة</span>
+                <span className="text-[10px] text-gray-500">صور وPDF — حتى 6MB للملف و12MB للمجموع</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-black bg-emerald-700 text-white rounded-lg hover:bg-emerald-800">
+                  <FileUp size={13} /> إضافة ملف
+                </button>
+                <button type="button" onClick={restoreSaved} className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-black bg-white text-emerald-800 border border-emerald-200 rounded-lg hover:bg-emerald-50">
+                  <RotateCcw size={13} /> استرداد المحفوظ
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
+                  multiple
+                  hidden
+                  onChange={(event) => {
+                    if (event.target.files) addFiles(event.target.files);
+                    event.currentTarget.value = '';
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="border border-dashed border-emerald-200 rounded-lg p-2 text-center text-[10.5px] text-gray-500 bg-emerald-50/30">
+              اسحب الملفات هنا أو اضغط <b>Ctrl + V</b> للصق صورة من الحافظة. المرفقات تحفظ محليًا في جهازك لاسترجاعها بعد إعادة فتح الأداة.
+            </div>
+
+            {attachments.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {attachments.map((item) => (
+                  <div key={item.id} className="flex items-center gap-2 border border-gray-200 rounded-lg p-2 bg-gray-50">
+                    {item.mimeType.startsWith('image/') ? (
+                      <img src={item.dataUrl} alt="" className="w-12 h-12 object-cover rounded-md border" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-md bg-red-50 text-red-700 flex items-center justify-center text-[10px] font-black">PDF</div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[11px] font-black text-gray-800 truncate">{item.name}</div>
+                      <div className="text-[10px] text-gray-500">{(item.size / 1024 / 1024).toFixed(2)} MB</div>
+                    </div>
+                    <button type="button" onClick={() => removeAttachment(item.id)} className="p-1 text-gray-400 hover:text-red-600" title="إزالة من التوليد">
+                      <XCircle size={15} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {savedAttachments.length > 0 && (
+              <details className="text-[10.5px]">
+                <summary className="cursor-pointer font-bold text-gray-600">المرفقات المحفوظة على الجهاز ({savedAttachments.length})</summary>
+                <div className="mt-2 space-y-1">
+                  {savedAttachments.slice(0, 10).map((item) => (
+                    <div key={item.id} className="flex items-center gap-2">
+                      <span className="truncate flex-1">{item.name}</span>
+                      <button type="button" onClick={() => setAttachments((prev) => prev.some(a => a.id === item.id) ? prev : [...prev, item].slice(0, 6))} className="text-emerald-700 font-black">استرداد</button>
+                      <button type="button" onClick={() => permanentlyDeleteSaved(item.id)} className="text-red-600" title="حذف نهائي من الجهاز"><Trash2 size={13} /></button>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            )}
           </div>
 
           {/* Tab Selector & Actions */}
