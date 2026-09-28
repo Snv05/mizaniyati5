@@ -87,7 +87,7 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
         setAttachments((prev) => {
           const nextTotal = prev.reduce((sum, item) => sum + item.size, 0) + attachment.size;
           if (nextTotal > MAX_TOTAL_ATTACHMENT_BYTES) {
-            showToast('إجمالي المرفقات يتجاوز 12MB.');
+            showToast('إجمالي المرفقات يتجاوز 10MB.');
             return prev;
           }
           if (prev.some((item) => item.name === attachment.name && item.size === attachment.size)) {
@@ -280,7 +280,7 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
               <div className="flex items-center gap-2">
                 <Paperclip size={15} className="text-emerald-700" />
                 <span className="text-xs font-black text-gray-800">مصادر المذكرة</span>
-                <span className="text-[10px] text-gray-500">صور وPDF — حتى 6MB للملف و12MB للمجموع</span>
+                <span className="text-[10px] text-gray-500">صور وPDF — حتى 6MB للملف و10MB للمجموع</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-black bg-emerald-700 text-white rounded-lg hover:bg-emerald-800">
