@@ -101,6 +101,172 @@ app.post('/api/gemini/generate', async (req, res) => {
   }
 });
 
+// المساعد الذكي المتقدم: المنهاج + المذكرات + الوثائق المرفقة + الويب
+app.post('/api/gemini/smart-assistant', async (req, res) => {
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return res.status(503).json({ error: 'GEMINI_API_KEY is not configured on server' });
+
+    const {
+      question,
+      level = '',
+      currentLesson = null,
+      curriculum = [],
+      attachments = [],
+      useWeb = true,
+    } = req.body;
+
+    if (!String(question || '').trim()) {
+      return res.status(400).json({ error: 'سؤال الأستاذ مطلوب' });
+    }
+    if (!Array.isArray(attachments) || attachments.length > 4) {
+      return res.status(400).json({ error: 'يسمح المساعد المتقدم بأربعة مرفقات كحد أقصى.' });
+    }
+
+    const allowedTypes = new Set([
+      'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+      'application/pdf', 'text/plain',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/msword',
+    ]);
+
+    const attachmentInputs: Array<{ mimeType: string; base64: string; displayName: string }> = [];
+    let totalLength = 0;
+    for (const item of attachments) {
+      if (!item || !allowedTypes.has(item.mimeType)) {
+        return res.status(400).json({ error: 'نوع ملف غير مدعوم في المساعد الذكي.' });
+      }
+      const dataUrl = String(item.dataUrl || '');
+      const prefix = `data:${item.mimeType};base64,`;
+      if (!dataUrl.startsWith(prefix) || dataUrl.length > 15_000_000) {
+        return res.status(400).json({ error: 'حجم أحد ملفات المساعد الذكي أكبر من الحد المسموح.' });
+      }
+      totalLength += dataUrl.length;
+      if (totalLength > 24_000_000) {
+        return res.status(400).json({ error: 'إجمالي ملفات المساعد الذكي كبير جداً.' });
+      }
+      attachmentInputs.push({
+        mimeType: item.mimeType,
+        base64: dataUrl.slice(prefix.length),
+        displayName: String(item.name || `assistant-source-${attachmentInputs.length + 1}`),
+      });
+    }
+
+    const compactLesson = currentLesson ? {
+      level: currentLesson.level,
+      midan: currentLesson.midan,
+      maqta: currentLesson.maqta,
+      mawrid: currentLesson.mawrid,
+      ta3alom: currentLesson.ta3alom,
+      markaba: currentLesson.markaba,
+      marifa: currentLesson.marifa,
+      manhaji: currentLesson.manhaji,
+      wadiya: currentLesson.wadiya,
+      moshkila: currentLesson.moshkila,
+      faradiyat: currentLesson.faradiyat,
+      irsae: currentLesson.irsae,
+      taqwim: currentLesson.taqwim,
+      activities: Array.isArray(currentLesson.anshita) ? currentLesson.anshita.slice(0, 8) : [],
+    } : null;
+
+    const curriculumRows = Array.isArray(curriculum)
+      ? curriculum
+          .filter((item: any) => !level || item.level === level)
+          .slice(0, 80)
+          .map((item: any) => ({
+            level: item.level,
+            midan: item.midan,
+            maqta: item.maqta,
+            mawrid: item.mawrid,
+            ta3alom: item.ta3alom,
+            markaba: item.markaba,
+            taqwim: item.taqwim,
+            activityTitles: Array.isArray(item.anshita) ? item.anshita.map((a: any) => a.title).slice(0, 8) : [],
+          }))
+      : [];
+
+    const sourcePolicy = [
+      'أنت المساعد الذكي المتخصص في علوم الطبيعة والحياة للتعليم المتوسط في الجزائر.',
+      'أولوية المصادر: 1) بيانات المنصة والمنهاج الحالي، 2) المذكرات/المورد الحالي في السياق، 3) الوثائق التي يرفقها الأستاذ، 4) الويب عند الحاجة.',
+      'لا تغيّر أسماء الميدان أو المقطع أو المورد أو تعلم المورد إذا كانت موجودة في بيانات المنصة.',
+      'لا تنسب معلومة إلى المنهاج أو الوثيقة المرافقة دون سند. إذا لم تجدها قل بوضوح: غير موجودة في المصادر المتاحة.',
+      'أي إضافة من عندك يجب وسمها صراحة: اقتراح تربوي.',
+      'عند وجود تعارض بين مصدرين، اعرض التعارض واذكر المصدرين ولا تحسمه باختلاق معلومة.',
+      'في الإجابات العلمية، فرّق بين المعلومة المستخرجة من المصدر وبين الشرح أو الاقتراح.',
+      'إذا استُخدم الويب، أدرج مصادر قابلة للفتح في نهاية الإجابة، ولا تستخدم الويب لمعلومة موجودة بوضوح في المنهاج المحلي إلا للتحقق أو التحديث.',
+      'ساعد الأستاذ عملياً: تحضير حصة، وضعية انطلاق، مسعى تقصي، تجربة، تقويم، شبكة تصحيح، تمرين، فرض، تدرج، أو دفتر يومي.',
+      'لا تنتج درساً كاملاً عشوائياً عندما يطلب الأستاذ معلومة محددة؛ أجب مباشرة وبنية واضحة.',
+    ].join('\n');
+
+    const context = [
+      sourcePolicy,
+      `المستوى المطلوب: ${level || compactLesson?.level || 'غير محدد'}`,
+      'المورد/المذكرة الحالية:',
+      JSON.stringify(compactLesson, null, 2),
+      'مقتطف قاعدة بيانات المنهاج والتدرجات:',
+      JSON.stringify(curriculumRows, null, 2),
+      'سؤال الأستاذ:',
+      String(question).slice(0, 12000),
+    ].join('\n\n');
+
+    const ai = new GoogleGenAI({ apiKey, httpOptions: { headers: { 'User-Agent': 'aistudio-build' } } });
+    const uploadedFiles: any[] = [];
+
+    try {
+      for (const item of attachmentInputs) {
+        const file = await ai.files.upload({
+          file: new Blob([Buffer.from(item.base64, 'base64')], { type: item.mimeType }),
+          config: { mimeType: item.mimeType, displayName: item.displayName },
+        });
+        let info = file;
+        for (let attempt = 0; attempt < 20 && info.state === 'PROCESSING'; attempt++) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          info = await ai.files.get({ name: file.name });
+        }
+        if (info.state === 'FAILED') throw new Error(`فشل تجهيز الملف: ${item.displayName}`);
+        uploadedFiles.push(info);
+      }
+
+      const fileParts = uploadedFiles.map((file) => createPartFromUri(file.uri, file.mimeType));
+      const model = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+      const response = await ai.models.generateContent({
+        model,
+        contents: fileParts.length
+          ? [{ role: 'user', parts: [{ text: context }, ...fileParts] }]
+          : context,
+        config: {
+          tools: useWeb ? [{ googleSearch: {} }] : undefined,
+        },
+      });
+
+      const candidate: any = response.candidates?.[0];
+      const grounding = candidate?.groundingMetadata;
+      const sources = Array.isArray(grounding?.groundingChunks)
+        ? grounding.groundingChunks
+            .map((chunk: any) => chunk?.web)
+            .filter((web: any) => web?.uri)
+            .map((web: any) => ({ title: web.title || web.uri, uri: web.uri }))
+            .filter((source: any, index: number, arr: any[]) => arr.findIndex((x) => x.uri === source.uri) === index)
+            .slice(0, 8)
+        : [];
+
+      return res.json({
+        text: response.text || '',
+        sources,
+        webSearchQueries: grounding?.webSearchQueries || [],
+        usedWeb: sources.length > 0 || Boolean(grounding?.webSearchQueries?.length),
+        usedAttachments: uploadedFiles.map((file) => file.displayName || file.name),
+      });
+    } finally {
+      await Promise.allSettled(uploadedFiles.map((file) => ai.files.delete({ name: file.name })));
+    }
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[Smart Assistant Error]:', message);
+    return res.status(500).json({ error: message });
+  }
+});
+
 // تحليل ورقة الفرض/الاختبار قبل بناء مذكرة التصحيح
 app.post('/api/gemini/analyze-correction-source', async (req, res) => {
   try {
