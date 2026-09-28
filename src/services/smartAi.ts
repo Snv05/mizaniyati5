@@ -1,9 +1,31 @@
 import { LessonMemo } from '../types';
 
+export interface SmartAiAttachment {
+  name: string;
+  mimeType: string;
+  dataUrl: string;
+}
+
+export interface SmartAiSource {
+  title: string;
+  uri: string;
+}
+
 export interface SmartAiRequest {
   question: string;
   lesson?: LessonMemo | null;
   curriculum: LessonMemo[];
+  attachments?: SmartAiAttachment[];
+  useWeb?: boolean;
+  level?: string;
+}
+
+export interface SmartAiResponse {
+  text: string;
+  sources: SmartAiSource[];
+  webSearchQueries: string[];
+  usedWeb: boolean;
+  usedAttachments: string[];
 }
 
 const compact = (value: unknown, max = 1800): string => {
@@ -19,7 +41,7 @@ const buildContext = ({ lesson, curriculum }: SmartAiRequest) => {
     : [];
 
   const relevantLessons = (lesson ? [lesson, ...sameMaqta.filter(x => x !== lesson)] : sameLevel)
-    .slice(0, 12)
+    .slice(0, 80)
     .map(item => ({
       level: item.level,
       midan: item.midan,
@@ -37,8 +59,8 @@ const buildContext = ({ lesson, curriculum }: SmartAiRequest) => {
       activities: item.anshita.map(a => ({
         sourceActivityId: a.sourceActivityId,
         title: a.title,
-        asila: compact(a.asila, 900),
-        ajwiba: compact(a.ajwiba, 900),
+        asila: compact(a.asila, 700),
+        ajwiba: compact(a.ajwiba, 700),
       })),
     }));
 
@@ -47,45 +69,67 @@ const buildContext = ({ lesson, curriculum }: SmartAiRequest) => {
     levelCount: sameLevel.length,
     sameMaqtaCount: sameMaqta.length,
     relevantLessons,
-    instruction: 'قاعدة المنصة هي المصدر الأول. لا تغيّر أو تخترع أسماء موارد أو أنشطة عندما يطلب الأستاذ معلومة عن المنهاج. إذا كانت المعلومة غير موجودة في السياق، صرّح بذلك. الاقتراحات الجديدة يجب وسمها بوضوح على أنها اقتراحات.',
+    sourcePolicy: [
+      'بيانات المنصة والمنهاج الحالي هي المصدر الأول.',
+      'المذكرات والوثائق المرفقة مصادر مباشرة عند إرفاقها.',
+      'الاقتراحات الجديدة يجب وسمها بوضوح على أنها اقتراحات.',
+      'لا تخترع أسماء موارد أو أنشطة غير موجودة في المصدر.',
+    ],
   }, null, 2);
 };
 
-export async function askSmartAi(request: SmartAiRequest): Promise<string | null> {
+export async function askSmartAi(request: SmartAiRequest): Promise<SmartAiResponse | null> {
   try {
     const prompt = [
-      'أنت مساعد بيداغوجي خبير لأساتذة مادة علوم الطبيعة والحياة في مرحلة التعليم المتوسط بالجزائر.',
-      'تعليمات الإجابة الصارمة:',
-      '1. قدّم إجابات منظمة جداً ومركّزة ومفيدة، وتجنب الإطالة المفرطة أو الحشو.',
-      '2. استخدم النقاط المرتبة (Bullet points) والفقرات القصيرة الواضحة.',
-      '3. اعتمد على مصطلحات المنهاج الجزائري الرسمي (المركبة، المورد، الكفاءة الختامية، المشكل العلمي، مسعى التقصي، الفرضيات).',
-      '4. عند اقتراح أنشطة أو تجارب مخبرية، اذكر الخطوات العملية المباشرة وبدائل الوسائل المتاحة في المخبر المدرسي.',
-      '5. عند طلب وضعية انطلاق أو مشكل علمي، اعرض صياغة تربوية دقيقة وسليمة لغوياً وعلمياً قابلة للنسخ المباشر في المذكرة.',
+      'أنت المساعد البيداغوجي الذكي المتخصص في علوم الطبيعة والحياة للتعليم المتوسط في الجزائر.',
+      'اجعل الإجابة عملية وقابلة للاستعمال من طرف الأستاذ.',
+      'اعتمد أولاً على قاعدة بيانات المنصة للميدان والمقطع والمورد وتعلم المورد والتدرج والمذكرات.',
+      'إذا أرفق الأستاذ وثيقة مرافقة أو مذكرة أو PDF/Word/صورة، اقرأها واستخرج منها ما يلزم قبل الإجابة.',
+      'إذا كان السؤال يحتاج معلومة حديثة أو بحثاً خارجياً، استخدم البحث على الويب واذكر المصادر.',
+      'لا تقدم معلومة على أنها رسمية إذا لم يثبتها المصدر. عند الغموض اكتب: يحتاج مراجعة الأستاذ.',
+      'عند إنشاء نشاط أو تجربة أو تقويم جديد، وسمه: اقتراح تربوي.',
+      'يمكنك مساعدة الأستاذ في: تحضير الحصة، وضعيات الانطلاق، مسعى التقصي، التجارب، التقويم، الفروض، مذكرة التصحيح، التدرج، الدفتر اليومي، وتكييف الأنشطة.',
       '',
-      'سياق المنهاج الحالي:',
+      'سياق المنهاج والمذكرات:',
       buildContext(request),
       '',
       'طلب الأستاذ:',
-      request.question
+      request.question,
     ].join('\n');
 
-    const res = await fetch('/api/gemini/generate', {
+    const res = await fetch('/api/gemini/smart-assistant', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ prompt }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        question: request.question,
+        prompt,
+        level: request.level || request.lesson?.level || '',
+        currentLesson: request.lesson || null,
+        curriculum: request.curriculum,
+        attachments: request.attachments || [],
+        useWeb: request.useWeb !== false,
+      }),
     });
 
     if (!res.ok) {
-      console.warn('[smart-ai] server returned status', res.status);
-      return null;
+      let message = '';
+      try {
+        const body = await res.json();
+        message = body.error || '';
+      } catch { /* ignore */ }
+      throw new Error(message || `Smart Assistant HTTP ${res.status}`);
     }
 
     const data = await res.json();
-    return data.text?.trim() || null;
+    return {
+      text: String(data.text || '').trim(),
+      sources: Array.isArray(data.sources) ? data.sources : [],
+      webSearchQueries: Array.isArray(data.webSearchQueries) ? data.webSearchQueries : [],
+      usedWeb: Boolean(data.usedWeb),
+      usedAttachments: Array.isArray(data.usedAttachments) ? data.usedAttachments : [],
+    };
   } catch (error) {
     console.error('[smart-ai] generation failed', error);
-    return null;
+    throw error;
   }
 }
