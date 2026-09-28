@@ -174,8 +174,8 @@ export const CorrectionMemoDrawer: React.FC<{
             <div className="rounded-xl border border-dashed border-teal-200 bg-teal-50/40 p-3 space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2 text-xs font-black text-teal-900">
-                  <Paperclip size={15} /> مصادر التصحيح
-                  <span className="text-[10px] text-slate-500 font-medium">صور/PDF + لصق Ctrl+V + استرداد محفوظ</span>
+                  <Paperclip size={15} /> استيراد ملفات التصحيح
+                  <span className="text-[10px] text-slate-500 font-medium">صور / PDF / TXT + لصق صورة + استرداد محفوظ</span>
                 </div>
                 <div className="flex gap-1.5">
                   <button type="button" onClick={() => fileInputRef.current?.click()} className="px-2.5 py-1.5 rounded-lg bg-teal-700 text-white text-[11px] font-black">
@@ -187,7 +187,7 @@ export const CorrectionMemoDrawer: React.FC<{
                   <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,application/pdf" multiple hidden onChange={e => { if (e.target.files) addFiles(e.target.files); e.currentTarget.value=''; }} />
                 </div>
               </div>
-              <div className="text-[10.5px] text-slate-500">يمكنك سحب الملف إلى هنا، اختيار ملف من الهاتف/الحاسوب، أو نسخ صورة ولصقها مباشرة داخل الأداة. الحد الأقصى 15MB للملف و24MB للمرفقات المحفوظة.</div>
+              <div className="text-[10.5px] text-slate-500">اسحب ملفات الفرض أو الاختبار إلى هذا المربع، أو اضغط «استيراد ملفات» من الهاتف/الحاسوب، أو الصق صورة مباشرة. سيُستخدم الملف كمصدر أصلي للتصحيح دون اختلاق أسئلة أو نقاط. الحد الأقصى 15MB للملف و24MB للمرفقات المحفوظة.</div>
               {attachments.length > 0 && (
                 <div className="grid sm:grid-cols-2 gap-2">
                   {attachments.map(item => (
