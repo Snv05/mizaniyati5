@@ -1,10 +1,12 @@
 import { LessonMemo } from '../types';
+import { PedagogicalAttachmentInput } from './geminiPedagogicalService';
 
 export interface CorrectionMemoRequest {
   examType: 'فرض' | 'اختبار';
   examText: string;
   lesson?: LessonMemo | null;
   curriculum: LessonMemo[];
+  attachments?: PedagogicalAttachmentInput[];
 }
 
 const compact = (value: unknown, max = 1200): string => {
@@ -68,7 +70,12 @@ export async function generateCorrectionMemo(request: CorrectionMemoRequest): Pr
     const response = await fetch('/api/gemini/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt }),
+      body: JSON.stringify({
+        prompt,
+        attachments: (request.attachments || []).map(({ name, mimeType, size, dataUrl }) => ({
+          name, mimeType, size, dataUrl,
+        })),
+      }),
     });
     if (!response.ok) return null;
     const data = await response.json();
