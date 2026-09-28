@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '15mb' }));
 
 // نقطة نهاية لمعالجة طلبات المساعد البيداغوجي الذكي على جانب الخادم
 app.post('/api/gemini/generate', async (req, res) => {
@@ -57,9 +57,40 @@ app.post('/api/gemini/generate-pedagogical-note', async (req, res) => {
     if (!apiKey) {
       return res.status(503).json({ error: 'مفتاح واجهة برمجة تطبيقات Gemini غير متوفر في الخادم' });
     }
-    const { gradeLevel, topic } = req.body;
+    const { gradeLevel, topic, attachments = [] } = req.body;
     if (!gradeLevel || !topic) {
       return res.status(400).json({ error: 'المستوى والموضوع مطلوبان لتوليد المذكرة' });
+    }
+
+    const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf', 'text/plain']);
+    if (!Array.isArray(attachments) || attachments.length > 6) {
+      return res.status(400).json({ error: 'عدد المرفقات المسموح به هو 6 كحد أقصى.' });
+    }
+
+    let totalLength = 0;
+    const attachmentParts: any[] = [];
+    for (const item of attachments) {
+      if (!item || !allowedTypes.has(item.mimeType)) {
+        return res.status(400).json({ error: 'تم رفض مرفق بسبب نوع ملف غير مسموح.' });
+      }
+      const dataUrl = String(item.dataUrl || '');
+      const prefix = `data:${item.mimeType};base64,`;
+      if (!dataUrl.startsWith(prefix) || dataUrl.length > 8_500_000) {
+        return res.status(400).json({ error: 'صيغة أو حجم أحد المرفقات غير صالح.' });
+      }
+      totalLength += dataUrl.length;
+      if (totalLength > 16_000_000) {
+        return res.status(400).json({ error: 'إجمالي المرفقات كبير جداً.' });
+      }
+      if (item.mimeType === 'text/plain') {
+        return res.status(400).json({ error: 'الملفات النصية غير مدعومة بعد في التوليد المرفق.' });
+      }
+      attachmentParts.push({
+        inlineData: {
+          mimeType: item.mimeType,
+          data: dataUrl.slice(prefix.length),
+        },
+      });
     }
 
     const ai = new GoogleGenAI({
@@ -76,7 +107,13 @@ app.post('/api/gemini/generate-pedagogical-note', async (req, res) => {
 
     const response = await ai.models.generateContent({
       model,
-      contents: `قم بتوليد المذكرة البيداغوجية الرسمية التامة لمستوى [${gradeLevel}] في مادة علوم الطبيعة والحياة حول: "${topic}". التزم بإخراج كائن JSON فقط طبقاً للشروط والتعليمات.`,
+      contents: [{
+        role: 'user',
+        parts: [
+          { text: `قم بتوليد المذكرة البيداغوجية الرسمية التامة لمستوى [${gradeLevel}] في مادة علوم الطبيعة والحياة حول: "${topic}". التزم بإخراج كائن JSON فقط طبقاً للشروط والتعليمات. إذا وُجدت مصادر مرفقة، اعتبرها مصادر الأستاذ ولا تخترع بيانات مخالفة لها.` },
+          ...attachmentParts,
+        ],
+      }],
       config: {
         systemInstruction: systemPrompt,
         responseMimeType: 'application/json',
