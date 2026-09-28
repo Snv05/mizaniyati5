@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "start": "node --import tsx/esm server.ts",
     "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "refresh:ai-knowledge": "node scripts/refresh-ai-knowledge.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
