@@ -119,6 +119,8 @@ export const CorrectionMemoDrawer: React.FC<{
   const clearForm = () => {
     setExamText('');
     setCorrection('');
+    setSourceAnalysis(null);
+    setAttachments([]);
   };
 
   return (
