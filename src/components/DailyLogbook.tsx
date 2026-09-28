@@ -456,7 +456,7 @@ const AUTO_FILLED_TIMETABLE_ROWS: TimetableGridRow[] = EMPTY_TIMETABLE_ROWS.map(
   cells: createEmptyDayCells(),
 }));
 
-const LOGBOOK_DATA_VERSION = '2026-09-26-official-v19';
+const LOGBOOK_DATA_VERSION = '2026-09-28-official-v20';
 const ROWS_PER_PAGE = 12;
 const getPageDimensions = (orientation: 'portrait' | 'landscape') => orientation === 'landscape' ? { w: 297, h: 210 } : { w: 210, h: 297 };
 const PRINT_MARGIN = '14mm';
@@ -996,24 +996,31 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
       الخميس: [],
     };
 
+    // فوجان للقسم نفسه في نفس الساعة واليوم والمستوى = حصة واحدة ومحتوى واحد.
+    const grouped: Record<string, Map<string, { id: string; time: string; section: string; level: '1م' | '2م' | '3م' | '4م' | null }>> = {
+      الأحد: new Map(), الإثنين: new Map(), الثلاثاء: new Map(), الأربعاء: new Map(), الخميس: new Map(),
+    };
+
     [...gridRows]
       .sort((a, b) => getTimeRank(a.time) - getTimeRank(b.time))
       .forEach((row) => {
         WEEK_DAYS.forEach((day) => {
           const sec = row.cells[day]?.trim();
-          if (sec) {
-            sched[day].push({
-              id: `${row.id}-${day}`,
-              time: row.time,
-              section: sec,
-              level: detectLevelFromSection(sec),
-            });
+          if (!sec) return;
+          const level = detectLevelFromSection(sec);
+          const baseSection = sec.replace(/\s*\(?(?:فوج|ف|فـ|g|grp|group)\s*\d+\)?\s*/gi, '').trim() || sec;
+          const key = row.time + '|' + (level || '') + '|' + baseSection;
+          const existing = grouped[day].get(key);
+          if (existing) {
+            if (!existing.section.includes(sec)) existing.section = existing.section + ' / ' + sec;
+          } else {
+            grouped[day].set(key, { id: row.id + '-' + day, time: row.time, section: sec, level });
           }
         });
       });
 
     WEEK_DAYS.forEach((day) => {
-      sched[day].sort((a, b) => getTimeRank(a.time) - getTimeRank(b.time));
+      sched[day] = Array.from(grouped[day].values()).sort((a, b) => getTimeRank(a.time) - getTimeRank(b.time));
     });
 
     return sched;
