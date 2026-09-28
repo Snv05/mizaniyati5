@@ -43,7 +43,7 @@ export const CorrectionMemoDrawer: React.FC<{
         });
         await saveMemoAttachment(attachment);
         setSavedAttachments(await listMemoAttachments());
-        setExamText(prev => prev.trim() ? prev : '[ورقة التقييم مرفقة كمصدر بصري/PDF]');
+        // وجود المرفق يكفي كمصدر؛ لا نضع نصاً وهمياً داخل ورقة التقييم.
       } catch (error: any) {
         setCorrection(error?.message || 'تعذر إضافة المرفق.');
       }
@@ -86,8 +86,8 @@ export const CorrectionMemoDrawer: React.FC<{
   if (!isOpen) return null;
 
   const generate = async () => {
-    if (!examText.trim()) {
-      setCorrection('ألصق ورقة الفرض أو الاختبار أولاً.');
+    if (!examText.trim() && attachments.length === 0) {
+      setCorrection('أدخل نص ورقة الفرض/الاختبار أو أرفق صورة/PDF واضحاً لها.');
       return;
     }
 
@@ -220,7 +220,7 @@ export const CorrectionMemoDrawer: React.FC<{
                 onChange={e => setExamText(e.target.value)}
                 rows={11}
                 className="w-full border border-teal-100 rounded-xl p-3 bg-white leading-8"
-                placeholder="ألصق هنا نص ورقة الفرض أو الاختبار كاملاً، مع النقاط والوثائق والأسئلة..."
+                placeholder="ألصق نص ورقة الفرض أو الاختبار، أو اتركه فارغاً إذا أرفقت صورة/PDF واضحاً للورقة..."
               />
             </label>
 
@@ -241,7 +241,7 @@ export const CorrectionMemoDrawer: React.FC<{
             )}
 
             <div className="flex flex-wrap gap-2">
-              <button onClick={generate} disabled={busy || !examText.trim()} className="flex-1 min-w-[220px] py-3 rounded-xl bg-teal-700 text-white font-black disabled:opacity-40">
+              <button onClick={generate} disabled={busy || (!examText.trim() && attachments.length === 0)} className="flex-1 min-w-[220px] py-3 rounded-xl bg-teal-700 text-white font-black disabled:opacity-40">
                 <Sparkles className="inline w-4 h-4 ml-1" />{busy ? 'جاري إعداد مذكرة التصحيح...' : 'إعداد مذكرة التصحيح'}
               </button>
               <button onClick={clearForm} disabled={busy} className="px-5 py-3 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold disabled:opacity-40">
