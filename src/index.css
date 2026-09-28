@@ -105,3 +105,13 @@ button,input,textarea,select{font-family:inherit;}
   pointer-events: none;
   display: block; /* For Firefox */
 }
+
+
+@media print {
+  .notebook-intro-page {
+    break-after: page !important;
+    page-break-after: always !important;
+    box-shadow: none !important;
+    border: 0 !important;
+  }
+}
