@@ -271,7 +271,7 @@ const auditCurriculumDatabase = (
   return { byLevel, errors };
 };
 
-type AnnualStoredItem = { id?: string; level?: string; lessonType?: string; midan?: string; maqta?: string; mawrid?: string; session1?: string; session2?: string; sourceSequenceId?: string; sourceResourceId?: string; sourceLearningUnitId?: string; sourceActivityId?: string; sourceActivityId2?: string; isHoliday?: boolean; isExam?: boolean; holidayLabel?: string; month?: string; dates?: string; taqwim?: string };
+type AnnualStoredItem = { id?: string; level?: string; lessonType?: string; midan?: string; maqta?: string; mawrid?: string; learningUnit?: string; session1?: string; session2?: string; sourceSequenceId?: string; sourceResourceId?: string; sourceLearningUnitId?: string; sourceActivityId?: string; sourceActivityId2?: string; isHoliday?: boolean; isExam?: boolean; holidayLabel?: string; month?: string; dates?: string; taqwim?: string };
 
 const getStoredAnnualSchedule = (level: '1م' | '2م' | '3م' | '4م'): { startDate: string; items: AnnualStoredItem[] } | null => {
   try {
@@ -650,11 +650,12 @@ const normalizeDailyLogbookRows = (
 
     return {
       ...row,
-      midan: clean(resource.midan),
-      maqta: clean(resource.maqta),
-      mawrid: clean(resource.mawrid),
-      ta3alom: clean(resource.ta3alom),
-      activitiesList: activities,
+      // نحافظ على بيانات التدرج التي وُلّد بها الصف؛ المذكرة هنا للربط والتحقق فقط.
+      midan: clean(row.midan) || clean(resource.midan),
+      maqta: clean(row.maqta) || clean(resource.maqta),
+      mawrid: clean(row.mawrid) || clean(resource.mawrid),
+      ta3alom: clean(row.ta3alom) || clean(resource.ta3alom),
+      activitiesList: row.activitiesList?.length ? row.activitiesList.map(clean).filter(Boolean).slice(0, 2) : activities,
       sourceSequenceId: resource.sourceSequenceId || row.sourceSequenceId,
       sourceResourceId: resource.sourceResourceId || row.sourceResourceId,
       sourceLearningUnitId: resource.sourceLearningUnitId || row.sourceLearningUnitId,
@@ -1265,20 +1266,17 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           section: sess.section || 'قسم غير محدد',
           level: lvl,
           content: res.formattedText,
-          midan: res.midan,
-          maqta: res.maqta,
-          mawrid: res.mawrid,
-          ta3alom: res.ta3alom,
+          // بيانات دفتر الدرس الأساسية مصدرها التدرج السنوي المحفوظ، وليس إعادة بناء من المذكرة.
+          // المذكرة تستخدم للربط والتحقق، بينما عناوين الأنشطة تُؤخذ من session1/session2 في التدرج.
+          midan: annualItem?.midan || res.midan,
+          maqta: annualItem?.maqta || res.maqta,
+          mawrid: annualItem?.mawrid || res.mawrid,
+          ta3alom: annualItem?.learningUnit || res.ta3alom,
           activitiesList: (() => {
             if (currentLessonType !== 'curriculum') return [];
-            const unique = Array.from(new Set((res.activities || []).map((x) => String(x || '').trim()).filter(Boolean)));
-            if (!annual) return unique.slice(0, 2);
-            const scheduledActivityId = sessionOrdinal === 0 ? linkedSourceActivityId : linkedSourceActivityId2;
-            if (scheduledActivityId) {
-              const activityIndex = (res.sourceActivityIds || []).indexOf(scheduledActivityId);
-              if (activityIndex >= 0 && res.activities[activityIndex]) return [res.activities[activityIndex]];
-            }
-            return sessionOrdinal === 0 ? unique.slice(0, 1) : unique.slice(1, 2);
+            const scheduledTitle = sessionOrdinal === 0 ? annualItem?.session1 : annualItem?.session2;
+            const title = String(scheduledTitle || '').trim();
+            return title ? [title] : [];
           })(),
           taqwim: res.taqwim || '',
           sourceSequenceId: linkedSourceSequenceId,
