@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json({ limit: '15mb' }));
+app.use(express.json({ limit: '14mb' }));
 
 // نقطة نهاية لمعالجة طلبات المساعد البيداغوجي الذكي على جانب الخادم
 app.post('/api/gemini/generate', async (req, res) => {
@@ -45,7 +45,7 @@ app.post('/api/gemini/generate', async (req, res) => {
         return res.status(400).json({ error: 'Invalid attachment data' });
       }
       attachmentSize += dataUrl.length;
-      if (dataUrl.length > 8_500_000 || attachmentSize > 13_000_000) {
+      if (dataUrl.length > 8_000_000 || attachmentSize > 10_000_000) {
         return res.status(400).json({ error: 'Attachments are too large' });
       }
       attachmentParts.push({
@@ -109,7 +109,7 @@ app.post('/api/gemini/generate-pedagogical-note', async (req, res) => {
         return res.status(400).json({ error: 'صيغة أو حجم أحد المرفقات غير صالح.' });
       }
       totalLength += dataUrl.length;
-      if (totalLength > 16_000_000) {
+      if (totalLength > 10_000_000) {
         return res.status(400).json({ error: 'إجمالي المرفقات كبير جداً.' });
       }
       if (item.mimeType === 'text/plain') {
