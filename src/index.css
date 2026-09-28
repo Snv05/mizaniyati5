@@ -108,10 +108,67 @@ button,input,textarea,select{font-family:inherit;}
 
 
 @media print {
-  .notebook-intro-page {
+  .print-preview-root {
+    position: static !important;
+    inset: auto !important;
+    display: block !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  .print-preview-root .preview-controls,
+  .print-preview-root .preview-scroll {
+    display: block !important;
+  }
+
+  .print-preview-root .preview-controls {
+    display: none !important;
+  }
+
+  .print-preview-root .preview-scroll {
+    overflow: visible !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+
+  .print-preview-root .preview-scroll > div {
+    transform: none !important;
+    width: 100% !important;
+    gap: 0 !important;
+  }
+
+  .print-preview-root [data-preview-export-page="true"] {
+    display: flex !important;
+    width: 190mm !important;
+    height: 277mm !important;
+    min-height: 277mm !important;
+    max-width: 190mm !important;
+    margin: 0 auto !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    overflow: hidden !important;
     break-after: page !important;
     page-break-after: always !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .print-preview-root .notebook-intro-page {
     box-shadow: none !important;
     border: 0 !important;
+  }
+
+  .print-preview-root table,
+  .print-preview-root tr,
+  .print-preview-root td,
+  .print-preview-root th {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .print-preview-root .print-page {
+    transform: none !important;
   }
 }
