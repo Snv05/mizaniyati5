@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json({ limit: '14mb' }));
+app.use(express.json({ limit: '40mb' }));
 
 // نقطة نهاية لمعالجة طلبات المساعد البيداغوجي الذكي على جانب الخادم
 app.post('/api/gemini/generate', async (req, res) => {
@@ -45,7 +45,7 @@ app.post('/api/gemini/generate', async (req, res) => {
         return res.status(400).json({ error: 'Invalid attachment data' });
       }
       attachmentSize += dataUrl.length;
-      if (dataUrl.length > 8_000_000 || attachmentSize > 10_000_000) {
+      if (dataUrl.length > 20_000_000 || attachmentSize > 32_000_000) {
         return res.status(400).json({ error: 'Attachments are too large' });
       }
       attachmentParts.push({
@@ -91,7 +91,7 @@ app.post('/api/gemini/analyze-correction-source', async (req, res) => {
       return res.status(400).json({ error: 'مصدر التصحيح مطلوب' });
     }
 
-    const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf']);
+    const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf', 'text/plain']);
     if (!Array.isArray(attachments) || attachments.length > 6) {
       return res.status(400).json({ error: 'عدد المرفقات غير مسموح' });
     }
@@ -102,11 +102,11 @@ app.post('/api/gemini/analyze-correction-source', async (req, res) => {
       if (!item || !allowedTypes.has(item.mimeType)) return res.status(400).json({ error: 'نوع مرفق غير مسموح' });
       const dataUrl = String(item.dataUrl || '');
       const prefix = `data:${item.mimeType};base64,`;
-      if (!dataUrl.startsWith(prefix) || dataUrl.length > 8_000_000) {
+      if (!dataUrl.startsWith(prefix) || dataUrl.length > 20_000_000) {
         return res.status(400).json({ error: 'مرفق غير صالح أو كبير جداً' });
       }
       totalLength += dataUrl.length;
-      if (totalLength > 10_000_000) return res.status(400).json({ error: 'إجمالي المرفقات كبير جداً' });
+      if (totalLength > 32_000_000) return res.status(400).json({ error: 'إجمالي المرفقات كبير جداً' });
       parts.push({ inlineData: { mimeType: item.mimeType, data: dataUrl.slice(prefix.length) } });
     }
 
