@@ -12,6 +12,9 @@ import {
   HelpCircle,
   CheckCircle2,
   Trash2,
+  Paperclip,
+  Globe2,
+  FileText,
 } from 'lucide-react';
 
 interface Message {
@@ -20,6 +23,13 @@ interface Message {
   text: string;
   timestamp: string;
   category?: string;
+  sources?: { title: string; uri: string }[];
+}
+
+interface AssistantAttachment {
+  name: string;
+  mimeType: string;
+  dataUrl: string;
 }
 
 const QUICK_PROMPTS = [
@@ -48,6 +58,8 @@ export const AIAssistantDrawer: React.FC<{
   ]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [attachments, setAttachments] = useState<AssistantAttachment[]>([]);
+  const [useWeb, setUseWeb] = useState(true);
 
   const smartContext = useMemo(() => currentLesson ? [
     'المستوى: ' + (selectedLevel || currentLesson.level),
@@ -61,7 +73,36 @@ export const AIAssistantDrawer: React.FC<{
 
   if (!isOpen) return null;
 
-  const handleSend = (textToSend?: string) => {
+  const readFileAsDataUrl = (file: File): Promise<string> => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(reader.error || new Error('تعذر قراءة الملف'));
+    reader.readAsDataURL(file);
+  });
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files) return;
+    const accepted = new Set([
+      'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+      'application/pdf', 'text/plain',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/msword',
+    ]);
+    const incoming = Array.from(files).slice(0, 4 - attachments.length);
+    try {
+      const next: AssistantAttachment[] = [];
+      for (const file of incoming) {
+        if (!accepted.has(file.type)) continue;
+        if (file.size > 15 * 1024 * 1024) continue;
+        next.push({ name: file.name, mimeType: file.type, dataUrl: await readFileAsDataUrl(file) });
+      }
+      if (next.length) setAttachments(prev => [...prev, ...next].slice(0, 4));
+    } catch (error) {
+      console.error('[smart-ai] attachment read failed', error);
+    }
+  };
+
+  const handleSend = async (textToSend?: string) => {
     const query = textToSend || inputText.trim();
     const activeContext = smartContext;
     if (!query) return;
@@ -78,19 +119,26 @@ export const AIAssistantDrawer: React.FC<{
     if (!textToSend) setInputText('');
     setIsTyping(true);
 
-    setTimeout(async () => {
-      let reply = '';
-      try {
-        const liveReply = await askSmartAi({ question: query, lesson: currentLesson, curriculum: curriculumLessons });
-        if (liveReply) {
-          reply = liveReply;
-        }
-      } catch (error) {
-        console.error('[smart-ai]', error);
-      }
+    try {
+      const liveReply = await askSmartAi({
+        question: query,
+        lesson: currentLesson,
+        curriculum: curriculumLessons,
+        attachments,
+        useWeb,
+        level: selectedLevel,
+      });
+      const reply = liveReply?.text || '';
       if (reply) {
-        const aiMsg: Message = { id: (Date.now() + 1).toString(), sender: 'ai', text: reply, timestamp: new Date().toLocaleTimeString('ar-DZ', { hour: '2-digit', minute: '2-digit' }) };
+        const aiMsg: Message = {
+          id: (Date.now() + 1).toString(),
+          sender: 'ai',
+          text: reply,
+          sources: liveReply?.sources || [],
+          timestamp: new Date().toLocaleTimeString('ar-DZ', { hour: '2-digit', minute: '2-digit' }),
+        };
         setMessages((prev) => [...prev, aiMsg]);
+        setAttachments([]);
         setIsTyping(false);
         return;
       }
@@ -121,7 +169,17 @@ export const AIAssistantDrawer: React.FC<{
 
       setMessages((prev) => [...prev, aiMsg]);
       setIsTyping(false);
-    }, 600);
+    } catch (error) {
+      console.error('[smart-ai]', error);
+      const errorMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        sender: 'ai',
+        text: 'تعذر الوصول إلى المساعد الذكي حالياً. تحقق من إعداد GEMINI_API_KEY أو حاول مرة أخرى.',
+        timestamp: new Date().toLocaleTimeString('ar-DZ', { hour: '2-digit', minute: '2-digit' }),
+      };
+      setMessages((prev) => [...prev, errorMsg]);
+      setIsTyping(false);
+    }
   };
 
   return (
@@ -232,6 +290,25 @@ export const AIAssistantDrawer: React.FC<{
                 }`}
               >
                 {m.text}
+                {m.sources && m.sources.length > 0 && (
+                  <div className="mt-3 pt-2 border-t border-gray-200 space-y-1.5">
+                    <div className="text-[10px] font-black text-teal-700 flex items-center gap-1">
+                      <Globe2 className="w-3 h-3" /> مصادر الويب المستخدمة
+                    </div>
+                    {m.sources.map((source) => (
+                      <a
+                        key={source.uri}
+                        href={source.uri}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block text-[10px] text-blue-700 hover:underline truncate"
+                        title={source.uri}
+                      >
+                        {source.title}
+                      </a>
+                    ))}
+                  </div>
+                )}
                 <div
                   className={`text-[10px] mt-1.5 text-left ${
                     m.sender === 'user' ? 'text-gray-400' : 'text-gray-400'
@@ -270,11 +347,46 @@ export const AIAssistantDrawer: React.FC<{
             ))}
           </div>
 
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gray-100 hover:bg-teal-50 border border-gray-200 text-[11px] font-bold text-gray-700 cursor-pointer">
+              <Paperclip className="w-3.5 h-3.5" />
+              إرفاق منهاج/وثيقة/مذكرة
+              <input
+                type="file"
+                multiple
+                accept=".pdf,.doc,.docx,.txt,image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => { void handleFiles(e.target.files); e.currentTarget.value = ''; }}
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => setUseWeb(v => !v)}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[11px] font-bold transition ${useWeb ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-gray-100 border-gray-200 text-gray-500'}`}
+              title="تفعيل البحث في الإنترنت عند الحاجة"
+            >
+              <Globe2 className="w-3.5 h-3.5" />
+              الإنترنت {useWeb ? 'مفعل' : 'متوقف'}
+            </button>
+          </div>
+
+          {attachments.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {attachments.map((file, index) => (
+                <span key={file.name + index} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-[10px] text-emerald-800 max-w-full">
+                  <FileText className="w-3 h-3 shrink-0" />
+                  <span className="truncate max-w-[180px]">{file.name}</span>
+                  <button type="button" onClick={() => setAttachments(prev => prev.filter((_, i) => i !== index))} className="font-black">×</button>
+                </span>
+              ))}
+            </div>
+          )}
+
           {/* Input Box */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              handleSend();
+              void handleSend();
             }}
             className="flex items-center gap-2 pt-1"
           >
@@ -282,7 +394,7 @@ export const AIAssistantDrawer: React.FC<{
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="اكتب استفسارك البيداغوجي أو المنهجي هنا..."
+              placeholder="اسأل عن المنهاج، المذكرات، الوثيقة المرافقة أو أي موضوع علمي..."
               className="flex-1 bg-gray-50 border border-gray-300 rounded-xl px-3.5 py-2 text-[13px] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:bg-white"
             />
             <button
