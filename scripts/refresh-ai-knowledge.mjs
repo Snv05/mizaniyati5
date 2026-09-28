@@ -53,7 +53,7 @@ try {
   throw new Error('Gemini returned invalid JSON during knowledge refresh');
 }
 
-const allowedTopics = new Set(['curriculum', 'pedagogy', 'science', 'official_update']);
+const allowedTopics = new Set(['curriculum', 'pedagogy', 'science', 'official_update', 'web_update']);
 const allowedImportance = new Set(['high', 'medium', 'low']);
 const allowedConfidence = new Set(['high', 'medium', 'low']);
 const clean = Array.isArray(parsed.updates)
