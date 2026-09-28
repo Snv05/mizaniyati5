@@ -18,7 +18,6 @@ import {
   Printer,
   Compass,
   Award,
-  Zap,
   CheckCircle2,
   MessageSquare,
   HelpCircle,
@@ -226,113 +225,6 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
               <div className="text-[13px] font-black text-emerald-950">منهاج الجيل الثاني المعتمد</div>
               <div className="text-[11.5px] font-medium text-emerald-700 mt-0.5">الجمهورية الجزائرية الديمقراطية الشعبية</div>
             </div>
-          </div>
-        </div>
-
-        {/* ═══════════════════════════════════════════════════════════════
-            قسم الأزرار السريعة الأساسية (المذكرة، التدرج، الدفتر، الإعدادات)
-           ═══════════════════════════════════════════════════════════════ */}
-        <div>
-          <div className="flex items-center justify-between mb-3 px-1">
-            <h3 className="text-lg font-black text-gray-800 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-amber-500" />
-              <span>الوصول السريع للأدوات البيداغوجية</span>
-            </h3>
-            <span className="text-xs text-gray-500 font-medium">كل ما يحتاجه الأستاذ بنقرة واحدة</span>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
-            {/* زر سريع 1: المذكرة البيداغوجية */}
-            <button
-              type="button"
-              id="quick-btn-memos"
-              onClick={() => onSelectYear(config.level || '1am', 'memos')}
-              className="p-4 rounded-2xl bg-white border border-teal-200 hover:border-teal-500 hover:shadow-md transition text-right group cursor-pointer flex flex-col justify-between h-32 relative overflow-hidden"
-            >
-              <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center font-bold group-hover:scale-110 transition">
-                <FileText className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="font-black text-[14px] text-gray-900 group-hover:text-teal-700 transition">
-                  المذكرة البيداغوجية
-                </h4>
-                <p className="text-[11.5px] text-gray-500 mt-0.5 line-clamp-1">
-                  تحضير وتعديل المذكرات الرسمية
-                </p>
-              </div>
-              <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition">
-                <ChevronLeft className="w-4 h-4 text-teal-600" />
-              </div>
-            </button>
-
-            {/* زر سريع 2: التدرج السنوي للتعلمات */}
-            <button
-              type="button"
-              id="quick-btn-distribution"
-              onClick={() => onSelectYear(config.level || '1am', 'distribution')}
-              className="p-4 rounded-2xl bg-white border border-blue-200 hover:border-blue-500 hover:shadow-md transition text-right group cursor-pointer flex flex-col justify-between h-32 relative overflow-hidden"
-            >
-              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold group-hover:scale-110 transition">
-                <CalendarDays className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="font-black text-[14px] text-gray-900 group-hover:text-blue-700 transition">
-                  التدرج السنوي
-                </h4>
-                <p className="text-[11.5px] text-gray-500 mt-0.5 line-clamp-1">
-                  مخطط التوزيع الوزاري وتتبع الأسابيع
-                </p>
-              </div>
-              <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition">
-                <ChevronLeft className="w-4 h-4 text-blue-600" />
-              </div>
-            </button>
-
-            {/* زر سريع 3: الدفتر اليومي */}
-            <button
-              type="button"
-              id="quick-btn-logbook"
-              onClick={onOpenLogbook}
-              className="p-4 rounded-2xl bg-white border border-emerald-200 hover:border-emerald-500 hover:shadow-md transition text-right group cursor-pointer flex flex-col justify-between h-32 relative overflow-hidden"
-            >
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold group-hover:scale-110 transition">
-                <BookOpenCheck className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="font-black text-[14px] text-gray-900 group-hover:text-emerald-700 transition">
-                  الدفتر اليومي
-                </h4>
-                <p className="text-[11.5px] text-gray-500 mt-0.5 line-clamp-1">
-                  دفتر النصوص وتسجيل الحصص
-                </p>
-              </div>
-              <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition">
-                <ChevronLeft className="w-4 h-4 text-emerald-600" />
-              </div>
-            </button>
-
-            {/* زر سريع 4: إعدادات الحساب */}
-            <button
-              type="button"
-              id="quick-btn-settings"
-              onClick={onOpenSettings}
-              className="p-4 rounded-2xl bg-white border border-purple-200 hover:border-purple-500 hover:shadow-md transition text-right group cursor-pointer flex flex-col justify-between h-32 relative overflow-hidden"
-            >
-              <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold group-hover:scale-110 transition">
-                <UserCog className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="font-black text-[14px] text-gray-900 group-hover:text-purple-700 transition">
-                  إعدادات الحساب
-                </h4>
-                <p className="text-[11.5px] text-gray-500 mt-0.5 line-clamp-1">
-                  بيانات المؤسسة والختم الرسمي
-                </p>
-              </div>
-              <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition">
-                <ChevronLeft className="w-4 h-4 text-purple-600" />
-              </div>
-            </button>
           </div>
         </div>
 
