@@ -70,20 +70,20 @@ export function validateAndRepairPedagogicalNote(rawInput: string, fallbackLevel
       learningResource: lockedResource || String(meta.learningResource || fallbackTopic || '').trim(),
       lessonTitle: String(meta.lessonTitle || fallbackTopic || 'عنوان الحصة التعليمية').trim(),
       durationHours: typeof meta.durationHours === 'number' ? meta.durationHours : 1,
-      targetedCompetence: String(meta.targetedCompetence || 'تجنيد الموارد المعرفية والمنهجية لحل مشكلات دالة').trim(),
+      targetedCompetence: String(meta.targetedCompetence || 'اقتراح AI — يحتاج مراجعة الأستاذ').trim(),
     },
     pedagogicalTriad: {
-      knowledgeResource: String(pedagogicalTriad.knowledgeResource || 'بناء المعارف والمفاهيم العلمية المستهدفة').trim(),
-      methodologicalResource: String(pedagogicalTriad.methodologicalResource || 'انتهاج مسعى علمي (تقصي، تجريب، تحليل وتفسير)').trim(),
-      valuesResource: String(pedagogicalTriad.valuesResource || 'تبني سلوكيات إيجابية نحو الصحة والبيئة').trim(),
+      knowledgeResource: String(pedagogicalTriad.knowledgeResource || 'اقتراح AI — يحتاج مراجعة الأستاذ').trim(),
+      methodologicalResource: String(pedagogicalTriad.methodologicalResource || 'اقتراح AI — يحتاج مراجعة الأستاذ').trim(),
+      valuesResource: String(pedagogicalTriad.valuesResource || 'اقتراح AI — يحتاج مراجعة الأستاذ').trim(),
     },
     requirements: {
       prerequisites: Array.isArray(requirements.prerequisites) && requirements.prerequisites.length > 0
         ? requirements.prerequisites.map((p: any) => String(p).trim()).filter(Boolean)
-        : ['المكتسبات القبلية المرتبطة بالمستوى السابق'],
+        : ['اقتراح AI — يحتاج مراجعة الأستاذ'],
       didacticMeans: Array.isArray(requirements.didacticMeans) && requirements.didacticMeans.length > 0
         ? requirements.didacticMeans.map((d: any) => String(d).trim()).filter(Boolean)
-        : ['الكتاب المدرسي، وثائق وسندات بيولوجية، معدات مخبرية'],
+        : ['اقتراح AI — يحتاج مراجعة الأستاذ'],
       scientificTerms: Array.isArray(requirements.scientificTerms)
         ? requirements.scientificTerms.map((t: any) => ({
             arabic: String(t.arabic || '').trim(),
