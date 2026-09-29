@@ -397,7 +397,7 @@ apiApp.post('/api/gemini/generate-pedagogical-note', async (req, res) => {
     if (!apiKey) {
       return res.status(503).json({ error: 'مفتاح واجهة برمجة تطبيقات Gemini غير متوفر في الخادم' });
     }
-    const { gradeLevel, topic, attachments = [], useWebResearch = true, modelSections = [] } = req.body;
+    const { gradeLevel, topic, attachments = [], useWebResearch = true, modelSections = [], sourceContext = {} } = req.body;
     if (!gradeLevel || !topic) {
       return res.status(400).json({ error: 'المستوى والموضوع مطلوبان لتوليد المذكرة' });
     }
@@ -442,7 +442,22 @@ apiApp.post('/api/gemini/generate-pedagogical-note', async (req, res) => {
       },
     });
 
-    const systemPrompt = buildGeminiSystemPrompt(gradeLevel, topic, Array.isArray(modelSections) ? modelSections.slice(0, 30).map(String) : []) + `\n\nقاعدة المعرفة الداخلية الحالية:\n${JSON.stringify(getKnowledgeSnapshot(), null, 2).slice(0, 30000)}`;
+    const safeModelSections = Array.isArray(modelSections) ? modelSections.slice(0, 30).map(String) : [];
+    const safeSourceContext = sourceContext && typeof sourceContext === 'object'
+      ? {
+          progression: Array.isArray((sourceContext as any).progression) ? (sourceContext as any).progression.slice(0, 40) : [],
+          memo: Array.isArray((sourceContext as any).memo) ? (sourceContext as any).memo.slice(0, 40) : [],
+          library: Array.isArray((sourceContext as any).library) ? (sourceContext as any).library.slice(0, 10) : [],
+        }
+      : {};
+
+    const provenanceInstruction = `
+ترتيب المصادر للمذكرة: 1) التدرج/بيانات المنصة، 2) المذكرة أو المورد، 3) مرفقات الأستاذ، 4) الويب عند الحاجة. مكتبة النماذج مرجع هيكلي فقط.
+عند استعمال قيمة من سياق المصدر، سجلها في sourceTrace. لا تنسب معلومة إلى التدرج أو المذكرة دون أن تكون موجودة فعلاً في السياق.
+إذا تعذر إثبات قيمة من المصادر الداخلية، لا تخترعها؛ يمكن اقتراحها فقط كـ sourceType="ai" وsourceLabel="اقتراح AI — يحتاج مراجعة الأستاذ".
+`;
+
+    const systemPrompt = buildGeminiSystemPrompt(gradeLevel, topic, safeModelSections) + `\n\n${provenanceInstruction}\nسياق المصادر الداخلي المرسل من الواجهة:\n${JSON.stringify(safeSourceContext, null, 2).slice(0, 50000)}\n\nقاعدة المعرفة الداخلية الحالية:\n${JSON.stringify(getKnowledgeSnapshot(), null, 2).slice(0, 30000)}`;
     const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
     const response = await ai.models.generateContent({
