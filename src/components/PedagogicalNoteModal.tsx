@@ -21,12 +21,14 @@ import {
   FileUp,
   Trash2,
   RotateCcw,
-  XCircle
+  XCircle,
+  Search
 } from 'lucide-react';
 import { PedagogicalNote, GradeLevel } from '../types/pedagogicalNote';
 import { generatePedagogicalNote } from '../services/geminiPedagogicalService';
 import { MemoConfig } from '../types';
 import { TeacherOfficialStamp } from './TeacherOfficialStamp';
+import { getScienceMemoModels, getMemoModelStatusLabel, ScienceMemoModel } from '../services/scienceMemoModelLibrary';
 import { ExpertLabBlock, consumePendingExpertLabBlock, subscribeExpertLab } from '../services/expertLabStore';
 import {
   MemoAttachment,
@@ -73,6 +75,9 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [useWebResearch, setUseWebResearch] = useState(true);
   const [labBlock, setLabBlock] = useState<ExpertLabBlock | null>(null);
+  const [showModelLibrary, setShowModelLibrary] = useState(false);
+  const [modelQuery, setModelQuery] = useState('');
+  const [selectedModel, setSelectedModel] = useState<ScienceMemoModel | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -164,7 +169,8 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
         selectedGrade,
         topic.trim(),
         attachments.map(({ name, mimeType, size, dataUrl }) => ({ name, mimeType, size, dataUrl })),
-        useWebResearch
+        useWebResearch,
+        selectedModel?.sections || []
       );
       setNote(generated);
       showToast('تم توليد المذكرة البيداغوجية الرسمية بنجاح 🌟');
@@ -280,6 +286,14 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
                 )}
               </button>
             </div>
+          </div>
+
+          <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-3 print:hidden">
+            <div className="flex items-center justify-between gap-2">
+              <div><div className="text-xs font-black text-blue-950">مكتبة نماذج مذكرات علوم الطبيعة والحياة</div><div className="text-[10px] text-blue-800">نماذج استرشادية منفصلة عن المصادر الرسمية.</div></div>
+              <button type="button" onClick={() => setShowModelLibrary(v => !v)} className="px-2.5 py-1 rounded-lg bg-blue-700 text-white text-[10px] font-black">فتح المكتبة</button>
+            </div>
+            {showModelLibrary && <div className="mt-3 space-y-2"><div className="relative"><Search size={13} className="absolute right-2 top-2.5 text-gray-400"/><input value={modelQuery} onChange={e => setModelQuery(e.target.value)} placeholder="ابحث عن نموذج..." className="w-full border border-blue-200 rounded-lg py-2 pr-7 pl-2 text-[11px] outline-none"/></div><div className="max-h-48 overflow-y-auto space-y-1.5">{getScienceMemoModels(selectedGrade).filter((m: ScienceMemoModel) => !modelQuery || (m.title + m.sections.join(' ')).includes(modelQuery)).map((m: ScienceMemoModel) => <button key={m.id} type="button" onClick={() => { setSelectedModel(m); setTopic(m.title); setShowModelLibrary(false); showToast('تم اختيار النموذج الاسترشادي. أدخل المورد الفعلي من التدرج قبل التوليد.'); }} className="w-full text-right p-2 rounded-lg bg-white border border-blue-100 hover:border-blue-300"><div className="text-[10px] font-black text-gray-800">{m.title}</div><div className="text-[9px] text-blue-700 mt-0.5">{getMemoModelStatusLabel(m.status)} • {m.sections.length} عناصر</div></button>)}</div></div>}
           </div>
 
           {/* مصادر المذكرة: ملفات، صور، لصق من الحافظة، واسترداد محلي */}

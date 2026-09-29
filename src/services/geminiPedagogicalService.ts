@@ -156,7 +156,8 @@ export async function generatePedagogicalNote(
   gradeLevel: GradeLevel,
   topic: string,
   attachments: PedagogicalAttachmentInput[] = [],
-  useWebResearch: boolean = true
+  useWebResearch: boolean = true,
+  modelSections: string[] = []
 ): Promise<PedagogicalNote> {
   const cleanTopic = (topic || '').trim();
   if (!cleanTopic) {
@@ -179,6 +180,7 @@ export async function generatePedagogicalNote(
           dataUrl,
         })),
         useWebResearch,
+        modelSections,
       }),
     });
 
