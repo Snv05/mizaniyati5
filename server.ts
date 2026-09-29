@@ -124,6 +124,7 @@ app.post('/api/gemini/smart-assistant', async (req, res) => {
       curriculum = [],
       attachments = [],
       useWeb = true,
+      expertMode = true,
     } = req.body;
 
     if (!String(question || '').trim()) {
