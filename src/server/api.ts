@@ -443,17 +443,41 @@ apiApp.post('/api/gemini/generate-pedagogical-note', async (req, res) => {
     });
 
     const safeModelSections = Array.isArray(modelSections) ? modelSections.slice(0, 30).map(String) : [];
+    const classifyAttachment = (item: any) => {
+      const name = String(item?.name || '').toLowerCase();
+      if (/منهاج|programme|curriculum/.test(name)) return { kind: 'curriculum', role: 'المنهاج الرسمي', priority: 1 };
+      if (/مرافق|مرافقة|document.*accompagn|companion/.test(name)) return { kind: 'companionDocument', role: 'الوثيقة المرافقة', priority: 3 };
+      if (/دليل.*أستاذ|أستاذ.*دليل|guide.*prof|teacher.*guide/.test(name)) return { kind: 'teacherGuide', role: 'كتاب دليل الأستاذ', priority: 4 };
+      if (/مذكر|memo|fiche/.test(name)) return { kind: 'memo', role: 'مذكرة/مورد تربوي', priority: 5 };
+      return { kind: 'attachment', role: 'وثيقة مرفقة من الأستاذ', priority: 6 };
+    };
+
     const safeSourceContext = sourceContext && typeof sourceContext === 'object'
       ? {
           progression: Array.isArray((sourceContext as any).progression) ? (sourceContext as any).progression.slice(0, 40) : [],
           memo: Array.isArray((sourceContext as any).memo) ? (sourceContext as any).memo.slice(0, 40) : [],
           library: Array.isArray((sourceContext as any).library) ? (sourceContext as any).library.slice(0, 10) : [],
+          sourceDocuments: Array.isArray((sourceContext as any).sourceDocuments)
+            ? (sourceContext as any).sourceDocuments.slice(0, 10)
+            : [],
+          sourcePolicy: (sourceContext as any).sourcePolicy || null,
         }
       : {};
 
     const provenanceInstruction = `
-ترتيب المصادر للمذكرة: 1) التدرج/بيانات المنصة، 2) المذكرة أو المورد، 3) مرفقات الأستاذ، 4) الويب عند الحاجة. مكتبة النماذج مرجع هيكلي فقط.
-عند استعمال قيمة من سياق المصدر، سجلها في sourceTrace. لا تنسب معلومة إلى التدرج أو المذكرة دون أن تكون موجودة فعلاً في السياق.
+ترتيب المصادر الإلزامي للمذكرة:
+1) المنهاج الرسمي وبيانات المنصة/التدرج،
+2) الوثيقة المرافقة،
+3) كتاب دليل الأستاذ،
+4) المذكرات/الموارد التربوية،
+5) مرفقات الأستاذ،
+6) الويب عند الحاجة فقط،
+7) مكتبة النماذج للهيكلة فقط،
+8) الذكاء الاصطناعي للاقتراحات غير المثبتة.
+
+لا تنسب أي معلومة إلى المنهاج أو الوثيقة المرافقة أو دليل الأستاذ إلا إذا كانت موجودة فعلاً في السياق أو في مرفق مصنف بذلك المصدر.
+لا تجعل الويب أو النموذج اللغوي يتغلب على مصدر رسمي متاح.
+عند استعمال قيمة من سياق المصدر، سجلها في sourceTrace مع نوع المصدر واسمه.
 إذا تعذر إثبات قيمة من المصادر الداخلية، لا تخترعها؛ يمكن اقتراحها فقط كـ sourceType="ai" وsourceLabel="اقتراح AI — يحتاج مراجعة الأستاذ".
 `;
 
