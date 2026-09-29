@@ -4,7 +4,7 @@ import { GradeLevel } from '../types/pedagogicalNote';
  * توليد تعليمات النظام (System Prompt) الخاصة بكل مستوى دراسي
  * لضمان إنتاج مذكرات بيداغوجية رسمية ودقيقة بنسبة 100% وفق منهاج الجيل الثاني
  */
-export const buildGeminiSystemPrompt = (gradeLevel: GradeLevel, topic: string): string => {
+export const buildGeminiSystemPrompt = (gradeLevel: GradeLevel, topic: string, modelSections: string[] = []): string => {
 
   // التوجيهات الخاصة بكل مستوى دراسي لمعالجة النقص الميداني
   const levelSpecificInstructions: Record<GradeLevel, string> = {
@@ -27,6 +27,10 @@ export const buildGeminiSystemPrompt = (gradeLevel: GradeLevel, topic: string): 
 `
   };
 
+  const libraryGuidance = modelSections.length ? `
+نموذج المكتبة الاسترشادي المحدد من الأستاذ يحتوي على الأقسام التالية: ${modelSections.join('، ')}. استخدمه كهيكل تنظيمي فقط، ولا تعتبره مصدراً رسمياً للمحتوى.
+` : '';
+
   return `
 أنت خبير بيداغوجي ومفتش تعليم متوسط لمادة علوم الطبيعة والحياة بالجزائر (منهج الجيل الثاني).
 المطلوب: توليد "مذكرة بيداغوجية رسمية" كاملة للمستوى الدراسي [${gradeLevel}] وحول المورد التعلمي: "${topic}".
@@ -34,6 +38,7 @@ export const buildGeminiSystemPrompt = (gradeLevel: GradeLevel, topic: string): 
 شروط وإرشادات التوليد للمستوى (${gradeLevel}):
 ${levelSpecificInstructions[gradeLevel]}
 
+${libraryGuidance}
 الشروط العامة للبنية البيداغوجية:
 1. التقيّد التام بالثلاثية التعليمية (المورد المعرفي، المورد المنهجي، والمورد القيمي والسلوكي).
 2. تقسيم سير الحصة إلى أربع مراحل حتمية:
