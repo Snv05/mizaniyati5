@@ -167,6 +167,37 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
 
     setIsLoading(true);
     try {
+      const distributions: Record<GradeLevel, any[]> = {
+        '1AM': OFFICIAL_1AM_DISTRIBUTION,
+        '2AM': OFFICIAL_2AM_DISTRIBUTION,
+        '3AM': OFFICIAL_3AM_DISTRIBUTION,
+        '4AM': OFFICIAL_4AM_DISTRIBUTION,
+      };
+      const norm = (v: unknown) => String(v || '').toLowerCase().replace(/[\\u064B-\\u065F\\u0670]/g, '').replace(/\\s+/g, ' ').trim();
+      const q = norm(topic);
+      const progression = (distributions[selectedGrade] || []).filter((row: any) => {
+        const text = [row.midan, row.maqta, row.mawrid, row.session1, row.session2].map(norm).join(' ');
+        return q && (text.includes(q) || q.includes(norm(row.mawrid)));
+      }).slice(0, 12).map((row: any) => ({
+        id: row.id, week: row.week, month: row.month, dates: row.dates,
+        midan: row.midan, maqta: row.maqta, mawrid: row.mawrid,
+        session1: row.session1, session2: row.session2,
+        isHoliday: row.isHoliday, isExam: row.isExam,
+      }));
+      const curriculum = loadCurriculumDatabase();
+      const memo = curriculum.filter((item: any) => {
+        if (item.level && String(item.level).toUpperCase() !== selectedGrade) return false;
+        const text = [item.midan, item.maqta, item.mawrid, item.ta3alom, item.learningResource, item.lessonTitle, item.title].map(norm).join(' ');
+        return q && (text.includes(q) || q.includes(norm(item.mawrid)) || q.includes(norm(item.learningResource)));
+      }).slice(0, 12).map((item: any) => ({
+        id: item.id || item.sourceSequenceId || item.sourceResourceId,
+        level: item.level, midan: item.midan, maqta: item.maqta,
+        mawrid: item.mawrid || item.learningResource,
+        ta3alom: item.ta3alom || item.learningUnit,
+        lessonTitle: item.lessonTitle || item.title,
+        taqwim: item.taqwim,
+        activityTitles: Array.isArray(item.anshita) ? item.anshita.map((a: any) => a.title).filter(Boolean).slice(0, 8) : [],
+      }));
       const generated = await generatePedagogicalNote(
         selectedGrade,
         topic.trim(),
@@ -174,13 +205,14 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
         useWebResearch,
         selectedModel?.sections || [],
         {
+          progression,
+          memo,
           library: selectedModel ? [{
             id: selectedModel.id,
             title: selectedModel.title,
             status: selectedModel.status,
             sections: selectedModel.sections,
           }] : [],
-          attachment: attachments.map(item => ({ name: item.name, mimeType: item.mimeType, size: item.size })),
         }
       );
       setNote(generated);
