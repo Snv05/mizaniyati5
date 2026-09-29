@@ -196,7 +196,13 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
         ta3alom: item.ta3alom || item.learningUnit,
         lessonTitle: item.lessonTitle || item.title,
         taqwim: item.taqwim,
+        sourceType: item.sourceOfficial ? 'curriculum' : 'memo',
+        sourceLabel: item.sourceOfficial ? 'المنهاج/المورد الرسمي' : 'قاعدة المذكرات/المورد',
         activityTitles: Array.isArray(item.anshita) ? item.anshita.map((a: any) => a.title).filter(Boolean).slice(0, 8) : [],
+        activitySources: Array.isArray(item.anshita) ? item.anshita.map((a: any) => ({
+          id: a.sourceActivityId || a.id || '',
+          title: a.title || '',
+        })).filter((a: any) => a.title).slice(0, 8) : [],
       }));
       const generated = await generatePedagogicalNote(
         selectedGrade,
