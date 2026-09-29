@@ -460,6 +460,9 @@ apiApp.post('/api/gemini/generate-pedagogical-note', async (req, res) => {
           sourceDocuments: Array.isArray((sourceContext as any).sourceDocuments)
             ? (sourceContext as any).sourceDocuments.slice(0, 10)
             : [],
+          officialSources: Array.isArray((sourceContext as any).officialSources)
+            ? (sourceContext as any).officialSources.slice(0, 20)
+            : [],
           sourcePolicy: (sourceContext as any).sourcePolicy || null,
         }
       : {};
