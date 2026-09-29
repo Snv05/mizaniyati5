@@ -702,6 +702,18 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
                     </div>
                   </div>
 
+                  {(note.sourceActivities?.title1 || note.sourceActivities?.title2 || note.sourceActivities?.assessment) && (
+                    <div className="space-y-2 border-t border-emerald-200 pt-4 print:break-inside-avoid">
+                      <h4 className="text-xs font-black text-emerald-900 border-r-4 border-emerald-600 pr-2">الأنشطة والتقويم من المصدر</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[10px]">
+                        <div className="rounded-lg border border-emerald-100 bg-emerald-50/50 p-2"><b>النشاط 1:</b> {note.sourceActivities.title1 || 'غير متوفر في المصدر'}</div>
+                        <div className="rounded-lg border border-emerald-100 bg-emerald-50/50 p-2"><b>النشاط 2:</b> {note.sourceActivities.title2 || 'غير متوفر في المصدر'}</div>
+                        <div className="rounded-lg border border-amber-100 bg-amber-50/50 p-2"><b>التقويم:</b> {note.sourceActivities.assessment || 'غير متوفر في المصدر'}</div>
+                      </div>
+                      <div className="text-[9px] text-gray-500">المصدر: {note.sourceActivities.sourceLabel}</div>
+                    </div>
+                  )}
+
                   {note.sourceTrace?.length > 0 && (
                     <div className="space-y-2 border-t border-sky-200 pt-4 print:break-inside-avoid">
                       <h4 className="text-xs font-black text-sky-900 flex items-center gap-1.5 border-r-4 border-sky-500 pr-2">
