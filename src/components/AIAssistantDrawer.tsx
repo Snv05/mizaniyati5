@@ -15,6 +15,7 @@ import {
   Paperclip,
   Globe2,
   FileText,
+  PlusCircle,
 } from 'lucide-react';
 
 interface Message {
