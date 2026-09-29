@@ -55,6 +55,20 @@ export function validateAndRepairPedagogicalNote(rawInput: string, fallbackLevel
   const lockedUnit = String(officialRow.maqta || memoRow.maqta || meta.learningUnit || '').trim();
   const lockedResource = String(officialRow.mawrid || memoRow.mawrid || meta.learningResource || fallbackTopic || '').trim();
   const lockedLearning = String(memoRow.ta3alom || '').trim();
+  const sourceActivityRow = memo.find((row: any) => Array.isArray(row.activityTitles) && row.activityTitles.length > 0) || {};
+  const activityTitles = Array.isArray(sourceActivityRow.activityTitles)
+    ? sourceActivityRow.activityTitles.map((x: any) => String(x || '').trim()).filter(Boolean).slice(0, 2)
+    : [];
+  const sourceAssessment = String(sourceActivityRow.taqwim || '').trim();
+  const sourceActivities = {
+    title1: activityTitles[0] || '',
+    title2: activityTitles[1] || '',
+    assessment: sourceAssessment,
+    sourceType: activityTitles.length || sourceAssessment ? 'memo' as const : 'ai' as const,
+    sourceLabel: activityTitles.length || sourceAssessment ? 'قاعدة المذكرات/المنهاج' : 'غير متوفر في المصدر',
+    ...(sourceActivityRow.id ? { sourceId: String(sourceActivityRow.id) } : {}),
+  };
+
   const lockedTrace = [
     lockedField && sourceField('الميدان', lockedField, officialRow.midan ? 'progression' : 'memo'),
     lockedUnit && sourceField('المقطع', lockedUnit, officialRow.maqta ? 'progression' : 'memo'),
@@ -147,6 +161,7 @@ export function validateAndRepairPedagogicalNote(rawInput: string, fallbackLevel
         : ['حلل السندات المقدمة واستخلص النتيجة العلمية المستهدفة'],
     },
     researchSources: Array.isArray(parsed.researchSources) ? parsed.researchSources.map((x:any)=>({title:String(x.title||''),url:String(x.url||''),purpose:String(x.purpose||'')})).filter((x:any)=>x.title||x.url) : [],
+    sourceActivities,
     sourceTrace: [...lockedTrace, ...(Array.isArray(parsed.sourceTrace)
       ? parsed.sourceTrace.map((x:any)=>({
           field: String(x.field || '').trim(),
