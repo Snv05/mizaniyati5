@@ -21,6 +21,15 @@ export interface SmartAiRequest {
   expertMode?: boolean;
 }
 
+export interface SmartAiLabBlock {
+  id: string;
+  type: 'experiment' | 'diagram' | 'activity' | 'image' | 'general';
+  title: string;
+  content: string;
+  createdAt: string;
+  sources?: SmartAiSource[];
+}
+
 export interface SmartAiResponse {
   text: string;
   sources: SmartAiSource[];
