@@ -170,7 +170,16 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
         topic.trim(),
         attachments.map(({ name, mimeType, size, dataUrl }) => ({ name, mimeType, size, dataUrl })),
         useWebResearch,
-        selectedModel?.sections || []
+        selectedModel?.sections || [],
+        {
+          library: selectedModel ? [{
+            id: selectedModel.id,
+            title: selectedModel.title,
+            status: selectedModel.status,
+            sections: selectedModel.sections,
+          }] : [],
+          attachment: attachments.map(item => ({ name: item.name, mimeType: item.mimeType, size: item.size })),
+        }
       );
       setNote(generated);
       showToast('تم توليد المذكرة البيداغوجية الرسمية بنجاح 🌟');
@@ -658,6 +667,55 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
                       </div>
                     </div>
                   </div>
+
+                  {note.sourceTrace?.length > 0 && (
+                    <div className="space-y-2 border-t border-sky-200 pt-4 print:break-inside-avoid">
+                      <h4 className="text-xs font-black text-sky-900 flex items-center gap-1.5 border-r-4 border-sky-500 pr-2">
+                        <FileCheck2 size={15} /> مصدر المعلومات في المذكرة
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px]">
+                        {note.sourceTrace.map((trace, idx) => {
+                          const labels: Record<string, string> = {
+                            progression: 'التدرج',
+                            memo: 'المذكرة',
+                            library: 'المكتبة',
+                            attachment: 'المرفق',
+                            web: 'الويب',
+                            ai: 'اقتراح AI',
+                          };
+                          const label = labels[trace.sourceType] || trace.sourceLabel;
+                          const safeUri = trace.uri && /^https?:\\/\\//i.test(trace.uri) ? trace.uri : '';
+                          return (
+                            <div key={idx} className="border border-sky-100 bg-sky-50/50 rounded-lg p-2">
+                              <div className="flex items-center justify-between gap-2 font-black text-sky-900">
+                                <span>{trace.field}</span>
+                                <span className="px-1.5 py-0.5 rounded bg-white border border-sky-200">{label}</span>
+                              </div>
+                              <div className="mt-1 text-gray-700 leading-5">{trace.value}</div>
+                              <div className="mt-1 text-gray-500">{trace.sourceLabel}</div>
+                              {safeUri ? (
+                                <a href={safeUri} target="_blank" rel="noopener noreferrer" className="text-blue-700 underline break-all print:hidden">{safeUri}</a>
+                              ) : null}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {note.researchSources?.some(source => /^https?:\\/\\//i.test(source.url)) && (
+                    <div className="space-y-2 border-t border-gray-200 pt-4 print:break-inside-avoid">
+                      <h4 className="text-xs font-black text-gray-800">مصادر ومراجع التوليد</h4>
+                      <ul className="space-y-1 text-[10px]">
+                        {note.researchSources.filter(source => /^https?:\\/\\//i.test(source.url)).map((source, idx) => (
+                          <li key={idx}>
+                            <a href={source.url} target="_blank" rel="noopener noreferrer" className="text-blue-700 underline print:text-black">{source.title || source.url}</a>
+                            {source.purpose ? <span className="text-gray-500"> — {source.purpose}</span> : null}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
                   {/* Footer & Teacher Stamp */}
                   <div className="pt-4 border-t flex justify-between items-center text-xs font-bold text-gray-600">
