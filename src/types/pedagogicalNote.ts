@@ -35,7 +35,7 @@ export interface StudentWorksheet {
   questionsToAnswer: string[];
 }
 
-export type MemoSourceType = 'progression' | 'memo' | 'library' | 'attachment' | 'web' | 'ai';
+export type MemoSourceType = 'curriculum' | 'progression' | 'companionDocument' | 'teacherGuide' | 'memo' | 'library' | 'attachment' | 'web' | 'ai';
 
 export interface MemoSourceTrace {
   field: string;
