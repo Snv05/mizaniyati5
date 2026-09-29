@@ -213,6 +213,21 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
             status: selectedModel.status,
             sections: selectedModel.sections,
           }] : [],
+          sourceDocuments: attachments.map((item) => ({
+            id: item.id,
+            name: item.name,
+            mimeType: item.mimeType,
+          })),
+          sourcePolicy: {
+            order: ['curriculum', 'progression', 'companionDocument', 'teacherGuide', 'memo', 'attachment', 'web', 'library', 'ai'],
+            rules: [
+              'المنهاج والتدرج أولاً للحقول الرسمية والتسلسل.',
+              'الوثيقة المرافقة ودليل الأستاذ لتفسير المنهجية والأنشطة والتجارب عند توفرهما.',
+              'المذكرات لاستخراج عناوين النشاطين والتقويم دون اختلاق أو إعادة صياغة.',
+              'الويب تكميلي فقط ولا يغيّر معلومة رسمية مثبتة.',
+              'أي اقتراح غير موثق يوسم: اقتراح AI — يحتاج مراجعة الأستاذ.',
+            ],
+          },
         }
       );
       setNote(generated);
