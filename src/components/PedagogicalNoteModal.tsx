@@ -27,6 +27,7 @@ import { PedagogicalNote, GradeLevel } from '../types/pedagogicalNote';
 import { generatePedagogicalNote } from '../services/geminiPedagogicalService';
 import { MemoConfig } from '../types';
 import { TeacherOfficialStamp } from './TeacherOfficialStamp';
+import { ExpertLabBlock, consumePendingExpertLabBlock, subscribeExpertLab } from '../services/expertLabStore';
 import {
   MemoAttachment,
   fileToMemoAttachment,
@@ -71,13 +72,18 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
   const [savedAttachments, setSavedAttachments] = useState<MemoAttachment[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [useWebResearch, setUseWebResearch] = useState(true);
+  const [labBlock, setLabBlock] = useState<ExpertLabBlock | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
+    const pending = consumePendingExpertLabBlock();
+    if (pending) setLabBlock(pending);
+    const unsubscribe = subscribeExpertLab(block => { if (block) setLabBlock(block); });
     listMemoAttachments()
       .then(setSavedAttachments)
       .catch((error) => console.error('[memo-attachments]', error));
+    return unsubscribe;
   }, [isOpen]);
 
   const addFiles = async (files: FileList | File[]) => {
@@ -466,6 +472,15 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
                       🎯 مركبة الكفاءة المستهدفة: <span className="font-normal text-gray-800">{note.meta.targetedCompetence}</span>
                     </div>
                   </div>
+
+                  {labBlock && (
+                    <div className="border-2 border-dashed border-emerald-300 bg-emerald-50/50 rounded-xl p-4 space-y-2 print:break-inside-avoid">
+                      <div className="flex items-center justify-between gap-2"><h4 className="text-xs font-black text-emerald-900">إضافة من مختبر المساعد الخبير — {labBlock.title}</h4><button type="button" onClick={() => setLabBlock(null)} className="text-[10px] text-gray-500 print:hidden">إزالة</button></div>
+                      <div className="text-xs leading-7 whitespace-pre-line text-gray-700">{labBlock.content}</div>
+                      {labBlock.sources?.length ? <div className="pt-2 border-t border-emerald-200 text-[9px] text-blue-700">المصادر: {labBlock.sources.map(s => s.title).join(' • ')}</div> : null}
+                      <div className="text-[9px] text-emerald-700 font-bold">اقتراح مساعد — يحتاج مراجعة الأستاذ قبل الاعتماد.</div>
+                    </div>
+                  )}
 
                   {/* 1. الثلاثية البيداغوجية */}
                   <div className="space-y-2">
