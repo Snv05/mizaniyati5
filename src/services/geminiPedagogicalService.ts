@@ -55,7 +55,7 @@ export function validateAndRepairPedagogicalNote(rawInput: string, fallbackLevel
   const lockedUnit = String(officialRow.maqta || memoRow.maqta || meta.learningUnit || '').trim();
   const lockedResource = String(officialRow.mawrid || memoRow.mawrid || meta.learningResource || fallbackTopic || '').trim();
   const lockedLearning = String(memoRow.ta3alom || '').trim();
-  const sourceActivityRow = memo.find((row: any) => Array.isArray(row.activityTitles) && row.activityTitles.length > 0) || {};
+  const sourceActivityRow = memo.find((row: any) => (Array.isArray(row.activityTitles) && row.activityTitles.length > 0) || row.taqwim) || {};
   const activityTitles = Array.isArray(sourceActivityRow.activityTitles)
     ? sourceActivityRow.activityTitles.map((x: any) => String(x || '').trim()).filter(Boolean).slice(0, 2)
     : [];
@@ -68,6 +68,12 @@ export function validateAndRepairPedagogicalNote(rawInput: string, fallbackLevel
     sourceLabel: activityTitles.length || sourceAssessment ? 'قاعدة المذكرات/المنهاج' : 'غير متوفر في المصدر',
     ...(sourceActivityRow.id ? { sourceId: String(sourceActivityRow.id) } : {}),
   };
+
+  const activityTrace = [
+    activityTitles[0] && { field: 'عنوان النشاط 1', value: activityTitles[0], sourceType: 'memo', sourceLabel: 'قاعدة المذكرات/المنهاج', ...(sourceActivityRow.id ? { sourceId: String(sourceActivityRow.id) } : {}) },
+    activityTitles[1] && { field: 'عنوان النشاط 2', value: activityTitles[1], sourceType: 'memo', sourceLabel: 'قاعدة المذكرات/المنهاج', ...(sourceActivityRow.id ? { sourceId: String(sourceActivityRow.id) } : {}) },
+    sourceAssessment && { field: 'التقويم', value: sourceAssessment, sourceType: 'memo', sourceLabel: 'قاعدة المذكرات/المنهاج', ...(sourceActivityRow.id ? { sourceId: String(sourceActivityRow.id) } : {}) },
+  ].filter(Boolean) as any[];
 
   const lockedTrace = [
     lockedField && sourceField('الميدان', lockedField, officialRow.midan ? 'progression' : 'memo'),
@@ -162,7 +168,7 @@ export function validateAndRepairPedagogicalNote(rawInput: string, fallbackLevel
     },
     researchSources: Array.isArray(parsed.researchSources) ? parsed.researchSources.map((x:any)=>({title:String(x.title||''),url:String(x.url||''),purpose:String(x.purpose||'')})).filter((x:any)=>x.title||x.url) : [],
     sourceActivities,
-    sourceTrace: [...lockedTrace, ...(Array.isArray(parsed.sourceTrace)
+    sourceTrace: [...lockedTrace, ...activityTrace, ...(Array.isArray(parsed.sourceTrace)
       ? parsed.sourceTrace.map((x:any)=>({
           field: String(x.field || '').trim(),
           value: String(x.value || '').trim(),
