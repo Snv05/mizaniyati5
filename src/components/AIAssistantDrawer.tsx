@@ -63,7 +63,8 @@ export const AIAssistantDrawer: React.FC<{
   const [isTyping, setIsTyping] = useState(false);
   const [attachments, setAttachments] = useState<AssistantAttachment[]>([]);
   const [useWeb, setUseWeb] = useState(true);
-  const [expertMode, setExpertMode] = useState(true);
+    const [assistantSources, setAssistantSources] = useState<Array<{title:string;uri:string}>>([]);
+const [expertMode, setExpertMode] = useState(true);
   const [showKnowledge, setShowKnowledge] = useState(false);
   const [knowledgeDetails, setKnowledgeDetails] = useState<{ sources: { label: string; url: string; priority?: string }[]; updates: { title: string; summary: string; date: string; sourceTitle?: string; sourceUrl?: string; confidence?: string }[] } | null>(null);
   const [knowledgeStatus, setKnowledgeStatus] = useState<{ updatedAt: string | null; updateCount: number; lastRefresh?: { at?: string; resultCount?: number; searchUsed?: boolean } | null } | null>(null);
