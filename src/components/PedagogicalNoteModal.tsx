@@ -30,6 +30,8 @@ import { MemoConfig } from '../types';
 import { TeacherOfficialStamp } from './TeacherOfficialStamp';
 import { getScienceMemoModels, getMemoModelStatusLabel, ScienceMemoModel } from '../services/scienceMemoModelLibrary';
 import { ExpertLabBlock, consumePendingExpertLabBlock, subscribeExpertLab } from '../services/expertLabStore';
+import { OFFICIAL_1AM_DISTRIBUTION, OFFICIAL_2AM_DISTRIBUTION, OFFICIAL_3AM_DISTRIBUTION, OFFICIAL_4AM_DISTRIBUTION } from '../data/officialAnnualDistributionData';
+import { loadCurriculumDatabase } from '../data/curriculumDb';
 import {
   MemoAttachment,
   fileToMemoAttachment,
