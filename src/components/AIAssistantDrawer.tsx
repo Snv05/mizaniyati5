@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { LessonMemo } from '../types';
 import { askSmartAi } from '../services/smartAi';
+import { ExpertLabBlock, setPendingExpertLabBlock } from '../services/expertLabStore';
 import {
   Sparkles,
   Send,
@@ -169,7 +170,9 @@ const [expertMode, setExpertMode] = useState(true);
       });
       let reply = liveReply?.text || '';
       if (reply) {
-        const aiMsg: Message = {
+        saveLabBlock(makeLabBlock(query, reply, liveReply?.sources || []));
+        saveLabBlock(makeLabBlock(query, reply));
+      const aiMsg: Message = {
           id: (Date.now() + 1).toString(),
           sender: 'ai',
           text: reply,
@@ -360,6 +363,13 @@ const [expertMode, setExpertMode] = useState(true);
             </button>
           </div>
         )}
+
+        <div className="border-b border-emerald-100 bg-emerald-50/60 p-3 space-y-2">
+          <div className="flex items-center justify-between gap-2"><div className="flex items-center gap-1.5 text-[11px] font-black text-emerald-900"><FlaskConical className="w-3.5 h-3.5" /> مختبر التحضير الخبير</div><span className="text-[9px] text-gray-500">{labBlocks.length} مخرجات</span></div>
+          <div className="flex gap-1.5 overflow-x-auto pb-1">{([['experiment','🧪 تجربة'],['diagram','📊 رسم'],['activity','📝 نشاط'],['image','🖼️ مصادر']] as const).map(([type,label]) => <button key={type} type="button" onClick={() => setLabFilter(type)} className={`px-2 py-1 rounded-lg border text-[10px] font-bold ${labFilter===type ? 'bg-emerald-700 text-white' : 'bg-white text-gray-700'}`}>{label}</button>)}<button type="button" onClick={() => setLabFilter('all')} className="px-2 py-1 rounded-lg border text-[10px] font-bold bg-white">الكل</button></div>
+          {labBlocks.filter(b => labFilter === 'all' || b.type === labFilter).slice(0,3).map(block => <div key={block.id} className="bg-white border border-emerald-100 rounded-xl p-2.5"><div className="text-[10px] font-black">{block.title}</div><div className="mt-1 text-[10px] leading-relaxed text-gray-600 max-h-16 overflow-hidden whitespace-pre-line">{block.content}</div><button type="button" onClick={() => insertLabBlockIntoMemo(block)} className="mt-2 inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-700 text-white rounded-lg text-[10px] font-black"><PlusCircle className="w-3 h-3" /> إدراج في المذكرة</button></div>)}
+          {labBlocks.length===0 && <div className="text-[10px] text-gray-500 bg-white border border-dashed border-emerald-200 rounded-lg p-2">اطلب تجربة أو رسماً أو نشاطاً، وسيظهر الناتج هنا.</div>}
+        </div>
 
         {/* Message Thread */}
         <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-gray-50/50">
