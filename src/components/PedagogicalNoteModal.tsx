@@ -32,6 +32,7 @@ import { getScienceMemoModels, getMemoModelStatusLabel, ScienceMemoModel } from 
 import { ExpertLabBlock, consumePendingExpertLabBlock, subscribeExpertLab } from '../services/expertLabStore';
 import { OFFICIAL_1AM_DISTRIBUTION, OFFICIAL_2AM_DISTRIBUTION, OFFICIAL_3AM_DISTRIBUTION, OFFICIAL_4AM_DISTRIBUTION } from '../data/officialAnnualDistributionData';
 import { loadCurriculumDatabase } from '../data/curriculumDb';
+import { buildOfficialSourceContext } from '../services/officialPedagogicalSources';
 import {
   MemoAttachment,
   fileToMemoAttachment,
@@ -224,6 +225,7 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
             name: item.name,
             mimeType: item.mimeType,
           })),
+          officialSources: buildOfficialSourceContext(),
           sourcePolicy: {
             order: ['curriculum', 'progression', 'companionDocument', 'teacherGuide', 'memo', 'attachment', 'web', 'library', 'ai'],
             rules: [
