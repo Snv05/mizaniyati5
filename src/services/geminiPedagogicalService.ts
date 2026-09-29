@@ -60,12 +60,17 @@ export function validateAndRepairPedagogicalNote(rawInput: string, fallbackLevel
     ? sourceActivityRow.activityTitles.map((x: any) => String(x || '').trim()).filter(Boolean).slice(0, 2)
     : [];
   const sourceAssessment = String(sourceActivityRow.taqwim || '').trim();
+  const sourceActivityKind = ['curriculum','companionDocument','teacherGuide','memo'].includes(String(sourceActivityRow.sourceType))
+    ? String(sourceActivityRow.sourceType) as any
+    : 'memo';
   const sourceActivities = {
     title1: activityTitles[0] || '',
     title2: activityTitles[1] || '',
     assessment: sourceAssessment,
-    sourceType: activityTitles.length || sourceAssessment ? 'memo' as const : 'ai' as const,
-    sourceLabel: activityTitles.length || sourceAssessment ? 'قاعدة المذكرات/المنهاج' : 'غير متوفر في المصدر',
+    sourceType: (activityTitles.length || sourceAssessment) ? sourceActivityKind : 'ai' as const,
+    sourceLabel: (activityTitles.length || sourceAssessment)
+      ? String(sourceActivityRow.sourceLabel || 'مصدر تربوي')
+      : 'غير متوفر في المصدر',
     ...(sourceActivityRow.id ? { sourceId: String(sourceActivityRow.id) } : {}),
   };
 
@@ -172,7 +177,7 @@ export function validateAndRepairPedagogicalNote(rawInput: string, fallbackLevel
       ? parsed.sourceTrace.map((x:any)=>({
           field: String(x.field || '').trim(),
           value: String(x.value || '').trim(),
-          sourceType: ['progression','memo','library','attachment','web','ai'].includes(x.sourceType) ? x.sourceType : 'ai',
+          sourceType: ['curriculum','progression','companionDocument','teacherGuide','memo','library','attachment','web','ai'].includes(x.sourceType) ? x.sourceType : 'ai',
           sourceLabel: String(x.sourceLabel || (x.sourceType === 'ai' ? 'اقتراح AI — يحتاج مراجعة الأستاذ' : 'مصدر غير محدد')).trim(),
           ...(x.sourceId ? { sourceId: String(x.sourceId).trim() } : {}),
           ...(x.uri && /^https?:\\/\\//i.test(String(x.uri)) ? { uri: String(x.uri).trim() } : {}),
