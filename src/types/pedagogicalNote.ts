@@ -26,6 +26,17 @@ export interface StudentWorksheet {
   questionsToAnswer: string[];
 }
 
+export type MemoSourceType = 'progression' | 'memo' | 'library' | 'attachment' | 'web' | 'ai';
+
+export interface MemoSourceTrace {
+  field: string;
+  value: string;
+  sourceType: MemoSourceType;
+  sourceLabel: string;
+  sourceId?: string;
+  uri?: string;
+}
+
 export interface ResearchSource { title: string; url: string; purpose: string; }
 export interface VisualPlan { diagramType: string; description: string; imageSuggestions: string[]; }
 
@@ -59,6 +70,7 @@ export interface PedagogicalNote {
   sequence: LessonSequenceStage[];
   studentWorksheet: StudentWorksheet;
   researchSources: ResearchSource[];
+  sourceTrace: MemoSourceTrace[];
   visualPlan: VisualPlan;
   bemEvaluationGrid: BemEvaluationGrid;
 }

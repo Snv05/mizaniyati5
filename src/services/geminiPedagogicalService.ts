@@ -127,6 +127,18 @@ export function validateAndRepairPedagogicalNote(rawInput: string, fallbackLevel
         : ['حلل السندات المقدمة واستخلص النتيجة العلمية المستهدفة'],
     },
     researchSources: Array.isArray(parsed.researchSources) ? parsed.researchSources.map((x:any)=>({title:String(x.title||''),url:String(x.url||''),purpose:String(x.purpose||'')})).filter((x:any)=>x.title||x.url) : [],
+    sourceTrace: Array.isArray(parsed.sourceTrace)
+      ? parsed.sourceTrace.map((x:any)=>({
+          field: String(x.field || '').trim(),
+          value: String(x.value || '').trim(),
+          sourceType: ['progression','memo','library','attachment','web','ai'].includes(x.sourceType) ? x.sourceType : 'ai',
+          sourceLabel: String(x.sourceLabel || (x.sourceType === 'ai' ? 'اقتراح AI — يحتاج مراجعة الأستاذ' : 'مصدر غير محدد')).trim(),
+          ...(x.sourceId ? { sourceId: String(x.sourceId).trim() } : {}),
+          ...(x.uri && /^https?:\\/\\//i.test(String(x.uri)) ? { uri: String(x.uri).trim() } : {}),
+        }))
+        .filter((x:any)=>x.field && x.value)
+        .slice(0, 80)
+      : [],
     visualPlan: {
       diagramType: String(visualPlan.diagramType || '').trim(),
       description: String(visualPlan.description || '').trim(),
@@ -157,7 +169,8 @@ export async function generatePedagogicalNote(
   topic: string,
   attachments: PedagogicalAttachmentInput[] = [],
   useWebResearch: boolean = true,
-  modelSections: string[] = []
+  modelSections: string[] = [],
+  sourceContext: Record<string, unknown> = {}
 ): Promise<PedagogicalNote> {
   const cleanTopic = (topic || '').trim();
   if (!cleanTopic) {
@@ -181,6 +194,7 @@ export async function generatePedagogicalNote(
         })),
         useWebResearch,
         modelSections,
+        sourceContext,
       }),
     });
 
