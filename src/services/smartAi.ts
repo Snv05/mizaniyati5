@@ -18,6 +18,7 @@ export interface SmartAiRequest {
   attachments?: SmartAiAttachment[];
   useWeb?: boolean;
   level?: string;
+  expertMode?: boolean;
 }
 
 export interface SmartAiResponse {
@@ -108,6 +109,7 @@ export async function askSmartAi(request: SmartAiRequest): Promise<SmartAiRespon
         curriculum: request.curriculum,
         attachments: request.attachments || [],
         useWeb: request.useWeb !== false,
+        expertMode: request.expertMode !== false,
       }),
     });
 

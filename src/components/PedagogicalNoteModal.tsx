@@ -127,7 +127,7 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
   };
 
   const handlePaste = async (event: React.ClipboardEvent<HTMLDivElement>) => {
-    const imageItem = Array.from(event.clipboardData.items).find((item) => item.type.startsWith('image/'));
+    const imageItem = (Array.from(event.clipboardData.items) as DataTransferItem[]).find((item) => item.type.startsWith('image/'));
     if (!imageItem) return;
     event.preventDefault();
     const blob = imageItem.getAsFile();

@@ -1023,9 +1023,6 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
               : baseSection;
           } else {
             grouped[day].set(row.time + '|' + (level || '') + '|' + baseSection, { id: row.id + '-' + day, time: row.time, section: groupMatches.length ? `${baseSection} — فوج ${Array.from(new Set(groupMatches)).join(' + فوج ')}` : sec, level });
-            continue;
-          }
-            grouped[day].set(key, { id: row.id + '-' + day, time: row.time, section: sec, level });
           }
         });
       });
@@ -1142,6 +1139,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
         let linkedSourceActivityId = res.sourceActivityIds?.[0];
         let linkedSourceActivityId2 = res.sourceActivityIds?.[1];
         let sessionOrdinal = 0;
+        let annualItem: any = null;
 
         if (annual) {
           const start = new Date(annual.startDate);
@@ -1151,7 +1149,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           const current = new Date(dateStr);
           const diffDays = Math.floor((current.getTime() - start.getTime()) / 86400000);
           const weekIndex = Math.floor(diffDays / 7);
-          const annualItem = weekIndex >= 0 ? annual.items[weekIndex] : null;
+          annualItem = weekIndex >= 0 ? annual.items[weekIndex] : null;
 
           if (annualItem) {
             const weekKey = baseSection + "::" + getSchoolWeekKey(dateStr);
@@ -1393,8 +1391,10 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
         showToast('ولّد الدفتر أولاً قبل الطباعة');
         return;
       }
+      setShowEmptyWarning(false);
       if (!isPreviewModalOpen || previewMode !== 'all') {
         setPreviewMode('all');
+        setPreviewZoom(100);
         setIsPreviewModalOpen(true);
         await new Promise(resolve => setTimeout(resolve, 250));
       }
@@ -1608,18 +1608,6 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
     setShowEmptyWarning(false);
   };
 
-  // طباعة الدفتر مباشرة من المعاينة مع احترام صفحة التعريف والغلاف وباقي الصفحات.
-  const handlePrintLogbook = () => {
-    if (!paginatedPages.length) {
-      displayUserAlert('يرجى توليد الدفتر أولاً قبل الطباعة');
-      return;
-    }
-    setPreviewMode('all');
-    setPreviewZoom(100);
-    setIsPreviewModalOpen(true);
-    setShowEmptyWarning(false);
-    window.setTimeout(() => window.print(), 250);
-  };
 
   const previewPagesToDisplay = useMemo(() => {
     if (previewMode === 'single') return paginatedPages.slice(0, 1);

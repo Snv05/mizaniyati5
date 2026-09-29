@@ -42,7 +42,7 @@ interface Props {
 export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, setConfig, showToast, curriculumLessons, curriculumBackground }) => {
   const [showPreview, setShowPreview] = useState(false);
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
-  const [orientation, setOrientation] = useState<'portrait' | 'landscape'>(() => level === '4am' ? 'landscape' : 'portrait');
+  const [orientation, setOrientation] = useState<'portrait' | 'landscape'>('portrait');
 
   // تنظيف أي تدرجات قديمة من التخزين المحلي لضمان استبدالها الكامل بالتدرج الوزاري الجديد
   useEffect(() => {
@@ -61,12 +61,6 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, set
       // ignore
     }
   }, []);
-
-  useEffect(() => {
-    if (level === '4am') {
-      setOrientation('landscape');
-    }
-  }, [level]);
 
   // مصدر الصفوف الوزارية الافتراضية المعتمدة
   const officialBaseRows = useMemo<OfficialAnnualDistributionRow[]>(() => {
@@ -127,7 +121,8 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, set
   const [customRows, setCustomRows] = useState<OfficialAnnualDistributionRow[]>(() => {
     try {
       const stored = JSON.parse(localStorage.getItem(ANNUAL_STORAGE_KEY) || '{}');
-      const base = (stored[level]?.items && Array.isArray(stored[level].items) && stored[level].items.length > 0)
+      const isFresh = stored[level]?.curriculumDataVersion === ANNUAL_SCHEDULE_DATA_VERSION;
+      const base = (isFresh && stored[level]?.items && Array.isArray(stored[level].items) && stored[level].items.length > 0)
         ? stored[level].items
         : officialBaseRows;
       const initialSettings = stored.globalCalendarSettings || stored[level]?.calendarSettings || getDefaultCalendarSettings(config.schoolYear);
@@ -140,7 +135,8 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, set
   useEffect(() => {
     try {
       const stored = JSON.parse(localStorage.getItem(ANNUAL_STORAGE_KEY) || '{}');
-      const base = (stored[level]?.items && Array.isArray(stored[level].items) && stored[level].items.length > 0)
+      const isFresh = stored[level]?.curriculumDataVersion === ANNUAL_SCHEDULE_DATA_VERSION;
+      const base = (isFresh && stored[level]?.items && Array.isArray(stored[level].items) && stored[level].items.length > 0)
         ? stored[level].items
         : officialBaseRows;
       const recalculated = recalculateDistributionRows(base, calendarSettings);
@@ -307,12 +303,12 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, set
 
     if (level === '4am') {
       // تطابق الصفحات الثلاث الرسمية في وثيقة وزارة التربية الوطنية:
-      // الصفحة 1: من الأسبوع 1 إلى 15 (نهاية الفصل الأول وعطلة الشتاء)
-      // الصفحة 2: من الأسبوع 16 إلى 33 (الفصل الثاني وبداية الثالث حتى 08 ماي)
-      // الصفحة 3: الأسبوعان 34 و 35 (الاختبارات والتوقيعات)
+      // الصفحة 1: الفصل الأول (من الأسبوع 1 إلى الأسبوع 15: عطلة الشتاء)
+      // الصفحة 2: الفصل الثاني (من الأسبوع 16 إلى الأسبوع 27: عطلة الربيع)
+      // الصفحة 3: الفصل الثالث (من الأسبوع 28 إلى الأسبوع 34: نهاية السنة والاختبارات + التأشيرات)
       const page1 = rows.slice(0, 15);
-      const page2 = rows.slice(15, 33);
-      const page3 = rows.slice(33);
+      const page2 = rows.slice(15, 27);
+      const page3 = rows.slice(27);
       return [page1, page2, page3];
     }
 
@@ -379,9 +375,11 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, set
   const handleExportPdf = async () => {
     try {
       if (document.fonts?.ready) await document.fonts.ready;
-      const pagesForExport = Array.from(
-        document.querySelectorAll<HTMLElement>('#official-distribution-content .annual-export-page')
-      );
+      const container = document.querySelector<HTMLElement>('#official-distribution-content');
+      const allFound = container
+        ? Array.from(container.querySelectorAll<HTMLElement>('.annual-export-page'))
+        : Array.from(document.querySelectorAll<HTMLElement>('.annual-export-page'));
+      const pagesForExport = allFound.slice(0, pages.length);
       await generateDistributionPdf(pagesForExport, orientation);
       showToast("تم تصدير التدرج السنوي بنفس ألوان وخط وجدول المعاينة (PDF)");
     } catch (error) {
@@ -413,7 +411,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, set
   };
 
   const DocumentPages = () => (
-    <div id="official-distribution-content" className="relative bg-transparent flex flex-col items-center p-4 print:p-0 print:bg-white w-full">
+    <div id="official-distribution-content" className={`relative bg-transparent flex flex-col items-center p-4 print:p-0 print:bg-white w-full ${orientation === 'landscape' ? 'print-orientation-landscape' : ''}`}>
       {curriculumBackground && (
         <div
           className="absolute inset-0 pointer-events-none z-0 rounded-2xl overflow-hidden print:hidden"
@@ -427,7 +425,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, set
         />
       )}
       <style>{`
-        @page { size: A4 ${orientation}; margin: 1cm; }
+        @page { size: A4 ${orientation}; margin: 8mm; }
         .editable-cell:hover { background-color: rgba(0,0,0,0.02); }
         .editable-cell:focus { outline: 1px dashed #c2185b; background-color: rgba(255,255,255,0.9); }
         .distribution-merged-vertical { writing-mode: vertical-rl; transform: rotate(180deg); min-width: 34px; white-space: normal; text-align: center; }
@@ -821,7 +819,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, set
         </div>
       ))}
       {/* إحصائيات التدرج */}
-      <div className="relative z-10 w-full max-w-[1100px] mt-2 mb-6 grid grid-cols-2 md:grid-cols-4 gap-3 print:mt-3 print:mb-3">
+      <div className="relative z-10 w-full max-w-[1100px] mt-2 mb-6 grid grid-cols-2 md:grid-cols-4 gap-3 print:hidden">
         {[
           ['عدد المقاطع', distributionStats.maqtaCount],
           ['عدد موارد التعلم', distributionStats.resourceCount],

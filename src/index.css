@@ -14,8 +14,15 @@ button,input,textarea,select{font-family:inherit;}
 
 @media print {
   @page {
-    size: A4 portrait;
-    margin: 10mm 10mm 12mm 10mm;
+    size: auto;
+    margin: 8mm 8mm 10mm 8mm;
+  }
+  @page landscape-print {
+    size: A4 landscape;
+    margin: 8mm;
+  }
+  .print-orientation-landscape {
+    page: landscape-print;
   }
 
   html, body {
@@ -35,7 +42,7 @@ button,input,textarea,select{font-family:inherit;}
   aside,
   nav,
   #toast-notification,
-  .print\\:hidden,
+  .print\:hidden,
   button,
   input[type="checkbox"],
   .no-print {
@@ -153,6 +160,13 @@ button,input,textarea,select{font-family:inherit;}
     page-break-after: always !important;
     break-inside: avoid !important;
     page-break-inside: avoid !important;
+  }
+
+  .print-preview-root.print-orientation-landscape [data-preview-export-page="true"] {
+    width: 277mm !important;
+    height: 190mm !important;
+    min-height: 190mm !important;
+    max-width: 277mm !important;
   }
 
   .print-preview-root .notebook-intro-page {

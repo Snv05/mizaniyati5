@@ -155,7 +155,8 @@ export interface PedagogicalAttachmentInput {
 export async function generatePedagogicalNote(
   gradeLevel: GradeLevel,
   topic: string,
-  attachments: PedagogicalAttachmentInput[] = []
+  attachments: PedagogicalAttachmentInput[] = [],
+  useWebResearch: boolean = true
 ): Promise<PedagogicalNote> {
   const cleanTopic = (topic || '').trim();
   if (!cleanTopic) {
@@ -177,6 +178,7 @@ export async function generatePedagogicalNote(
           size,
           dataUrl,
         })),
+        useWebResearch,
       }),
     });
 

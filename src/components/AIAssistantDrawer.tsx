@@ -166,7 +166,7 @@ const [expertMode, setExpertMode] = useState(true);
         level: selectedLevel,
         expertMode,
       });
-      const reply = liveReply?.text || '';
+      let reply = liveReply?.text || '';
       if (reply) {
         const aiMsg: Message = {
           id: (Date.now() + 1).toString(),

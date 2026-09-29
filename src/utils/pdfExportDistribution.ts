@@ -57,13 +57,15 @@ export const generateDistributionPdf = async (
 
     const host = document.createElement("div");
     host.style.position = "fixed";
-    host.style.left = "-100000px";
+    host.style.left = "0";
     host.style.top = "0";
     host.style.width = page.style.width;
     host.style.height = page.style.height;
     host.style.overflow = "hidden";
-    host.style.background = "#fff";
-    host.style.zIndex = "-1";
+    host.style.background = "#ffffff";
+    host.style.zIndex = "-9999";
+    host.style.pointerEvents = "none";
+    host.style.opacity = "1";
     host.appendChild(page);
     document.body.appendChild(host);
 
@@ -79,11 +81,11 @@ export const generateDistributionPdf = async (
         allowTaint: false,
         backgroundColor: "#ffffff",
         logging: false,
-        onclone: sanitizeOklchForHtml2Canvas,
-        width: page.scrollWidth,
-        height: page.scrollHeight,
-        windowWidth: page.scrollWidth,
-        windowHeight: page.scrollHeight,
+        scrollX: 0,
+        scrollY: 0,
+        onclone: (clonedDoc) => {
+          sanitizeOklchForHtml2Canvas(clonedDoc);
+        },
       });
 
       if (i > 0) pdf.addPage();

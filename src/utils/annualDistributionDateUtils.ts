@@ -1,6 +1,6 @@
 import { OfficialAnnualDistributionRow } from '../data/officialAnnualDistributionData';
 
-export const ANNUAL_SCHEDULE_DATA_VERSION = '2026-09-28-official-v25-first-weeks';
+export const ANNUAL_SCHEDULE_DATA_VERSION = '2026-2027-official-all-levels-v33';
 export const ANNUAL_STORAGE_KEY = 'algeria_sciences_annual_dist_v6';
 
 export const ARABIC_MONTH_NAMES = [
@@ -39,7 +39,7 @@ export function deriveDefaultSchoolEntryDate(schoolYear: string): string {
   
   if (year === 2024) return '2024-09-22';
   if (year === 2025) return '2025-09-21';
-  if (year === 2026) return '2026-09-20';
+  if (year === 2026) return '2026-09-21';
   
   // البحث عن الأحد الثالث أو الرابع من سبتمبر
   const sepDate = new Date(year, 8, 20); // 20 سبتمبر
@@ -74,23 +74,23 @@ export function getDefaultCalendarSettings(schoolYear: string, customStartDate?:
   const startDate = customStartDate || deriveDefaultSchoolEntryDate(schoolYear);
   return {
     startDate,
-    schoolYear: schoolYear || '2024-2025',
+    schoolYear: schoolYear || '2026-2027',
     dateFormat: 'short',
     holidays: {
-      autumnWeek: 6,
+      autumnWeek: 7,
       autumnLabel: 'عطلة الخريف',
-      winterWeeks: [14, 15],
+      winterWeeks: [15, 15],
       winterLabel: 'عطلة الشتاء',
-      springWeeks: [27, 28],
+      springWeeks: [27, 27],
       springLabel: 'عطلة الربيع',
     },
     exams: {
-      exam1Week: 11,
-      exam1Label: 'إختبارات الفصل الأول',
-      exam2Week: 24,
-      exam2Label: 'إختبارات الفصل الثاني',
-      exam3Week: 35,
-      exam3Label: 'إختبارات الفصل الثالث',
+      exam1Week: 13,
+      exam1Label: 'اختبارات الثلاثي الأول',
+      exam2Week: 25,
+      exam2Label: 'اختبارات الثلاثي الثاني',
+      exam3Week: 34,
+      exam3Label: 'اختبارات الثلاثي الثالث',
     },
   };
 }
@@ -195,57 +195,51 @@ export function recalculateDistributionRows(
 
     const range = computeWeekRange(startSunday, weekIndex, settings.dateFormat);
 
-    // التحقق من فترات العطل الرسمية
+    // الحفاظ على التواريخ الوزارية الرسمية للأسبوع
+    const finalMonth = (row.month && settings.dateFormat === 'short') ? row.month : range.monthName;
+    const finalDates = (row.dates && settings.dateFormat === 'short') ? row.dates : range.datesStr;
+
+    // لا يتم تحويل أي درس بيداغوجي لـ عطلة أو اختبار إلا إذا كان الصف مصنفاً رسمياً كذلك
+    const isHoliday = Boolean(row.isHoliday || /عطلة/.test(row.session1 || '') || /عطلة/.test(row.mawrid || ''));
+    const isExam = Boolean(row.isExam || /إ?ختبار|اختبارات/.test(row.session1 || '') || /إ?ختبار|اختبارات/.test(row.mawrid || ''));
+
     const isAutumn = weekNum === settings.holidays.autumnWeek;
     const isWinter = settings.holidays.winterWeeks.includes(weekNum as any);
     const isSpring = settings.holidays.springWeeks.includes(weekNum as any);
-    const isHoliday = isAutumn || isWinter || isSpring || row.isHoliday;
-
-    // التحقق من فترات الاختبارات الرسمية
     const isExam1 = weekNum === settings.exams.exam1Week;
     const isExam2 = weekNum === settings.exams.exam2Week;
     const isExam3 = weekNum === settings.exams.exam3Week;
-    const isExam = isExam1 || isExam2 || isExam3 || row.isExam;
 
     let updatedSession1 = row.session1;
     let updatedSession2 = row.session2;
     let updatedHolidayLabel = row.holidayLabel;
     let updatedMawrid = row.mawrid;
 
-    // تحديث مسميات العطل والاختبارات بناءً على الرزنامة الرسمية
-    if (isAutumn) {
-      updatedHolidayLabel = `${settings.holidays.autumnLabel} (${range.datesStr})`;
-      if (row.session2 && /عطلة الخريف/.test(row.session2)) {
-        updatedSession2 = `${settings.holidays.autumnLabel} (${range.datesStr})`;
-      }
-    } else if (isWinter) {
-      updatedHolidayLabel = settings.holidays.winterLabel;
-      if (row.session1 && (/عطلة الشتاء/.test(row.session1) || !row.session2)) {
-        updatedSession1 = settings.holidays.winterLabel;
-        updatedSession2 = settings.holidays.winterLabel;
-        updatedMawrid = settings.holidays.winterLabel;
-      }
-    } else if (isSpring) {
-      updatedHolidayLabel = settings.holidays.springLabel;
-      if (row.session1 && (/عطلة الربيع/.test(row.session1) || !row.session2)) {
-        updatedSession1 = settings.holidays.springLabel;
-        updatedSession2 = settings.holidays.springLabel;
-        updatedMawrid = settings.holidays.springLabel;
+    // تحديث مسميات العطل والاختبارات فقط إذا كان الصف عطلة أو اختباراً بالفعل
+    if (isHoliday) {
+      if (isAutumn) {
+        updatedHolidayLabel = settings.holidays.autumnLabel;
+        if (/عطلة/.test(row.session1 || '')) updatedSession1 = settings.holidays.autumnLabel;
+        if (/عطلة/.test(row.session2 || '')) updatedSession2 = settings.holidays.autumnLabel;
+      } else if (isWinter) {
+        updatedHolidayLabel = settings.holidays.winterLabel;
+        if (/عطلة/.test(row.session1 || '')) updatedSession1 = settings.holidays.winterLabel;
+        if (/عطلة/.test(row.session2 || '')) updatedSession2 = settings.holidays.winterLabel;
+      } else if (isSpring) {
+        updatedHolidayLabel = settings.holidays.springLabel;
+        if (/عطلة/.test(row.session1 || '')) updatedSession1 = settings.holidays.springLabel;
+        if (/عطلة/.test(row.session2 || '')) updatedSession2 = settings.holidays.springLabel;
       }
     }
 
-    if (isExam1) {
-      if (/اختبارات|إختبار/.test(row.mawrid || '') || /اختبارات|إختبار/.test(row.session1 || '')) {
+    if (isExam) {
+      if (isExam1 && /اختبارات|إختبار/.test(row.session1 || '')) {
         updatedMawrid = settings.exams.exam1Label;
         updatedSession1 = settings.exams.exam1Label;
-      }
-    } else if (isExam2) {
-      if (/اختبارات|إختبار/.test(row.mawrid || '') || /اختبارات|إختبار/.test(row.session1 || '')) {
+      } else if (isExam2 && /اختبارات|إختبار/.test(row.session1 || '')) {
         updatedMawrid = settings.exams.exam2Label;
         updatedSession1 = settings.exams.exam2Label;
-      }
-    } else if (isExam3) {
-      if (/اختبارات|إختبار/.test(row.mawrid || '') || /اختبارات|إختبار/.test(row.session1 || '')) {
+      } else if (isExam3 && /اختبارات|إختبار/.test(row.session1 || '')) {
         updatedMawrid = settings.exams.exam3Label;
         updatedSession1 = settings.exams.exam3Label;
       }
@@ -254,8 +248,8 @@ export function recalculateDistributionRows(
     return {
       ...row,
       week: weekNum,
-      month: range.monthName,
-      dates: range.datesStr,
+      month: finalMonth,
+      dates: finalDates,
       isHoliday,
       isExam,
       holidayLabel: updatedHolidayLabel,

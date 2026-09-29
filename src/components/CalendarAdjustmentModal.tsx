@@ -37,7 +37,7 @@ export const CalendarAdjustmentModal: React.FC<CalendarAdjustmentModalProps> = (
   currentSettings,
   onApply,
   onReset,
-  totalWeeks = 35,
+  totalWeeks = 34,
 }) => {
   const [settings, setSettings] = useState<SchoolCalendarSettings>(currentSettings);
   const [syncWithLogbook, setSyncWithLogbook] = useState(true);

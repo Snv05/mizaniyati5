@@ -65,7 +65,7 @@ export const CorrectionMemoDrawer: React.FC<{
   };
 
   const handlePaste = async (event: React.ClipboardEvent<HTMLElement>) => {
-    const item = Array.from(event.clipboardData.items).find(x => x.type.startsWith('image/'));
+    const item = (Array.from(event.clipboardData.items) as DataTransferItem[]).find(x => x.type.startsWith('image/'));
     if (!item) return;
     event.preventDefault();
     const blob = item.getAsFile();
@@ -206,7 +206,7 @@ export const CorrectionMemoDrawer: React.FC<{
                     {savedAttachments.slice(0, 10).map(item => (
                       <div key={item.id} className="flex gap-2 items-center">
                         <span className="truncate flex-1">{item.name}</span>
-                        <button type="button" onClick={() => setAttachments(prev => prev.some(x => x.id === item.id) ? prev : [...prev, item].slice(0, 6)} className="text-teal-700 font-black">استرداد</button>
+                        <button type="button" onClick={() => setAttachments(prev => prev.some(x => x.id === item.id) ? prev : [...prev, item].slice(0, 6))} className="text-teal-700 font-black">استرداد</button>
                         <button type="button" onClick={() => removeSaved(item.id)}><Trash2 size={13} className="text-red-500" /></button>
                       </div>
                     ))}

@@ -35,10 +35,11 @@ const prepareExportPage = (
 ): { page: HTMLElement; cleanup: () => void } => {
   const page = source.cloneNode(false) as HTMLElement;
 
+  const widthPx = Math.round(source.getBoundingClientRect().width) || 794;
   page.style.boxShadow = 'none';
   page.style.borderRadius = '0';
   page.style.margin = '0';
-  page.style.width = source.getBoundingClientRect().width + 'px';
+  page.style.width = widthPx + 'px';
   page.style.height = pageHeightPx + 'px';
   page.style.minHeight = pageHeightPx + 'px';
   page.style.maxWidth = 'none';
@@ -87,13 +88,15 @@ const prepareExportPage = (
 
   const host = document.createElement('div');
   host.style.position = 'fixed';
-  host.style.left = '-100000px';
+  host.style.left = '0';
   host.style.top = '0';
-  host.style.width = page.getBoundingClientRect().width + 'px';
+  host.style.width = widthPx + 'px';
   host.style.height = pageHeightPx + 'px';
   host.style.overflow = 'hidden';
   host.style.background = '#ffffff';
-  host.style.zIndex = '-1';
+  host.style.zIndex = '-9999';
+  host.style.pointerEvents = 'none';
+  host.style.opacity = '1';
   host.setAttribute('aria-hidden', 'true');
   host.appendChild(page);
   document.body.appendChild(host);
