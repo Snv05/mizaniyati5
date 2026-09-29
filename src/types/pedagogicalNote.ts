@@ -28,6 +28,8 @@ export interface SourceActivityTitles {
   sourceType: MemoSourceType;
   sourceLabel: string;
   sourceId?: string;
+  sourceId2?: string;
+  assessmentSourceId?: string;
 }
 
 export interface StudentWorksheet {
