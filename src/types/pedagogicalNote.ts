@@ -21,6 +21,15 @@ export interface LessonSequenceStage {
   didacticSupports: string[];
 }
 
+export interface SourceActivityTitles {
+  title1: string;
+  title2: string;
+  assessment: string;
+  sourceType: MemoSourceType;
+  sourceLabel: string;
+  sourceId?: string;
+}
+
 export interface StudentWorksheet {
   instructions: string[];
   questionsToAnswer: string[];
@@ -71,6 +80,7 @@ export interface PedagogicalNote {
   studentWorksheet: StudentWorksheet;
   researchSources: ResearchSource[];
   sourceTrace: MemoSourceTrace[];
+  sourceActivities: SourceActivityTitles;
   visualPlan: VisualPlan;
   bemEvaluationGrid: BemEvaluationGrid;
 }
