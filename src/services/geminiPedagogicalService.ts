@@ -56,11 +56,15 @@ export function validateAndRepairPedagogicalNote(rawInput: string, fallbackLevel
   const lockedResource = String(officialRow.mawrid || memoRow.mawrid || meta.learningResource || fallbackTopic || '').trim();
   const lockedLearning = String(memoRow.ta3alom || '').trim();
   const sourceActivityRow = memo.find((row: any) => (Array.isArray(row.activityTitles) && row.activityTitles.length > 0) || row.taqwim) || {};
+  const sourceActivityRows = Array.isArray(memo) ? memo.filter((row: any) =>
+    (Array.isArray(row.activityTitles) && row.activityTitles.length > 0) || row.taqwim
+  ).slice(0, 2) : [];
+  const primaryActivitySource = sourceActivityRows[0] || sourceActivityRow;
   const activityTitles = Array.isArray(sourceActivityRow.activityTitles)
     ? sourceActivityRow.activityTitles.map((x: any) => String(x || '').trim()).filter(Boolean).slice(0, 2)
     : [];
-  const sourceAssessment = String(sourceActivityRow.taqwim || '').trim();
-  const sourceActivityKind = ['curriculum','companionDocument','teacherGuide','memo'].includes(String(sourceActivityRow.sourceType))
+  const sourceAssessment = String(primaryActivitySource.taqwim || '').trim();
+  const sourceActivityKind = ['curriculum','companionDocument','teacherGuide','memo'].includes(String(primaryActivitySource.sourceType))
     ? String(sourceActivityRow.sourceType) as any
     : 'memo';
   const sourceActivities = {
@@ -69,7 +73,7 @@ export function validateAndRepairPedagogicalNote(rawInput: string, fallbackLevel
     assessment: sourceAssessment,
     sourceType: (activityTitles.length || sourceAssessment) ? sourceActivityKind : 'ai' as const,
     sourceLabel: (activityTitles.length || sourceAssessment)
-      ? String(sourceActivityRow.sourceLabel || 'مصدر تربوي')
+      ? String(primaryActivitySource.sourceLabel || 'مصدر تربوي')
       : 'غير متوفر في المصدر',
     ...(sourceActivityRow.id ? { sourceId: String(sourceActivityRow.id) } : {}),
   };
@@ -78,8 +82,8 @@ export function validateAndRepairPedagogicalNote(rawInput: string, fallbackLevel
   const activityTraceLabel = String(sourceActivityRow.sourceLabel || 'مصدر تربوي');
   const activityTrace = [
     activityTitles[0] && { field: 'عنوان النشاط 1', value: activityTitles[0], sourceType: activityTraceType, sourceLabel: activityTraceLabel, ...(sourceActivityRow.id ? { sourceId: String(sourceActivityRow.id) } : {}) },
-    activityTitles[1] && { field: 'عنوان النشاط 2', value: activityTitles[1], sourceType: 'memo', sourceLabel: 'قاعدة المذكرات/المنهاج', ...(sourceActivityRow.id ? { sourceId: String(sourceActivityRow.id) } : {}) },
-    sourceAssessment && { field: 'التقويم', value: sourceAssessment, sourceType: 'memo', sourceLabel: 'قاعدة المذكرات/المنهاج', ...(sourceActivityRow.id ? { sourceId: String(sourceActivityRow.id) } : {}) },
+    activityTitles[1] && { field: 'عنوان النشاط 2', value: activityTitles[1], sourceType: activityTraceType, sourceLabel: activityTraceLabel, ...(activitySourceId2 ? { sourceId: activitySourceId2 } : {}) },
+    sourceAssessment && { field: 'التقويم', value: sourceAssessment, sourceType: activityTraceType, sourceLabel: activityTraceLabel, ...(assessmentSourceId ? { sourceId: assessmentSourceId } : {}) },
   ].filter(Boolean) as any[];
 
   const lockedTrace = [
