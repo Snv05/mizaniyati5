@@ -24,8 +24,7 @@ apiApp.use(express.json({ limit: '40mb' }));
 
 // حماية نقاط Gemini المكلفة: حد بسيط لكل عنوان IP، مع تنظيف دوري تلقائي.
 apiApp.use('/api/gemini', (req, res, next) => {
-  const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
-  const key = forwarded || req.ip || 'unknown';
+  const key = req.ip || 'unknown';
   if (!geminiRateLimit(key)) return res.status(429).json({ error: 'تم تجاوز حد الطلبات مؤقتاً. أعد المحاولة بعد دقيقة.' });
   next();
 });
