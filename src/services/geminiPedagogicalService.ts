@@ -194,7 +194,7 @@ export function validateAndRepairPedagogicalNote(rawInput: string, fallbackLevel
           sourceType: ['curriculum','progression','companionDocument','teacherGuide','memo','library','attachment','web','ai'].includes(x.sourceType) ? x.sourceType : 'ai',
           sourceLabel: String(x.sourceLabel || (x.sourceType === 'ai' ? 'اقتراح AI — يحتاج مراجعة الأستاذ' : 'مصدر غير محدد')).trim(),
           ...(x.sourceId ? { sourceId: String(x.sourceId).trim() } : {}),
-          ...(x.uri && /^https?:\\/\\//i.test(String(x.uri)) ? { uri: String(x.uri).trim() } : {}),
+          ...(x.uri && /^https?:\/\//i.test(String(x.uri)) ? { uri: String(x.uri).trim() } : {}),
         }))
         .filter((x:any)=>x.field && x.value)
         .slice(0, 80)

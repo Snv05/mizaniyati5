@@ -753,7 +753,7 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
                             ai: 'اقتراح AI',
                           };
                           const label = labels[trace.sourceType] || trace.sourceLabel;
-                          const safeUri = trace.uri && /^https?:\\/\\//i.test(trace.uri) ? trace.uri : '';
+                          const safeUri = trace.uri && /^https?:\/\//i.test(trace.uri) ? trace.uri : '';
                           return (
                             <div key={idx} className="border border-sky-100 bg-sky-50/50 rounded-lg p-2">
                               <div className="flex items-center justify-between gap-2 font-black text-sky-900">
@@ -772,11 +772,11 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
                     </div>
                   )}
 
-                  {note.researchSources?.some(source => /^https?:\\/\\//i.test(source.url)) && (
+                  {note.researchSources?.some(source => /^https?:\/\//i.test(source.url)) && (
                     <div className="space-y-2 border-t border-gray-200 pt-4 print:break-inside-avoid">
                       <h4 className="text-xs font-black text-gray-800">مصادر ومراجع التوليد</h4>
                       <ul className="space-y-1 text-[10px]">
-                        {note.researchSources.filter(source => /^https?:\\/\\//i.test(source.url)).map((source, idx) => (
+                        {note.researchSources.filter(source => /^https?:\/\//i.test(source.url)).map((source, idx) => (
                           <li key={idx}>
                             <a href={source.url} target="_blank" rel="noopener noreferrer" className="text-blue-700 underline print:text-black">{source.title || source.url}</a>
                             {source.purpose ? <span className="text-gray-500"> — {source.purpose}</span> : null}
