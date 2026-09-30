@@ -65,6 +65,64 @@ const createCell = (text: string, bold = false, bgColor?: string, columnSpan?: n
   });
 };
 
+const createEditableNotebookGrid = (content: string, textColor = "000000") => {
+  const gridColumns = 18;
+  const gridRows = 3;
+  const cells = Array.from({ length: gridRows }, (_, rowIndex) =>
+    new TableRow({
+      cantSplit: true,
+      children: Array.from({ length: gridColumns }, (_, columnIndex) =>
+        new TableCell({
+          width: { size: Math.floor(100 / gridColumns), type: WidthType.PERCENTAGE },
+          margins: { top: 0, bottom: 0, left: 0, right: 0 },
+          verticalAlign: VerticalAlign.TOP,
+          shading: { fill: "FFFFFF", type: ShadingType.CLEAR, color: "D9E2E8" },
+          borders: {
+            top: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
+            bottom: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
+            left: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
+            right: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
+          },
+          children: [
+            rowIndex === 0 && columnIndex === 0
+              ? createParagraph(content, false, textColor, 18, AlignmentType.RIGHT)
+              : new Paragraph({ text: "", spacing: { before: 0, after: 0 } })
+          ],
+        })
+      ),
+    })
+  );
+  return new Table({
+    visuallyRightToLeft: true,
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    columnWidths: Array.from({ length: gridColumns }, () => 450),
+    borders: {
+      top: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
+      bottom: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
+      left: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
+      right: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
+      insideHorizontal: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
+      insideVertical: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
+    },
+    rows: cells,
+  });
+};
+
+const createEditableNotebookCell = (
+  text: string,
+  bgColor = "FFFFFF",
+  size = 18,
+  widthPercent?: number,
+) => {
+  return new TableCell({
+    shading: { fill: bgColor, type: ShadingType.CLEAR, color: "auto" },
+    margins: { top: 80, bottom: 80, left: 80, right: 80 },
+    verticalAlign: VerticalAlign.TOP,
+    width: widthPercent ? { size: widthPercent, type: WidthType.PERCENTAGE } : undefined,
+    children: [createEditableNotebookGrid(text)],
+  });
+};
+
 const LEVEL_THEMES: Record<string, { header: string; border: string; soft: string; ink: string }> = {
   '1م': { header: '047857', border: '10B981', soft: 'ECFDF5', ink: '065F46' },
   '2م': { header: '2563EB', border: '60A5FA', soft: 'EFF6FF', ink: '1E3A8A' },
@@ -275,7 +333,7 @@ export const generateLogbookDocx = async (
         createCell(log.dateStr, false, bgColor, 1, 1, 18, AlignmentType.CENTER, 14),
         createCell(log.time, false, bgColor, 1, 1, 18, AlignmentType.CENTER, 13),
         createCell(log.section, true, bgColor, 1, 1, 20, AlignmentType.CENTER, 13),
-        createCell(getExportLessonContent(log, findPreviousComparableCurriculumLog(logs, index, log)), false, bgColor, 1, 1, 20, AlignmentType.RIGHT, 45),
+        createEditableNotebookCell(getExportLessonContent(log, findPreviousComparableCurriculumLog(logs, index, log)), bgColor, 18, 45),
         createCell(log.note || '', false, bgColor, 1, 1, 18, AlignmentType.RIGHT, 15),
       ]
     }));
