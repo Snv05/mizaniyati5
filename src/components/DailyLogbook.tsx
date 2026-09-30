@@ -275,7 +275,9 @@ type AnnualStoredItem = { id?: string; level?: string; lessonType?: string; mida
 
 const getStoredAnnualSchedule = (level: '1م' | '2م' | '3م' | '4م'): { startDate: string; items: AnnualStoredItem[] } | null => {
   try {
-    const raw = JSON.parse(localStorage.getItem(ANNUAL_STORAGE_KEY) || '{}');
+    const primaryRaw = localStorage.getItem('annual_distribution_custom_v3');
+    const fallbackRaw = localStorage.getItem(ANNUAL_STORAGE_KEY);
+    const raw = JSON.parse(primaryRaw || fallbackRaw || '{}');
     const key = level.replace('م', 'am') as '1am' | '2am' | '3am' | '4am';
     const value = raw?.[key];
     if (!value?.startDate || !Array.isArray(value.items)) return null;
