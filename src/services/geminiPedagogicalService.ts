@@ -98,6 +98,16 @@ export function validateAndRepairPedagogicalNote(rawInput: string, fallbackLevel
     lockedLearning && sourceField('تعلم المورد', lockedLearning, 'memo'),
   ].filter(Boolean) as any[];
 
+  const sourceSequence = Array.isArray(parsed.sequence) ? parsed.sequence : [];
+  const cleanedSequence = sourceSequence.map((stage: any, index: number) => ({
+    stageName: String(stage.stageName || `المرحلة ${index + 1}`).trim(),
+    timeMinutes: typeof stage.timeMinutes === 'number' && stage.timeMinutes >= 0 ? stage.timeMinutes : 0,
+    teacherInstructions: String(stage.teacherInstructions || '').trim(),
+    studentActivities: String(stage.studentActivities || '').trim(),
+    didacticSupports: Array.isArray(stage.didacticSupports) ? stage.didacticSupports.map(String).filter(Boolean) : [],
+  })).filter((stage: any) => stage.teacherInstructions || stage.studentActivities || stage.stageName);
+  const hasStandaloneAssessmentStage = cleanedSequence.some((stage: any) => /^(تقويم|التقويم|تقويم الموارد)$/u.test(stage.stageName.trim()));
+
   const validatedNote: PedagogicalNote = {
     meta: {
       gradeLevel: (['1AM', '2AM', '3AM', '4AM'].includes(meta.gradeLevel) ? meta.gradeLevel : fallbackLevel) as GradeLevel,
@@ -136,14 +146,7 @@ export function validateAndRepairPedagogicalNote(rawInput: string, fallbackLevel
           scientificConclusion: String(exp.scientificConclusion || '').trim(),
         }))
       : [],
-    sequence: Array.isArray(parsed.sequence) && parsed.sequence.length > 0
-      ? parsed.sequence.map((stage: any, index: number) => ({
-          stageName: String(stage.stageName || `المرحلة ${index + 1}`).trim(),
-          timeMinutes: typeof stage.timeMinutes === 'number' ? stage.timeMinutes : 15,
-          teacherInstructions: String(stage.teacherInstructions || '').trim(),
-          studentActivities: String(stage.studentActivities || '').trim(),
-          didacticSupports: Array.isArray(stage.didacticSupports) ? stage.didacticSupports.map(String) : [],
-        }))
+    sequence: cleanedSequence.length > 0 && !hasStandaloneAssessmentStage ? cleanedSequence
       : [
           {
             stageName: 'وضعية الانطلاق',
