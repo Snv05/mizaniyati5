@@ -65,8 +65,9 @@ export const AIAssistantDrawer: React.FC<{
   const [isTyping, setIsTyping] = useState(false);
   const [attachments, setAttachments] = useState<AssistantAttachment[]>([]);
   const [useWeb, setUseWeb] = useState(true);
-    const [assistantSources, setAssistantSources] = useState<Array<{title:string;uri:string}>>([]);
-const [expertMode, setExpertMode] = useState(true);
+  const [expertMode, setExpertMode] = useState(true);
+  const [labBlocks, setLabBlocks] = useState<ExpertLabBlock[]>([]);
+  const [labFilter, setLabFilter] = useState<'all' | ExpertLabBlock['type']>('all');
   const [showKnowledge, setShowKnowledge] = useState(false);
   const [knowledgeDetails, setKnowledgeDetails] = useState<{ sources: { label: string; url: string; priority?: string }[]; updates: { title: string; summary: string; date: string; sourceTitle?: string; sourceUrl?: string; confidence?: string }[] } | null>(null);
   const [knowledgeStatus, setKnowledgeStatus] = useState<{ updatedAt: string | null; updateCount: number; lastRefresh?: { at?: string; resultCount?: number; searchUsed?: boolean } | null } | null>(null);
@@ -141,6 +142,30 @@ const [expertMode, setExpertMode] = useState(true);
     }
   };
 
+  const makeLabBlock = (query: string, content: string, sources: { title: string; uri: string }[] = []): ExpertLabBlock => {
+    const normalized = query.toLowerCase();
+    const type: ExpertLabBlock['type'] =
+      normalized.includes('تجرب') || normalized.includes('مخبر') || normalized.includes('نشا') || normalized.includes('كشف')
+        ? 'experiment'
+        : normalized.includes('رسم') || normalized.includes('مخطط') || normalized.includes('شكل')
+          ? 'diagram'
+          : normalized.includes('نشاط') || normalized.includes('وضعية')
+            ? 'activity'
+            : normalized.includes('صور') || normalized.includes('وثائق') || sources.length > 0
+              ? 'image'
+              : 'general';
+    const title =
+      type === 'experiment' ? 'تجربة مقترحة' :
+      type === 'diagram' ? 'رسم تخطيطي مقترح' :
+      type === 'activity' ? 'نشاط/وضعية مقترحة' :
+      type === 'image' ? 'مصادر ووثائق مقترحة' : 'مخرج تحضيري';
+    return { id: `lab-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, type, title, content, createdAt: new Date().toISOString(), sources };
+  };
+
+  const insertLabBlockIntoMemo = (block: ExpertLabBlock) => {
+    setPendingExpertLabBlock(block);
+  };
+
   const handleSend = async (textToSend?: string) => {
     const query = textToSend || inputText.trim();
     const activeContext = smartContext;
@@ -170,8 +195,8 @@ const [expertMode, setExpertMode] = useState(true);
       });
       let reply = liveReply?.text || '';
       if (reply) {
-        saveLabBlock(makeLabBlock(query, reply, liveReply?.sources || []));
-        saveLabBlock(makeLabBlock(query, reply));
+        const block = makeLabBlock(query, reply, liveReply?.sources || []);
+        setLabBlocks(prev => [block, ...prev.filter(item => item.content !== block.content)].slice(0, 12));
       const aiMsg: Message = {
           id: (Date.now() + 1).toString(),
           sender: 'ai',
