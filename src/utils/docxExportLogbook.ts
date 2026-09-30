@@ -335,12 +335,13 @@ export const generateLogbookDocx = async (
     if (previousWeekKey && currentWeekKey !== previousWeekKey) {
       for (let weekSpaceIdx = 0; weekSpaceIdx < 2; weekSpaceIdx++) {
         rows.push(new TableRow({
+          cantSplit: true,
           children: [
-            createCell("", false, "FFFFFF", 1, 1, 18, AlignmentType.CENTER, 14),
-            createCell("", false, "FFFFFF", 1, 1, 18, AlignmentType.CENTER, 13),
-            createCell("", false, "FFFFFF", 1, 1, 18, AlignmentType.CENTER, 13),
-            createCell("", false, "FFFFFF", 1, 1, 18, AlignmentType.RIGHT, 45),
-            createCell("", false, "FFFFFF", 1, 1, 18, AlignmentType.CENTER, 15)
+            createEditableNotebookCell("", "FFFFFF", 14, theme.border, 8),
+            createEditableNotebookCell("", "FFFFFF", 13, theme.border, 8),
+            createEditableNotebookCell("", "FFFFFF", 13, theme.border, 8),
+            createEditableNotebookCell("", "FFFFFF", 45, theme.border, 18),
+            createEditableNotebookCell("", "FFFFFF", 15, theme.border, 10)
           ]
         }));
       }
