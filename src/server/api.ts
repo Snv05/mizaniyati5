@@ -5,6 +5,7 @@ import { GoogleGenAI, createPartFromUri } from '@google/genai';
 import { Buffer } from 'node:buffer';
 import fs from 'node:fs';
 import { buildGeminiSystemPrompt } from '../services/geminiPrompts';
+import { geminiRateLimit, validateBase64Magic } from './uploadSecurity';
 
 dotenv.config();
 
@@ -21,6 +22,14 @@ const getKnowledgeSnapshot = () => {
 
 apiApp.use(express.json({ limit: '40mb' }));
 
+// حماية نقاط Gemini المكلفة: حد بسيط لكل عنوان IP، مع تنظيف دوري تلقائي.
+apiApp.use('/api/gemini', (req, res, next) => {
+  const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+  const key = forwarded || req.ip || 'unknown';
+  if (!geminiRateLimit(key)) return res.status(429).json({ error: 'تم تجاوز حد الطلبات مؤقتاً. أعد المحاولة بعد دقيقة.' });
+  next();
+});
+
 // نقطة نهاية لمعالجة طلبات المساعد البيداغوجي الذكي على جانب الخادم
 apiApp.post('/api/gemini/generate', async (req, res) => {
   try {
@@ -34,7 +43,7 @@ apiApp.post('/api/gemini/generate', async (req, res) => {
       return res.status(400).json({ error: 'Missing prompt in request' });
     }
 
-    const allowedAttachmentTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf']);
+    const allowedAttachmentTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf', 'text/plain']);
     if (!Array.isArray(attachments) || attachments.length > 6) {
       return res.status(400).json({ error: 'Too many attachments' });
     }
@@ -47,8 +56,8 @@ apiApp.post('/api/gemini/generate', async (req, res) => {
       }
       const dataUrl = String(item.dataUrl || '');
       const prefix = `data:${item.mimeType};base64,`;
-      if (!dataUrl.startsWith(prefix)) {
-        return res.status(400).json({ error: 'Invalid attachment data' });
+      if (!dataUrl.startsWith(prefix) || !validateBase64Magic(item.mimeType, dataUrl.slice(prefix.length))) {
+        return res.status(400).json({ error: 'Invalid attachment data or file signature' });
       }
       attachmentSize += dataUrl.length;
       if (dataUrl.length > 20_000_000 || attachmentSize > 32_000_000) {
@@ -143,8 +152,8 @@ apiApp.post('/api/gemini/smart-assistant', async (req, res) => {
       }
       const dataUrl = String(item.dataUrl || '');
       const prefix = `data:${item.mimeType};base64,`;
-      if (!dataUrl.startsWith(prefix) || dataUrl.length > 15_000_000) {
-        return res.status(400).json({ error: 'حجم أحد ملفات المساعد الذكي أكبر من الحد المسموح.' });
+      if (!dataUrl.startsWith(prefix) || dataUrl.length > 15_000_000 || !validateBase64Magic(item.mimeType, dataUrl.slice(prefix.length))) {
+        return res.status(400).json({ error: 'صيغة الملف أو توقيعه غير صالح، أو حجمه أكبر من الحد المسموح.' });
       }
       totalLength += dataUrl.length;
       if (totalLength > 24_000_000) {
@@ -331,8 +340,8 @@ apiApp.post('/api/gemini/analyze-correction-source', async (req, res) => {
       if (!item || !allowedTypes.has(item.mimeType)) return res.status(400).json({ error: 'نوع مرفق غير مسموح' });
       const dataUrl = String(item.dataUrl || '');
       const prefix = `data:${item.mimeType};base64,`;
-      if (!dataUrl.startsWith(prefix) || dataUrl.length > 20_000_000) {
-        return res.status(400).json({ error: 'مرفق غير صالح أو كبير جداً' });
+      if (!dataUrl.startsWith(prefix) || dataUrl.length > 20_000_000 || !validateBase64Magic(item.mimeType, dataUrl.slice(prefix.length))) {
+        return res.status(400).json({ error: 'مرفق غير صالح أو كبير جداً أو لا يطابق نوع الملف.' });
       }
       totalLength += dataUrl.length;
       if (totalLength > 32_000_000) return res.status(400).json({ error: 'إجمالي المرفقات كبير جداً' });
@@ -415,8 +424,8 @@ apiApp.post('/api/gemini/generate-pedagogical-note', async (req, res) => {
       }
       const dataUrl = String(item.dataUrl || '');
       const prefix = `data:${item.mimeType};base64,`;
-      if (!dataUrl.startsWith(prefix) || dataUrl.length > 8_500_000) {
-        return res.status(400).json({ error: 'صيغة أو حجم أحد المرفقات غير صالح.' });
+      if (!dataUrl.startsWith(prefix) || dataUrl.length > 8_500_000 || !validateBase64Magic(item.mimeType, dataUrl.slice(prefix.length))) {
+        return res.status(400).json({ error: 'صيغة أو حجم أو توقيع أحد المرفقات غير صالح.' });
       }
       totalLength += dataUrl.length;
       if (totalLength > 10_000_000) {
