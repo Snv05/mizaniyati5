@@ -60,13 +60,16 @@ export function validateAndRepairPedagogicalNote(rawInput: string, fallbackLevel
     (Array.isArray(row.activityTitles) && row.activityTitles.length > 0) || row.taqwim
   ).slice(0, 2) : [];
   const primaryActivitySource = sourceActivityRows[0] || sourceActivityRow;
-  const activityTitles = Array.isArray(sourceActivityRow.activityTitles)
+  const activityTitles = Array.isArray(primaryActivitySource.activityTitles)
     ? sourceActivityRow.activityTitles.map((x: any) => String(x || '').trim()).filter(Boolean).slice(0, 2)
     : [];
   const sourceAssessment = String(primaryActivitySource.taqwim || '').trim();
   const sourceActivityKind = ['curriculum','companionDocument','teacherGuide','memo'].includes(String(primaryActivitySource.sourceType))
-    ? String(sourceActivityRow.sourceType) as any
+    ? String(primaryActivitySource.sourceType) as any
     : 'memo';
+  const activitySourceId1 = primaryActivitySource.activitySources?.[0]?.id ? String(primaryActivitySource.activitySources[0].id) : '';
+  const activitySourceId2 = primaryActivitySource.activitySources?.[1]?.id ? String(primaryActivitySource.activitySources[1].id) : '';
+  const assessmentSourceId = primaryActivitySource.id ? String(primaryActivitySource.id) : '';
   const sourceActivities = {
     title1: activityTitles[0] || '',
     title2: activityTitles[1] || '',
@@ -75,7 +78,9 @@ export function validateAndRepairPedagogicalNote(rawInput: string, fallbackLevel
     sourceLabel: (activityTitles.length || sourceAssessment)
       ? String(primaryActivitySource.sourceLabel || 'مصدر تربوي')
       : 'غير متوفر في المصدر',
-    ...(sourceActivityRow.id ? { sourceId: String(sourceActivityRow.id) } : {}),
+    ...(activitySourceId1 ? { sourceId: activitySourceId1 } : {}),
+    ...(activitySourceId2 ? { sourceId2: activitySourceId2 } : {}),
+    ...(assessmentSourceId ? { assessmentSourceId } : {}),
   };
 
   const activityTraceType = ['curriculum','companionDocument','teacherGuide','memo'].includes(String(sourceActivityRow.sourceType)) ? String(sourceActivityRow.sourceType) as any : 'memo';
