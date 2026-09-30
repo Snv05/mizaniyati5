@@ -108,7 +108,7 @@ export const CorrectionMemoDrawer: React.FC<{
         return;
       }
       setSourceAnalysis(analysis);
-      const result = await generateCorrectionMemo(request);
+      const result = await generateCorrectionMemo({ ...request, sourceAnalysis: analysis });
       setCorrection(result || 'تعذر إنشاء مذكرة التصحيح بعد قراءة المصدر. راجع العناصر غير الواضحة ثم أعد المحاولة.');
     } catch {
       setCorrection('تعذر إنشاء مذكرة التصحيح. أعد المحاولة.');
@@ -184,7 +184,7 @@ export const CorrectionMemoDrawer: React.FC<{
                   <button type="button" onClick={restoreSaved} className="px-2.5 py-1.5 rounded-lg bg-white border border-teal-200 text-teal-800 text-[11px] font-black">
                     <RotateCcw className="inline w-3.5 h-3.5 ml-1" />استرداد
                   </button>
-                  <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,application/pdf" multiple hidden onChange={e => { if (e.target.files) addFiles(e.target.files); e.currentTarget.value=''; }} />
+                  <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,text/plain" multiple hidden onChange={e => { if (e.target.files) addFiles(e.target.files); e.currentTarget.value=''; }} />
                 </div>
               </div>
               <div className="text-[10.5px] text-slate-500">اسحب ملفات الفرض أو الاختبار إلى هذا المربع، أو اضغط «استيراد ملفات» من الهاتف/الحاسوب، أو الصق صورة مباشرة. سيُستخدم الملف كمصدر أصلي للتصحيح دون اختلاق أسئلة أو نقاط. الحد الأقصى 15MB للملف و24MB للمرفقات المحفوظة.</div>
