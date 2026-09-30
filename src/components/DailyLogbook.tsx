@@ -1144,10 +1144,12 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
         let annualItem: any = null;
 
         if (annual) {
-          const start = new Date(annual.startDate);
+          // يجب أن يكون مرجع الأسبوع مطابقاً لنفس قاعدة الرزنامة:
+          // الإثنين–الخميس ← الأحد السابق، الجمعة/السبت ← الأحد التالي.
+          // هذا يمنع أن يبدأ الدفتر من تاريخ الدخول بينما تُربط أول حصة بالأسبوع الثاني.
+          const start = alignToSunday(annual.startDate);
           // كل صف في التدرج يمثل أسبوعاً واحداً، وكل أسبوع له حصتان = ساعتان.
           // نربط الأسبوع بتاريخ بداية الدفتر، ثم نربط أول حصة بـ session1 والثانية بـ session2.
-          while (start.getDay() !== 0) start.setDate(start.getDate() - 1);
           const current = new Date(dateStr);
           const diffDays = Math.floor((current.getTime() - start.getTime()) / 86400000);
           const weekIndex = Math.floor(diffDays / 7);
