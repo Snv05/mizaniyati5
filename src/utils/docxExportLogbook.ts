@@ -67,31 +67,25 @@ const createCell = (text: string, bold = false, bgColor?: string, columnSpan?: n
 
 const createEditableNotebookGrid = (content: string, textColor = "000000") => {
   const gridColumns = 18;
-  const gridRows = 3;
-  const cells = Array.from({ length: gridRows }, (_, rowIndex) =>
-    new TableRow({
-      cantSplit: true,
-      children: Array.from({ length: gridColumns }, (_, columnIndex) =>
-        new TableCell({
-          width: { size: Math.floor(100 / gridColumns), type: WidthType.PERCENTAGE },
-          margins: { top: 0, bottom: 0, left: 0, right: 0 },
-          verticalAlign: VerticalAlign.TOP,
-          shading: { fill: "FFFFFF", type: ShadingType.CLEAR, color: "D9E2E8" },
-          borders: {
-            top: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
-            bottom: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
-            left: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
-            right: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
-          },
-          children: [
-            rowIndex === 0 && columnIndex === 0
-              ? createParagraph(content, false, textColor, 18, AlignmentType.RIGHT)
-              : new Paragraph({ text: "", spacing: { before: 0, after: 0 } })
-          ],
-        })
-      ),
-    })
-  );
+  const blankGridRow = () => new TableRow({
+    cantSplit: true,
+    children: Array.from({ length: gridColumns }, () =>
+      new TableCell({
+        width: { size: Math.floor(100 / gridColumns), type: WidthType.PERCENTAGE },
+        margins: { top: 0, bottom: 0, left: 0, right: 0 },
+        verticalAlign: VerticalAlign.TOP,
+        shading: { fill: "FFFFFF", type: ShadingType.CLEAR, color: "D9E2E8" },
+        borders: {
+          top: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
+          bottom: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
+          left: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
+          right: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
+        },
+        children: [new Paragraph({ text: "", spacing: { before: 0, after: 0 } })],
+      })
+    ),
+  });
+
   return new Table({
     visuallyRightToLeft: true,
     width: { size: 100, type: WidthType.PERCENTAGE },
@@ -104,7 +98,22 @@ const createEditableNotebookGrid = (content: string, textColor = "000000") => {
       insideHorizontal: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
       insideVertical: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
     },
-    rows: cells,
+    rows: [
+      new TableRow({
+        cantSplit: true,
+        children: [
+          new TableCell({
+            columnSpan: gridColumns,
+            margins: { top: 60, bottom: 60, left: 80, right: 80 },
+            verticalAlign: VerticalAlign.TOP,
+            shading: { fill: "FFFFFF", type: ShadingType.CLEAR, color: "D9E2E8" },
+            children: [createParagraph(content, false, textColor, 18, AlignmentType.RIGHT)],
+          }),
+        ],
+      }),
+      blankGridRow(),
+      blankGridRow(),
+    ],
   });
 };
 
