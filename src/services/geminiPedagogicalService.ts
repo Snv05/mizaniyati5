@@ -60,13 +60,16 @@ export function validateAndRepairPedagogicalNote(rawInput: string, fallbackLevel
     (Array.isArray(row.activityTitles) && row.activityTitles.length > 0) || row.taqwim
   ).slice(0, 2) : [];
   const primaryActivitySource = sourceActivityRows[0] || sourceActivityRow;
-  const activityTitles = Array.isArray(sourceActivityRow.activityTitles)
+  const activityTitles = Array.isArray(primaryActivitySource.activityTitles)
     ? sourceActivityRow.activityTitles.map((x: any) => String(x || '').trim()).filter(Boolean).slice(0, 2)
     : [];
   const sourceAssessment = String(primaryActivitySource.taqwim || '').trim();
   const sourceActivityKind = ['curriculum','companionDocument','teacherGuide','memo'].includes(String(primaryActivitySource.sourceType))
-    ? String(sourceActivityRow.sourceType) as any
+    ? String(primaryActivitySource.sourceType) as any
     : 'memo';
+  const activitySourceId1 = primaryActivitySource.activitySources?.[0]?.id ? String(primaryActivitySource.activitySources[0].id) : '';
+  const activitySourceId2 = primaryActivitySource.activitySources?.[1]?.id ? String(primaryActivitySource.activitySources[1].id) : '';
+  const assessmentSourceId = primaryActivitySource.id ? String(primaryActivitySource.id) : '';
   const sourceActivities = {
     title1: activityTitles[0] || '',
     title2: activityTitles[1] || '',
@@ -75,7 +78,9 @@ export function validateAndRepairPedagogicalNote(rawInput: string, fallbackLevel
     sourceLabel: (activityTitles.length || sourceAssessment)
       ? String(primaryActivitySource.sourceLabel || 'مصدر تربوي')
       : 'غير متوفر في المصدر',
-    ...(sourceActivityRow.id ? { sourceId: String(sourceActivityRow.id) } : {}),
+    ...(activitySourceId1 ? { sourceId: activitySourceId1 } : {}),
+    ...(activitySourceId2 ? { sourceId2: activitySourceId2 } : {}),
+    ...(assessmentSourceId ? { assessmentSourceId } : {}),
   };
 
   const activityTraceType = ['curriculum','companionDocument','teacherGuide','memo'].includes(String(sourceActivityRow.sourceType)) ? String(sourceActivityRow.sourceType) as any : 'memo';
@@ -92,6 +97,16 @@ export function validateAndRepairPedagogicalNote(rawInput: string, fallbackLevel
     lockedResource && sourceField('المورد التعلمي', lockedResource, officialRow.mawrid ? 'progression' : 'memo'),
     lockedLearning && sourceField('تعلم المورد', lockedLearning, 'memo'),
   ].filter(Boolean) as any[];
+
+  const sourceSequence = Array.isArray(parsed.sequence) ? parsed.sequence : [];
+  const cleanedSequence = sourceSequence.map((stage: any, index: number) => ({
+    stageName: String(stage.stageName || `المرحلة ${index + 1}`).trim(),
+    timeMinutes: typeof stage.timeMinutes === 'number' && stage.timeMinutes >= 0 ? stage.timeMinutes : 0,
+    teacherInstructions: String(stage.teacherInstructions || '').trim(),
+    studentActivities: String(stage.studentActivities || '').trim(),
+    didacticSupports: Array.isArray(stage.didacticSupports) ? stage.didacticSupports.map(String).filter(Boolean) : [],
+  })).filter((stage: any) => stage.teacherInstructions || stage.studentActivities || stage.stageName);
+  const hasStandaloneAssessmentStage = cleanedSequence.some((stage: any) => /^(تقويم|التقويم|تقويم الموارد)$/u.test(stage.stageName.trim()));
 
   const validatedNote: PedagogicalNote = {
     meta: {
@@ -131,14 +146,7 @@ export function validateAndRepairPedagogicalNote(rawInput: string, fallbackLevel
           scientificConclusion: String(exp.scientificConclusion || '').trim(),
         }))
       : [],
-    sequence: Array.isArray(parsed.sequence) && parsed.sequence.length > 0
-      ? parsed.sequence.map((stage: any, index: number) => ({
-          stageName: String(stage.stageName || `المرحلة ${index + 1}`).trim(),
-          timeMinutes: typeof stage.timeMinutes === 'number' ? stage.timeMinutes : 15,
-          teacherInstructions: String(stage.teacherInstructions || '').trim(),
-          studentActivities: String(stage.studentActivities || '').trim(),
-          didacticSupports: Array.isArray(stage.didacticSupports) ? stage.didacticSupports.map(String) : [],
-        }))
+    sequence: cleanedSequence.length > 0 && !hasStandaloneAssessmentStage ? cleanedSequence
       : [
           {
             stageName: 'وضعية الانطلاق',
