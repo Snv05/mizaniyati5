@@ -22,7 +22,7 @@ const getKnowledgeSnapshot = () => {
 
 apiApp.use(express.json({ limit: '40mb' }));
 
-// حماية نقاط Gemini المكلفة: حد بسيط لكل عنوان IP، مع تنظيف دوري تلقائي.
+// حماية نقاط Gemini المكلفة: حد بسيط لكل عنوان IP داخل عملية الخادم.
 apiApp.use('/api/gemini', (req, res, next) => {
   const key = req.ip || 'unknown';
   if (!geminiRateLimit(key)) return res.status(429).json({ error: 'تم تجاوز حد الطلبات مؤقتاً. أعد المحاولة بعد دقيقة.' });
