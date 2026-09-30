@@ -185,8 +185,9 @@ export function recalculateDistributionRows(
   settings: SchoolCalendarSettings
 ): OfficialAnnualDistributionRow[] {
   if (!baseRows || baseRows.length === 0) return [];
-  // تاريخ الدخول هو مرساة الأسبوع الأول، حتى لو كان الدخول يوم الإثنين–الخميس.
-  const startSunday = new Date(`${settings.startDate}T12:00:00`);
+  // تاريخ الدخول هو مرساة الأسبوع الأول، ويُحاذى إلى الأحد الدراسي
+  // حتى لا يبدأ أسبوع الدفتر من يوم الإثنين/الثلاثاء بسبب تاريخ إدخال متغير.
+  const startSunday = alignToSunday(settings.startDate);
 
   return baseRows.map((row, index) => {
     // رقم الأسبوع يبدأ من 1
@@ -195,9 +196,11 @@ export function recalculateDistributionRows(
 
     const range = computeWeekRange(startSunday, weekIndex, settings.dateFormat);
 
-    // الحفاظ على التواريخ الوزارية الرسمية للأسبوع
-    const finalMonth = (row.month && settings.dateFormat === 'short') ? row.month : range.monthName;
-    const finalDates = (row.dates && settings.dateFormat === 'short') ? row.dates : range.datesStr;
+    // تاريخ الدخول المتغير هو المصدر الحاكم للتاريخ في الدفتر والتدرج.
+    // لا نعيد استعمال dates/month القديمة من القاعدة الرسمية، وإلا بقيت
+    // الصفوف مرتبطة بسنة/تاريخ ثابت رغم تغيير تاريخ الدخول.
+    const finalMonth = range.monthName;
+    const finalDates = range.datesStr;
 
     // لا يتم تحويل أي درس بيداغوجي لـ عطلة أو اختبار إلا إذا كان الصف مصنفاً رسمياً كذلك
     const isHoliday = Boolean(row.isHoliday || /عطلة/.test(row.session1 || '') || /عطلة/.test(row.mawrid || ''));
