@@ -90,9 +90,12 @@ const transformLessonMemoToLogbook = (lessons: LessonMemo[], levelLabel: '1م' |
       txt += `\n<u>التقويم:</u> ${lesson.taqwim}`;
     }
 
-    const sourceActivityIds = lesson.anshita.map((a, index) =>
-      a.sourceActivityId || `generated:${lesson.level || levelLabel}:${lesson.memoNumber || lesson.sourceLearningUnitId || 'unit'}:activity-${index + 1}`
-    );
+    // الدفتر يعرض نشاطين فقط؛ لذلك يجب أن تبقى معرفاتهما فقط في سجل الدفتر.
+    // لا ننشئ معرفات وهمية لأن الربط يجب أن يعود إلى المصدر الرسمي القابل للتتبع.
+    const sourceActivityIds = lesson.anshita
+      .slice(0, 2)
+      .map(a => String(a.sourceActivityId || '').trim())
+      .filter(Boolean);
 
     return {
       level: levelLabel,
@@ -229,8 +232,11 @@ const auditCurriculumDatabase = (
         errors.push(`${level}: لا يوجد نشاط مرتبط بـ ${item.ta3alom || item.mawrid || 'المورد'}.`);
       }
 
-      if (level !== '4م' && !clean(item.sourceLearningUnitId)) {
+      if (!clean(item.sourceLearningUnitId)) {
         errors.push(`${level}: معرف تعلم المورد الرسمي مفقود في ${item.ta3alom || '(بدون عنوان)'}.`);
+      }
+      if (item.level && item.level !== level) {
+        errors.push(`${level}: مستوى السجل غير متطابق مع قاعدة الدفتر: ${item.level}.`);
       }
 
       const localActivityIds = new Set<string>();
