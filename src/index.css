@@ -186,3 +186,36 @@ button,input,textarea,select{font-family:inherit;}
     transform: none !important;
   }
 }
+
+
+/* شبكة الدفتر: مربعات صغيرة واضحة في المعاينة والطباعة ولقطة PDF. */
+.grid-paper-bg {
+  background-color: #fffdf8;
+  background-image:
+    linear-gradient(to right, rgba(20, 110, 100, 0.12) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(20, 110, 100, 0.12) 1px, transparent 1px);
+  background-size: 6px 6px;
+  background-position: 0 0;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.logbook-grid-cell,
+.logbook-grid-input {
+  background-color: rgba(255,255,255,.82);
+  background-image:
+    linear-gradient(to right, rgba(20, 110, 100, 0.16) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(20, 110, 100, 0.16) 1px, transparent 1px);
+  background-size: 6px 6px;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+@media print {
+  .grid-paper-bg,
+  .logbook-grid-cell,
+  .logbook-grid-input {
+    background-image:
+      linear-gradient(to right, rgba(20, 110, 100, 0.16) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(20, 110, 100, 0.16) 1px, transparent 1px) !important;
+    background-size: 6px 6px !important;
+  }
+}
