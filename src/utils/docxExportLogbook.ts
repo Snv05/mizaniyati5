@@ -65,6 +65,14 @@ const createCell = (text: string, bold = false, bgColor?: string, columnSpan?: n
   });
 };
 
+const LEVEL_THEMES: Record<string, { header: string; border: string; soft: string; ink: string }> = {
+  '1م': { header: '047857', border: '10B981', soft: 'ECFDF5', ink: '065F46' },
+  '2م': { header: '2563EB', border: '60A5FA', soft: 'EFF6FF', ink: '1E3A8A' },
+  '3م': { header: 'D97706', border: 'F59E0B', soft: 'FFFBEB', ink: '92400E' },
+  '4م': { header: 'E11D48', border: 'FB7185', soft: 'FFF1F2', ink: '9F1239' },
+};
+const getLevelTheme = (levels: string[]) => LEVEL_THEMES[levels[0]] || LEVEL_THEMES['1م'];
+
 const WEEK_DAYS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
 
 const findPreviousComparableCurriculumLog = (logs: LogEntry[], currentIndex: number, log: LogEntry): LogEntry | undefined => {
@@ -223,16 +231,17 @@ export const generateLogbookDocx = async (
   orientation: 'portrait' | 'landscape' = 'portrait'
 ): Promise<Blob> => {
 
+  const theme = getLevelTheme(assignedLevels);
   const rows: TableRow[] = [];
   let previousWeekKey = '';
   rows.push(new TableRow({
     tableHeader: true,
     children: [
-      createCell("التاريخ", true, "000000", 1, 1, 22, AlignmentType.CENTER, 14),
-      createCell("الوقت", true, "000000", 1, 1, 22, AlignmentType.CENTER, 13),
-      createCell("القسم", true, "000000", 1, 1, 22, AlignmentType.CENTER, 13),
-      createCell("سير الحصة", true, "000000", 1, 1, 22, AlignmentType.CENTER, 45),
-      createCell("الملاحظات", true, "000000", 1, 1, 22, AlignmentType.CENTER, 15),
+      createCell("التاريخ", true, theme.header, 1, 1, 22, AlignmentType.CENTER, 14),
+      createCell("الوقت", true, theme.header, 1, 1, 22, AlignmentType.CENTER, 13),
+      createCell("القسم", true, theme.header, 1, 1, 22, AlignmentType.CENTER, 13),
+      createCell("سير الحصة", true, theme.header, 1, 1, 22, AlignmentType.CENTER, 45),
+      createCell("الملاحظات", true, theme.header, 1, 1, 22, AlignmentType.CENTER, 15),
     ]
   }));
 
@@ -259,7 +268,7 @@ export const generateLogbookDocx = async (
     }
 
     previousWeekKey = currentWeekKey;
-    const bgColor = index % 2 === 0 ? "FFFFFF" : "F0FDF4";
+    const bgColor = index % 2 === 0 ? "FFFFFF" : theme.soft;
     rows.push(new TableRow({
       cantSplit: true,
       children: [
