@@ -65,8 +65,14 @@ const createCell = (text: string, bold = false, bgColor?: string, columnSpan?: n
   });
 };
 
-const createEditableNotebookGrid = (content: string, textColor = "000000") => {
-  const gridColumns = 18;
+const createEditableNotebookGrid = (
+  content: string,
+  textColor = "000000",
+  backgroundColor = "FFFFFF",
+  borderColor = "D9E2E8",
+  gridColumns = 12,
+  blankRows = 1,
+) => {
   const blankGridRow = () => new TableRow({
     cantSplit: true,
     children: Array.from({ length: gridColumns }, () =>
@@ -74,14 +80,14 @@ const createEditableNotebookGrid = (content: string, textColor = "000000") => {
         width: { size: Math.floor(100 / gridColumns), type: WidthType.PERCENTAGE },
         margins: { top: 0, bottom: 0, left: 0, right: 0 },
         verticalAlign: VerticalAlign.TOP,
-        shading: { fill: "FFFFFF", type: ShadingType.CLEAR, color: "D9E2E8" },
+        shading: { fill: backgroundColor, type: ShadingType.CLEAR, color: borderColor },
         borders: {
-          top: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
-          bottom: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
-          left: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
-          right: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
+          top: { style: BorderStyle.SINGLE, size: 2, color: borderColor },
+          bottom: { style: BorderStyle.SINGLE, size: 2, color: borderColor },
+          left: { style: BorderStyle.SINGLE, size: 2, color: borderColor },
+          right: { style: BorderStyle.SINGLE, size: 2, color: borderColor },
         },
-        children: [new Paragraph({ text: "", spacing: { before: 0, after: 0 } })],
+        children: [new Paragraph({ text: "", spacing: { before: 0, after: 0, line: 120 } })],
       })
     ),
   });
@@ -91,12 +97,12 @@ const createEditableNotebookGrid = (content: string, textColor = "000000") => {
     width: { size: 100, type: WidthType.PERCENTAGE },
     columnWidths: Array.from({ length: gridColumns }, () => 450),
     borders: {
-      top: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
-      bottom: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
-      left: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
-      right: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
-      insideHorizontal: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
-      insideVertical: { style: BorderStyle.SINGLE, size: 2, color: "D9E2E8" },
+      top: { style: BorderStyle.SINGLE, size: 2, color: borderColor },
+      bottom: { style: BorderStyle.SINGLE, size: 2, color: borderColor },
+      left: { style: BorderStyle.SINGLE, size: 2, color: borderColor },
+      right: { style: BorderStyle.SINGLE, size: 2, color: borderColor },
+      insideHorizontal: { style: BorderStyle.SINGLE, size: 2, color: borderColor },
+      insideVertical: { style: BorderStyle.SINGLE, size: 2, color: borderColor },
     },
     rows: [
       new TableRow({
@@ -106,13 +112,18 @@ const createEditableNotebookGrid = (content: string, textColor = "000000") => {
             columnSpan: gridColumns,
             margins: { top: 60, bottom: 60, left: 80, right: 80 },
             verticalAlign: VerticalAlign.TOP,
-            shading: { fill: "FFFFFF", type: ShadingType.CLEAR, color: "D9E2E8" },
+            shading: { fill: backgroundColor, type: ShadingType.CLEAR, color: borderColor },
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 2, color: borderColor },
+              bottom: { style: BorderStyle.SINGLE, size: 2, color: borderColor },
+              left: { style: BorderStyle.SINGLE, size: 2, color: borderColor },
+              right: { style: BorderStyle.SINGLE, size: 2, color: borderColor },
+            },
             children: [createParagraph(content, false, textColor, 18, AlignmentType.RIGHT)],
           }),
         ],
       }),
-      blankGridRow(),
-      blankGridRow(),
+      ...Array.from({ length: blankRows }, () => blankGridRow()),
     ],
   });
 };
@@ -121,13 +132,15 @@ const createEditableNotebookCell = (
   text: string,
   bgColor = "FFFFFF",
   widthPercent?: number,
+  borderColor = "D9E2E8",
+  gridColumns = 12,
 ) => {
   return new TableCell({
-    shading: { fill: bgColor, type: ShadingType.CLEAR, color: "auto" },
-    margins: { top: 80, bottom: 80, left: 80, right: 80 },
+    shading: { fill: bgColor, type: ShadingType.CLEAR, color: borderColor },
+    margins: { top: 40, bottom: 40, left: 40, right: 40 },
     verticalAlign: VerticalAlign.TOP,
     width: widthPercent ? { size: widthPercent, type: WidthType.PERCENTAGE } : undefined,
-    children: [createEditableNotebookGrid(text)],
+    children: [createEditableNotebookGrid(text, "000000", bgColor, borderColor, gridColumns, 1)],
   });
 };
 
@@ -338,11 +351,17 @@ export const generateLogbookDocx = async (
     rows.push(new TableRow({
       cantSplit: true,
       children: [
-        createCell(log.dateStr, false, bgColor, 1, 1, 18, AlignmentType.CENTER, 14),
-        createCell(log.time, false, bgColor, 1, 1, 18, AlignmentType.CENTER, 13),
-        createCell(log.section, true, bgColor, 1, 1, 20, AlignmentType.CENTER, 13),
-        createEditableNotebookCell(getExportLessonContent(log, findPreviousComparableCurriculumLog(logs, index, log)), bgColor, 45),
-        createCell(log.note || '', false, bgColor, 1, 1, 18, AlignmentType.RIGHT, 15),
+        createEditableNotebookCell(log.dateStr, bgColor, 14, theme.border, 8),
+        createEditableNotebookCell(log.time, bgColor, 13, theme.border, 8),
+        createEditableNotebookCell(log.section, bgColor, 13, theme.border, 8),
+        createEditableNotebookCell(
+          getExportLessonContent(log, findPreviousComparableCurriculumLog(logs, index, log)),
+          bgColor,
+          45,
+          theme.border,
+          18
+        ),
+        createEditableNotebookCell(log.note || '', bgColor, 15, theme.border, 10),
       ]
     }));
   });
