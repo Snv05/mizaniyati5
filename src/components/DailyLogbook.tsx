@@ -2950,13 +2950,13 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
 
                 tableBodyRows.push(
                   <tr key={r.id} className="bg-white">
-                    <td className="border border-zinc-300 px-2 py-2 text-center font-mono text-[10px] text-zinc-800 w-[92px]" dir="ltr">
+                    <td className="logbook-grid-cell border border-zinc-300 px-2 py-2 text-center font-mono text-[10px] text-zinc-800 w-[92px]" dir="ltr">
                       {r.dateStr}
                     </td>
-                    <td className="border border-zinc-300 px-2 py-2 text-center font-mono text-[10px] text-zinc-800 w-[88px]" dir="ltr">
+                    <td className="logbook-grid-cell border border-zinc-300 px-2 py-2 text-center font-mono text-[10px] text-zinc-800 w-[88px]" dir="ltr">
                       {r.time}
                     </td>
-                    <td className="border border-zinc-300 px-2 py-2 text-center font-bold text-zinc-900 w-[78px]">
+                    <td className="logbook-grid-cell border border-zinc-300 px-2 py-2 text-center font-bold text-zinc-900 w-[78px]">
                       {r.section}
                     </td>
                     <td
@@ -2964,7 +2964,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                       style={{ minHeight: NOTEBOOK_CONTENT_MIN_HEIGHT, height: NOTEBOOK_CONTENT_MIN_HEIGHT }}
                       dangerouslySetInnerHTML={{ __html: displayContent }}
                     />
-                    <td className="border border-zinc-300 px-2 py-2 text-zinc-900 align-top min-h-[58px]">
+                    <td className="logbook-grid-cell border border-zinc-300 px-2 py-2 text-zinc-900 align-top min-h-[58px]">
                       {r.note || ''}
                     </td>
                   </tr>
