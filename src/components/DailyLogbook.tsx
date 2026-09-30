@@ -347,7 +347,22 @@ const findLessonForScheduledSource = (
       return candidate === targetTitle || candidate.includes(targetTitle) || targetTitle.includes(candidate);
     })
   );
-  return titleOnlyCandidates.length === 1 ? titleOnlyCandidates[0] : null;
+  if (titleOnlyCandidates.length === 1) return titleOnlyCandidates[0];
+
+  // البحث بمطابقة المورد والمقطع عندما تختلف صياغة النشاط بين التدرج وبنك المذكرات
+  const cleanMawrid = targetMawrid.replace(/^(?:المورد|المورد التعلمي)?\s*\d+[-–:.\s]*/i, '').trim();
+  if (cleanMawrid) {
+    const mawridCandidates = bank.filter(resource => {
+      const resMawrid = normalizeMatchText(resource.mawrid).replace(/^(?:المورد|المورد التعلمي)?\s*\d+[-–:.\s]*/i, '').trim();
+      return (
+        (!targetMidan || normalizeMatchText(resource.midan).includes(targetMidan) || targetMidan.includes(normalizeMatchText(resource.midan))) &&
+        (resMawrid.includes(cleanMawrid) || cleanMawrid.includes(resMawrid))
+      );
+    });
+    if (mawridCandidates.length >= 1) return mawridCandidates[0];
+  }
+
+  return null;
 };
 
 const LEVEL_NAMES_MAP: Record<string, string> = {
@@ -484,14 +499,104 @@ export function detectLevelFromSection(sec: string): '1م' | '2م' | '3م' | '4�
   return null;
 }
 
+/**
+ * استخراج بيانات الفوج والقسم الأساسي:
+ * يتعامل مع مختلف صياغات الأساتذة: (ف1)، (فوج 1)، ف1، فوج 1، grp 1، إلخ.
+ */
+export function extractGroupInfo(sec: string): { baseSection: string; groupNum?: string; rawGroup?: string } {
+  const clean = (sec || '').trim();
+  if (!clean) return { baseSection: 'قسم غير محدد' };
+  const match = clean.match(/(?:[-—/–\s]*\(?(?:فوج|فـ|ف|grp|group|g)\s*([1234])\)?\s*)/i);
+  if (match) {
+    const base = clean.replace(match[0], '').replace(/\(\s*\)/g, '').trim();
+    return {
+      baseSection: base || clean,
+      groupNum: match[1],
+      rawGroup: `ف${match[1]}`,
+    };
+  }
+  return { baseSection: clean };
+}
+
+export function getBaseSection(sec: string): string {
+  return extractGroupInfo(sec).baseSection;
+}
+
 function formatDateToIsoString(d: Date): string {
   return d.toISOString().split('T')[0];
 }
 
 /**
- * عرض هرمي لمحتوى الدفتر:
- * نحتفظ بالبيانات كاملة في قاعدة البيانات، لكن لا نكرر
- * الميدان/المقطع/المورد/تعلم المورد في كل صف عندما لا تتغير.
+ * دمج الحصص التابعة لنفس القسم (مثل: فوج 1 وفوج 2 لنفس القسم) في خانة واحدة
+ * يدمج التوقيت معاً (08:00 - 09:00 ف1 / 09:00 - 10:00 ف2) والمحتوى واحد
+ */
+export function mergeConsecutiveGroupEntries(entries: LogEntry[]): LogEntry[] {
+  const result: LogEntry[] = [];
+  const visited = new Set<number>();
+
+  for (let i = 0; i < entries.length; i++) {
+    if (visited.has(i)) continue;
+    const a = entries[i];
+    visited.add(i);
+
+    const baseA = getBaseSection(a.section);
+    const infoA = extractGroupInfo(a.section);
+
+    // البحث عن حصة أخرى لنفس التاريخ ونفس القسم والمستوى
+    let partnerIdx = -1;
+    for (let j = i + 1; j < entries.length; j++) {
+      if (visited.has(j)) continue;
+      const b = entries[j];
+      if (b.dateStr === a.dateStr && b.level === a.level && getBaseSection(b.section) === baseA) {
+        partnerIdx = j;
+        break;
+      }
+    }
+
+    if (partnerIdx !== -1) {
+      const b = entries[partnerIdx];
+      visited.add(partnerIdx);
+      const infoB = extractGroupInfo(b.section);
+
+      const grpA = infoA.groupNum || '1';
+      const grpB = infoB.groupNum || '2';
+      const isGroupSplit = !!infoA.groupNum || !!infoB.groupNum || a.section.includes('ف') || b.section.includes('ف');
+
+      // توقيت الحصتين يكتب كما هو
+      let combinedTime = a.time;
+      if (a.time !== b.time) {
+        if (isGroupSplit && !a.time.includes('ف') && !b.time.includes('ف')) {
+          combinedTime = `${a.time} (ف${grpA}) / ${b.time} (ف${grpB})`;
+        } else {
+          combinedTime = `${a.time} / ${b.time}`;
+        }
+      }
+
+      const combinedSection = isGroupSplit
+        ? `${baseA} (فوج 1 + فوج 2)`
+        : baseA;
+
+      const combinedNote = [a.note, b.note].filter(Boolean).join(' | ');
+
+      result.push({
+        ...a,
+        time: combinedTime,
+        section: combinedSection,
+        note: combinedNote,
+      });
+    } else {
+      result.push(a);
+    }
+  }
+
+  return result;
+}
+
+/**
+ * عرض هرمي لمحتوى الدفتر اليومي:
+ * - الميدان يكتب ولا يتكرر إلا إذا وجد ميدان جديد.
+ * - نفس الشيء للمقطع، المورد، وتعلم المورد.
+ * - أسبوع التعارف والصحة المدرسية والمعالجة البيداغوجية ليس لهما ميدان ولا مقطع.
  */
 function buildHierarchicalContent(
   row: LogEntry,
@@ -501,95 +606,77 @@ function buildHierarchicalContent(
     return row.content || '';
   }
 
-  // محتوى الدرس يُستخرج من المذكرة الرسمية فقط:
-  // عنوانا النشاطين + التقويم. لا نعرض تفاصيل النشاط ولا الاستنتاج.
-  // أما الميدان/المقطع/المورد/تعلم المورد فتظهر مرة واحدة هرمياً عند تغيرها.
   const clean = (value?: string) => String(value || '').trim();
   const unique = (values: string[] = []) =>
     Array.from(new Set(values.map(clean).filter(Boolean))).slice(0, 2);
 
   const activities = unique(row.activitiesList);
-  const previousActivities = unique(previous?.activitiesList);
-  const sameSection = !!previous && previous.level === row.level && previous.section === row.section;
-
-  const sameSource =
-    sameSection &&
-    previous?.sourceSequenceId === row.sourceSequenceId &&
-    previous?.sourceResourceId === row.sourceResourceId &&
-    previous?.sourceLearningUnitId === row.sourceLearningUnitId &&
-    previous?.sourceActivityId === row.sourceActivityId &&
-    previous?.sourceActivityId2 === row.sourceActivityId2;
-
   const parts: string[] = [];
   const seen = new Set<string>();
+
   const addLine = (label: string, value?: string) => {
     const cleanValue = clean(value);
     if (!cleanValue) return;
-    const line = label + ': ' + cleanValue;
+    const line = `<u>${label}:</u> ${cleanValue}`;
     if (seen.has(line)) return;
     seen.add(line);
     parts.push(line);
   };
 
-  const sameMidan = sameSection && clean(previous?.midan) === clean(row.midan);
-  const sameMaqta =
-    sameSection &&
-    clean(previous?.midan) === clean(row.midan) &&
-    clean(previous?.maqta) === clean(row.maqta);
-  const sameMawrid =
-    sameSection &&
-    clean(previous?.midan) === clean(row.midan) &&
-    clean(previous?.maqta) === clean(row.maqta) &&
-    clean(previous?.mawrid) === clean(row.mawrid);
-  const sameTa3alom =
-    sameSection &&
-    clean(previous?.midan) === clean(row.midan) &&
-    clean(previous?.maqta) === clean(row.maqta) &&
-    clean(previous?.mawrid) === clean(row.mawrid) &&
-    clean(previous?.ta3alom) === clean(row.ta3alom);
+  const currentMidan = clean(row.midan);
+  const prevMidan = clean(previous?.midan);
+  const currentMaqta = clean(row.maqta);
+  const prevMaqta = clean(previous?.maqta);
+  const currentMawrid = clean(row.mawrid);
+  const prevMawrid = clean(previous?.mawrid);
+  const currentTa3alom = clean(row.ta3alom);
+  const prevTa3alom = clean(previous?.ta3alom);
 
-  if (!sameMidan) addLine('الميدان', row.midan);
-  if (!sameMaqta) addLine('المقطع', row.maqta);
-  if (!sameMawrid) addLine('المورد التعلمي', row.mawrid);
-  if (!sameTa3alom) addLine('تعلم المورد', row.ta3alom);
+  // 1. الميدان: يكتب فقط عند أول ظهور له، ولا يتكرر إلا إذا وجد ميدان جديد
+  const isNewMidan = !!currentMidan && (!previous || !prevMidan || prevMidan !== currentMidan);
 
-  // لا نكرر عناوين الأنشطة إذا كان الصف السابق لنفس القسم والمصدر نفسه.
-  const activitiesChanged =
-    !sameSection ||
-    !sameSource ||
-    previousActivities.join('|') !== activities.join('|');
+  // 2. المقطع: يكتب عند أول ظهور له، ولا يتكرر إلا إذا وجد مقطع جديد أو ميدان جديد
+  const isNewMaqta = !!currentMaqta && (isNewMidan || !previous || !prevMaqta || prevMaqta !== currentMaqta);
 
-  if (activitiesChanged && activities.length) {
-    addLine('عناوين الأنشطة', activities.join(' + '));
+  // 3. المورد التعلمي: يكتب عند أول ظهور له، ولا يتكرر إلا إذا وجد مورد جديد أو مقطع جديد
+  const isNewMawrid = !!currentMawrid && (isNewMaqta || !previous || !prevMawrid || prevMawrid !== currentMawrid);
+
+  // 4. تعلم المورد: يكتب عند أول ظهور له، ولا يتكرر إلا إذا وجد تعلم مورد جديد أو مورد جديد
+  const isNewTa3alom = !!currentTa3alom && (isNewMawrid || !previous || !prevTa3alom || prevTa3alom !== currentTa3alom);
+
+  if (isNewMidan) addLine('الميدان', currentMidan);
+  if (isNewMaqta) addLine('المقطع', currentMaqta);
+  if (isNewMawrid) addLine('المورد التعلمي', currentMawrid);
+  if (isNewTa3alom) addLine('تعلم المورد', currentTa3alom);
+
+  // 5. محتوى الحصة (الأنشطة المنجزة في هذه الحصة بالتحديد)
+  if (activities.length) {
+    addLine('محتوى الحصة / الأنشطة', activities.join(' + '));
+  } else if (!isNewMidan && !isNewMaqta && !isNewMawrid && !isNewTa3alom && row.content) {
+    parts.push(row.content);
   }
 
-  // التقويم جزء من محتوى الحصة، ويظهر مرة واحدة لنفس المصدر حتى لا يتكرر.
+  // 6. التقويم (إن وجد لهذه الحصة)
   const taqwim = clean(row.taqwim);
-  const previousTaqwim = clean(previous?.taqwim);
-  const assessmentChanged =
-    !!taqwim &&
-    (!sameSection || !sameSource || taqwim !== previousTaqwim);
-
-  if (assessmentChanged) {
+  if (taqwim) {
     addLine('التقويم', taqwim);
   }
 
   return parts.join('\n');
 }
 
+/**
+ * البحث عن آخر حصة لنفس القسم ونفس المستوى بغض النظر عن حدود الأسابيع
+ * حتى لا يتكرر الميدان والمقطع والمورد عند الانتقال من أسبوع لآخر
+ */
 const findPreviousComparableCurriculumRow = (allRows: LogEntry[], currentIndex: number, row: LogEntry): LogEntry | undefined => {
-  // المقارنة تكون داخل نفس الأسبوع الدراسي فقط.
-  // لا نسمح لآخر حصة من الأسبوع السابق بأن تمنع إظهار
-  // الميدان/المقطع/المورد/تعلم المورد في بداية الأسبوع الجديد.
-  const currentWeekKey = getSchoolWeekKey(row.dateStr);
+  const baseSection = getBaseSection(row.section);
 
   for (let i = currentIndex - 1; i >= 0; i--) {
     const candidate = allRows[i];
-    if (getSchoolWeekKey(candidate.dateStr) !== currentWeekKey) break;
-
     if (
       candidate.level === row.level &&
-      candidate.section === row.section &&
+      getBaseSection(candidate.section) === baseSection &&
       (!candidate.lessonType || candidate.lessonType === 'curriculum')
     ) {
       return candidate;
@@ -606,8 +693,25 @@ const normalizeDailyLogbookRows = (
     '1م': '1م', '2م': '2م', '3م': '3م', '4م': '4م',
   };
 
-  return savedRows.map((row) => {
-    if (row.lessonType && row.lessonType !== 'curriculum') return row;
+  const normalized = savedRows.map((row) => {
+    // تمييز الحصص الخاصة (تعارف، صحة مدرسية، معالجة بيداغوجية، تقويم تشخيصي، عطل)
+    const isSpecialLesson =
+      (row.lessonType && row.lessonType !== 'curriculum') ||
+      !row.midan ||
+      !row.maqta ||
+      /تعارف|صحة|استقبال|معالجة|تشخيصي/.test(row.mawrid || '') ||
+      /تعارف|صحة|استقبال|معالجة|تشخيصي/.test(row.content || '');
+
+    if (isSpecialLesson) {
+      return {
+        ...row,
+        lessonType: (row.lessonType && row.lessonType !== 'curriculum')
+          ? row.lessonType
+          : (/معالجة/.test(row.mawrid || '') || /معالجة/.test(row.content || '') ? 'remediation' : 'introductory'),
+        midan: '',
+        maqta: '',
+      };
+    }
 
     const level = levelMap[row.level];
     const bank = level ? db[level] : [];
@@ -651,10 +755,10 @@ const normalizeDailyLogbookRows = (
     return {
       ...row,
       // نحافظ على بيانات التدرج التي وُلّد بها الصف؛ المذكرة هنا للربط والتحقق فقط.
-      midan: clean(row.midan) || clean(resource.midan),
-      maqta: clean(row.maqta) || clean(resource.maqta),
-      mawrid: clean(row.mawrid) || clean(resource.mawrid),
-      ta3alom: clean(row.ta3alom) || clean(resource.ta3alom),
+      midan: row.midan !== undefined ? clean(row.midan) : clean(resource.midan),
+      maqta: row.maqta !== undefined ? clean(row.maqta) : clean(resource.maqta),
+      mawrid: row.mawrid !== undefined ? clean(row.mawrid) : clean(resource.mawrid),
+      ta3alom: row.ta3alom !== undefined ? clean(row.ta3alom) : clean(resource.ta3alom),
       activitiesList: row.activitiesList?.length ? row.activitiesList.map(clean).filter(Boolean).slice(0, 2) : activities,
       sourceSequenceId: resource.sourceSequenceId || row.sourceSequenceId,
       sourceResourceId: resource.sourceResourceId || row.sourceResourceId,
@@ -663,6 +767,8 @@ const normalizeDailyLogbookRows = (
       sourceActivityId2: secondId || clean(resource.sourceActivityIds?.[1]),
     };
   });
+
+  return mergeConsecutiveGroupEntries(normalized);
 };
 
 interface DailyLogbookAudit {
@@ -689,7 +795,15 @@ const auditGeneratedDailyLogbook = (
     if (seenRows.has(rowKey)) duplicateRows.push(rowKey);
     seenRows.add(rowKey);
 
-    if (row.lessonType && row.lessonType !== 'curriculum') continue;
+    // إذا كانت الحصة غير منهجية (تعارف، صحة مدرسية، معالجة بيداغوجية، تقويم تشخيصي، عطلة)
+    const isSpecialLesson =
+      (row.lessonType && row.lessonType !== 'curriculum') ||
+      !row.midan ||
+      !row.maqta ||
+      /تعارف|صحة|استقبال|معالجة|تشخيصي/.test(row.mawrid || '') ||
+      /تعارف|صحة|استقبال|معالجة|تشخيصي/.test(row.content || '');
+
+    if (isSpecialLesson) continue;
 
     if (!row.midan || !row.maqta || !row.mawrid || !row.ta3alom) {
       missingHierarchy.push(row.dateStr + ' ' + row.time + ' ' + row.section);
@@ -990,7 +1104,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
     return Array.from(secSet).sort();
   }, [gridRows, config.assignedClasses]);
 
-  // Structured Timetable lookup
+  // Structured Timetable lookup مع دمج الحصص التي تضم نفس القسم (مثل فوج 1 وفوج 2)
   const timetableSchedule = useMemo(() => {
     const sched: Record<string, { id: string; time: string; section: string; level: '1م' | '2م' | '3م' | '4م' | null }[]> = {
       الأحد: [],
@@ -1000,35 +1114,84 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
       الخميس: [],
     };
 
-    // فوجان للقسم نفسه في نفس الساعة واليوم والمستوى = حصة واحدة ومحتوى واحد.
-    const grouped: Record<string, Map<string, { id: string; time: string; section: string; level: '1م' | '2م' | '3م' | '4م' | null }>> = {
-      الأحد: new Map(), الإثنين: new Map(), الثلاثاء: new Map(), الأربعاء: new Map(), الخميس: new Map(),
-    };
+    WEEK_DAYS.forEach((day) => {
+      // 1. جمع الحصص لهذا اليوم مرتبة زمنياً
+      const rawSessions: Array<{ time: string; section: string; level: '1م' | '2م' | '3م' | '4م' | null; baseSection: string; groupNum?: string; rawGroup?: string }> = [];
 
-    [...gridRows]
-      .sort((a, b) => getTimeRank(a.time) - getTimeRank(b.time))
-      .forEach((row) => {
-        WEEK_DAYS.forEach((day) => {
+      [...gridRows]
+        .sort((a, b) => getTimeRank(a.time) - getTimeRank(b.time))
+        .forEach((row) => {
           const sec = row.cells[day]?.trim();
           if (!sec) return;
           const level = detectLevelFromSection(sec);
-          const baseSection = sec.replace(/\s*\(?(?:فوج|ف|فـ|g|grp|group)\s*\d+\)?\s*/gi, '').trim() || sec;
-          const groupMatches = Array.from(sec.matchAll(/(?:فوج|ف|فـ|g|grp|group)\s*(\d+)/gi)).map(m => m[1]);
-          const existing = grouped[day].get(row.time + '|' + (level || '') + '|' + baseSection);
-          if (existing) {
-            const currentGroups = Array.from(existing.section.matchAll(/(?:فوج|ف|فـ|g|grp|group)\s*(\d+)/gi)).map(m => m[1]);
-            const allGroups = Array.from(new Set([...currentGroups, ...groupMatches])).sort((a, b) => Number(a) - Number(b));
-            existing.section = allGroups.length
-              ? `${baseSection} — فوج ${allGroups.join(' + فوج ')}`
-              : baseSection;
-          } else {
-            grouped[day].set(row.time + '|' + (level || '') + '|' + baseSection, { id: row.id + '-' + day, time: row.time, section: groupMatches.length ? `${baseSection} — فوج ${Array.from(new Set(groupMatches)).join(' + فوج ')}` : sec, level });
-          }
+          const { baseSection, groupNum, rawGroup } = extractGroupInfo(sec);
+          rawSessions.push({
+            time: row.time,
+            section: sec,
+            level,
+            baseSection,
+            groupNum,
+            rawGroup,
+          });
         });
-      });
 
-    WEEK_DAYS.forEach((day) => {
-      sched[day] = Array.from(grouped[day].values()).sort((a, b) => getTimeRank(a.time) - getTimeRank(b.time));
+      // 2. دمج الحصص التابعة لنفس القسم (مثل: من 8:00 إلى 9:00 ف1 و 9:00 إلى 10:00 ف2) في خانة واحدة
+      const mergedList: Array<{ id: string; time: string; section: string; level: '1م' | '2م' | '3م' | '4م' | null }> = [];
+      const visited = new Set<number>();
+
+      for (let i = 0; i < rawSessions.length; i++) {
+        if (visited.has(i)) continue;
+        const current = rawSessions[i];
+        visited.add(i);
+
+        // البحث عن حصة شريكة لنفس القسم في نفس اليوم
+        let partnerIndex = -1;
+        for (let j = i + 1; j < rawSessions.length; j++) {
+          if (visited.has(j)) continue;
+          const candidate = rawSessions[j];
+          if (candidate.baseSection === current.baseSection && candidate.level === current.level) {
+            partnerIndex = j;
+            break;
+          }
+        }
+
+        if (partnerIndex !== -1) {
+          const partner = rawSessions[partnerIndex];
+          visited.add(partnerIndex);
+
+          const grpA = current.groupNum || (current.rawGroup ? current.rawGroup.replace(/\D/g, '') : '1');
+          const grpB = partner.groupNum || (partner.rawGroup ? partner.rawGroup.replace(/\D/g, '') : '2');
+          const isGroupSplit = !!current.groupNum || !!partner.groupNum || !!current.rawGroup || !!partner.rawGroup || current.section.includes('ف') || partner.section.includes('ف');
+
+          let mergedTime = '';
+          let mergedSection = '';
+
+          if (isGroupSplit) {
+            // التوقيت يكتب كما هو: 08:00 - 09:00 (ف1) / 09:00 - 10:00 (ف2)
+            mergedTime = `${current.time} (ف${grpA}) / ${partner.time} (ف${grpB})`;
+            mergedSection = `${current.baseSection} (فوج 1 + فوج 2)`;
+          } else {
+            mergedTime = `${current.time} / ${partner.time}`;
+            mergedSection = current.baseSection;
+          }
+
+          mergedList.push({
+            id: `merged-${day}-${i}-${partnerIndex}`,
+            time: mergedTime,
+            section: mergedSection,
+            level: current.level,
+          });
+        } else {
+          mergedList.push({
+            id: `single-${day}-${i}`,
+            time: current.time,
+            section: current.section,
+            level: current.level,
+          });
+        }
+      }
+
+      sched[day] = mergedList;
     });
 
     return sched;
@@ -1110,7 +1273,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
 
         const storedAnnual = getStoredAnnualSchedule(lvl);
         // لا نستخدم تدرجاً محفوظاً إذا كان مولداً بتاريخ بداية مختلف.
-        const annual = storedAnnual && storedAnnual.startDate === startDate ? storedAnnual : (() => {
+        const annualRaw = storedAnnual && storedAnnual.startDate === startDate ? storedAnnual : (() => {
           const sourceRows =
             lvl === '1م' ? OFFICIAL_1AM_DISTRIBUTION :
             lvl === '2م' ? OFFICIAL_2AM_DISTRIBUTION :
@@ -1120,16 +1283,31 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
             const text = [item.maqta, item.mawrid, item.session1, item.session2].join(' ');
             const isHoliday = /عطلة/.test(text);
             const isExam = /إ?ختبار|اختبارات|الفرض المحروس|الفرض/.test(text);
+            const isRemediation = /معالجة/.test(text) || item.mawrid === 'معالجة بيداغوجية';
+            const isIntroductory = /تعارف|صحة|استقبال/.test(text) || (!item.midan && !item.maqta);
             return {
               ...item,
               isHoliday,
               isExam,
-              lessonType: isHoliday ? 'holiday' as const : isExam ? 'assessment' as const : 'curriculum' as const,
+              lessonType: isHoliday ? 'holiday' as const : isExam ? 'assessment' as const : isRemediation ? 'remediation' as const : isIntroductory ? 'introductory' as const : 'curriculum' as const,
               holidayLabel: isHoliday ? item.mawrid || item.maqta || 'عطلة' : undefined,
             };
           });
           return { startDate, items: officialItems };
         })();
+
+        // تطبيع عناصر التدرج للتأكد من تعيين نوع الحصة والميادين الفارغة بدقة
+        const annual = {
+          startDate: annualRaw.startDate,
+          items: annualRaw.items.map((item) => {
+            const text = [item.maqta, item.mawrid, item.session1, item.session2].join(' ');
+            const isRemediation = /معالجة/.test(text) || item.mawrid === 'معالجة بيداغوجية';
+            const isIntroductory = /تعارف|صحة|استقبال/.test(text) || (!item.midan && !item.maqta);
+            if (isRemediation) return { ...item, lessonType: 'remediation' as const, midan: '', maqta: '' };
+            if (isIntroductory) return { ...item, lessonType: 'introductory' as const, midan: '', maqta: '' };
+            return item;
+          })
+        };
 
         let res = bank[currentResIdx];
         let currentLessonType: LogEntry['lessonType'] = 'curriculum';
@@ -1163,43 +1341,20 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
             weeklySessionCounters[weekKey] = ordinal + 1;
             sessionOrdinal = ordinal;
 
-            const scheduledTitle = ordinal === 0 ? annualItem.session1 : annualItem.session2;
+            const scheduledTitle = (ordinal === 0 ? annualItem.session1 : annualItem.session2) || '';
             const hasCurriculumSourceForSession =
               ordinal === 0 ? !!annualItem.sourceActivityId : !!annualItem.sourceActivityId2;
 
             const isCalendarSpecialSession = !!annualItem.isExam || !!annualItem.isHoliday;
-            const isAssessmentSession =
-              ordinal === 1 &&
-              !annualItem.sourceActivityId2 &&
-              (!!annualItem.taqwim ||
-                String(scheduledTitle || '').trim().startsWith('تقويم') ||
-                isCalendarSpecialSession);
-
-            // التقويم لا يتحول إلى حصة ثالثة أو درس مستقل.
-            if (isAssessmentSession && !annualItem.isHoliday && !annualItem.isExam) {
-              const previousLessonIndex = generated.findLastIndex((entry) =>
-                entry.dateStr === dateStr &&
-                getBaseSection(entry.section) === baseSection &&
-                entry.level === lvl &&
-                entry.lessonType === 'curriculum'
-              );
-              if (previousLessonIndex >= 0 && annualItem.taqwim) {
-                generated[previousLessonIndex] = {
-                  ...generated[previousLessonIndex],
-                  taqwim: annualItem.taqwim,
-                };
-              }
-              continue;
-            }
-
-            if (
-              isAssessmentSession ||
+            const isSpecialAnnualLesson =
               annualItem.isHoliday ||
-              (annualItem.lessonType && annualItem.lessonType !== 'curriculum' && !hasCurriculumSourceForSession)
-            ) {
-              currentLessonType = isAssessmentSession
-                ? 'assessment'
-                : annualItem.lessonType as LogEntry['lessonType'];
+              (annualItem.lessonType && annualItem.lessonType !== 'curriculum' && !hasCurriculumSourceForSession) ||
+              isCalendarSpecialSession;
+
+            if (isSpecialAnnualLesson) {
+              currentLessonType = annualItem.isHoliday
+                ? 'holiday'
+                : (annualItem.lessonType as LogEntry['lessonType']) || 'introductory';
 
               linkedSourceSequenceId = undefined;
               linkedSourceResourceId = undefined;
@@ -1210,7 +1365,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
               const specialTitle =
                 scheduledTitle ||
                 (annualItem.isHoliday ? (annualItem.holidayLabel || 'عطلة') : '') ||
-                (annualItem.taqwim ? `تقويم: ${annualItem.taqwim}` : 'تقويم');
+                (annualItem.taqwim ? `تقويم: ${annualItem.taqwim}` : '');
 
               res = {
                 level: lvl,
@@ -1220,7 +1375,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                 mawrid: annualItem.mawrid || '',
                 ta3alom: '',
                 formattedText: specialTitle,
-                activities: [],
+                activities: scheduledTitle ? [scheduledTitle] : [],
                 taqwim: annualItem.taqwim || ''
               };
             } else {
@@ -1230,17 +1385,18 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                 linkedSourceSequenceId = annualItem.sourceSequenceId || scheduled.sourceSequenceId;
                 linkedSourceResourceId = annualItem.sourceResourceId || scheduled.sourceResourceId;
                 linkedSourceLearningUnitId = annualItem.sourceLearningUnitId || scheduled.sourceLearningUnitId;
-                linkedSourceActivityId = annualItem.sourceActivityId || scheduled.sourceActivityIds?.[0];
-                linkedSourceActivityId2 = annualItem.sourceActivityId2 || scheduled.sourceActivityIds?.[1];
+                linkedSourceActivityId = ordinal === 0 ? scheduled.sourceActivityIds?.[0] : (scheduled.sourceActivityIds?.[1] || scheduled.sourceActivityIds?.[0]);
+                linkedSourceActivityId2 = undefined;
+                currentLessonType = 'curriculum';
               } else {
-                // لا نستخدم المورد المتسلسل التالي كبديل؛ الربط يجب أن يبقى مطابقاً للتدرج.
+                // الربط مطابق للتدرج السنوي
                 res = {
                   level: lvl,
                   memoNumber: '',
                   midan: annualItem.midan || '',
                   maqta: annualItem.maqta || '',
                   mawrid: annualItem.mawrid || '',
-                  ta3alom: '',
+                  ta3alom: annualItem.learningUnit || '',
                   formattedText: scheduledTitle || 'محتوى الحصة غير مرتبط بالمذكرة',
                   activities: scheduledTitle ? [scheduledTitle] : [],
                   taqwim: annualItem.taqwim || ''
@@ -1256,6 +1412,10 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           }
         }
 
+        const scheduledActivityTitle = String(
+          (sessionOrdinal === 0 ? annualItem?.session1 : annualItem?.session2) || ''
+        ).trim();
+
         generated.push({
           id: `${dateStr}-${baseSection}-${sess.time}-${generated.length}`,
           dayName,
@@ -1263,20 +1423,22 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           time: sess.time,
           section: sess.section || 'قسم غير محدد',
           level: lvl,
-          content: res.formattedText,
-          // بيانات دفتر الدرس الأساسية مصدرها التدرج السنوي المحفوظ، وليس إعادة بناء من المذكرة.
-          // المذكرة تستخدم للربط والتحقق، بينما عناوين الأنشطة تُؤخذ من session1/session2 في التدرج.
-          midan: annualItem?.midan || res.midan,
-          maqta: annualItem?.maqta || res.maqta,
-          mawrid: annualItem?.mawrid || res.mawrid,
-          ta3alom: annualItem?.learningUnit || res.ta3alom,
+          content: scheduledActivityTitle || res.formattedText,
+          // بيانات دفتر الدرس الأساسية مصدرها التدرج السنوي المحفوظ:
+          // الحصة الأولى = session1 (ساعة 1 للقسم)، الحصة الثانية = session2 (ساعة 2 لنفس القسم)
+          midan: annualItem !== null && annualItem !== undefined && annualItem.midan !== undefined ? annualItem.midan : res.midan,
+          maqta: annualItem !== null && annualItem !== undefined && annualItem.maqta !== undefined ? annualItem.maqta : res.maqta,
+          mawrid: annualItem !== null && annualItem !== undefined && annualItem.mawrid !== undefined ? annualItem.mawrid : res.mawrid,
+          ta3alom: annualItem !== null && annualItem !== undefined && annualItem.learningUnit !== undefined ? annualItem.learningUnit : (res.ta3alom || ''),
           activitiesList: (() => {
-            if (currentLessonType !== 'curriculum') return [];
-            const scheduledTitle = sessionOrdinal === 0 ? annualItem?.session1 : annualItem?.session2;
-            const title = String(scheduledTitle || '').trim();
-            return title ? [title] : [];
+            if (scheduledActivityTitle) return [scheduledActivityTitle];
+            if (res.activities?.length) {
+              const act = res.activities[sessionOrdinal % res.activities.length] || res.activities[0];
+              if (act) return [act];
+            }
+            return [];
           })(),
-          taqwim: res.taqwim || '',
+          taqwim: sessionOrdinal === 1 ? (annualItem?.taqwim || res.taqwim || '') : (res.taqwim || ''),
           sourceSequenceId: linkedSourceSequenceId,
           sourceResourceId: linkedSourceResourceId,
           sourceLearningUnitId: linkedSourceLearningUnitId,
@@ -2807,6 +2969,28 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                       <Eraser className="w-3.5 h-3.5 text-zinc-500" /><span>مسح الدفتر</span>
                     </button>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!rows.length) {
+                        showToast('الدفتر فارغ حالياً.');
+                        return;
+                      }
+                      const beforeCount = rows.length;
+                      const merged = mergeConsecutiveGroupEntries(rows);
+                      setRows(merged);
+                      const diff = beforeCount - merged.length;
+                      if (diff > 0) {
+                        showToast(`تم بنجاح دمج ${diff} حصة للأفواج (ف1 + ف2) في خانة واحدة! ✅`);
+                      } else {
+                        showToast('الحصص مدمجة بالفعل وفق نظام الأفواج ✅');
+                      }
+                    }}
+                    className="w-full bg-teal-50 hover:bg-teal-100 text-teal-900 border border-teal-300 rounded-lg py-2 text-[11px] font-extrabold flex items-center justify-center gap-1.5 transition cursor-pointer"
+                  >
+                    <TableIcon className="w-3.5 h-3.5 text-teal-700" />
+                    <span>دمج حصص الأفواج (ف1 + ف2)</span>
+                  </button>
                 </div>
 
                 {showEmptyWarning && (

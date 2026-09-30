@@ -71,6 +71,65 @@ const [expertMode, setExpertMode] = useState(true);
   const [knowledgeDetails, setKnowledgeDetails] = useState<{ sources: { label: string; url: string; priority?: string }[]; updates: { title: string; summary: string; date: string; sourceTitle?: string; sourceUrl?: string; confidence?: string }[] } | null>(null);
   const [knowledgeStatus, setKnowledgeStatus] = useState<{ updatedAt: string | null; updateCount: number; lastRefresh?: { at?: string; resultCount?: number; searchUsed?: boolean } | null } | null>(null);
 
+  const [labBlocks, setLabBlocks] = useState<ExpertLabBlock[]>(() => {
+    try {
+      const raw = localStorage.getItem('expert_lab_blocks_v1');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [labFilter, setLabFilter] = useState<'all' | 'experiment' | 'diagram' | 'activity' | 'image'>('all');
+
+  const makeLabBlock = (
+    queryText: string,
+    replyText: string,
+    sources: { title: string; uri: string }[] = []
+  ): ExpertLabBlock => {
+    const qText = queryText.toLowerCase();
+    let type: ExpertLabBlock['type'] = 'general';
+    if (qText.includes('تجربة') || qText.includes('مخبر') || qText.includes('بروتوكول')) {
+      type = 'experiment';
+    } else if (qText.includes('رسم') || qText.includes('تخطيطي') || qText.includes('مخطط')) {
+      type = 'diagram';
+    } else if (qText.includes('نشاط') || qText.includes('مهمة') || qText.includes('تعليمات')) {
+      type = 'activity';
+    } else if (qText.includes('صورة') || qText.includes('وثيقة') || qText.includes('سند') || qText.includes('مصادر')) {
+      type = 'image';
+    }
+
+    const firstLine = replyText.trim().split('\n')[0].replace(/[#*`]/g, '').trim();
+    const title = firstLine.length > 0 && firstLine.length < 60 ? firstLine : queryText.slice(0, 50);
+
+    return {
+      id: `${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      type,
+      title,
+      content: replyText,
+      createdAt: new Date().toISOString(),
+      sources,
+    };
+  };
+
+  const saveLabBlock = (block: ExpertLabBlock) => {
+    setLabBlocks((prev) => {
+      const updated = [block, ...prev.filter((b) => b.id !== block.id)].slice(0, 20);
+      try {
+        localStorage.setItem('expert_lab_blocks_v1', JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
+      return updated;
+    });
+  };
+
+  const insertLabBlockIntoMemo = (block: ExpertLabBlock) => {
+    setPendingExpertLabBlock(block);
+    if (onOpenPedagogicalModal) {
+      onOpenPedagogicalModal();
+    }
+  };
+
   useEffect(() => {
     if (!isOpen) return;
     let cancelled = false;
@@ -171,8 +230,7 @@ const [expertMode, setExpertMode] = useState(true);
       let reply = liveReply?.text || '';
       if (reply) {
         saveLabBlock(makeLabBlock(query, reply, liveReply?.sources || []));
-        saveLabBlock(makeLabBlock(query, reply));
-      const aiMsg: Message = {
+        const aiMsg: Message = {
           id: (Date.now() + 1).toString(),
           sender: 'ai',
           text: reply,

@@ -18,7 +18,7 @@ import {
   PageNumber
 } from "docx";
 import { MemoConfig } from "../types";
-import { LogEntry } from "../components/DailyLogbook";
+import { LogEntry, getBaseSection } from "../components/DailyLogbook";
 
 const createParagraph = (text: string, bold = false, color = "000000", size = 20, alignment: any = AlignmentType.CENTER) => {
   return new Paragraph({
@@ -76,22 +76,13 @@ const getLevelTheme = (levels: string[]) => LEVEL_THEMES[levels[0]] || LEVEL_THE
 const WEEK_DAYS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
 
 const findPreviousComparableCurriculumLog = (logs: LogEntry[], currentIndex: number, log: LogEntry): LogEntry | undefined => {
-  // نفس قاعدة الدفتر: لا نقارن بداية الأسبوع الجديد بآخر حصة من الأسبوع السابق.
-  const currentDate = new Date(`${log.dateStr}T12:00:00`);
-  if (Number.isNaN(currentDate.getTime())) return undefined;
-  currentDate.setDate(currentDate.getDate() - currentDate.getDay());
-  const currentWeekKey = currentDate.toISOString().split('T')[0];
+  const baseSection = getBaseSection(log.section);
 
   for (let i = currentIndex - 1; i >= 0; i--) {
     const candidate = logs[i];
-    const candidateDate = new Date(`${candidate.dateStr}T12:00:00`);
-    if (Number.isNaN(candidateDate.getTime())) break;
-    candidateDate.setDate(candidateDate.getDate() - candidateDate.getDay());
-    if (candidateDate.toISOString().split('T')[0] !== currentWeekKey) break;
-
     if (
       candidate.level === log.level &&
-      candidate.section === log.section &&
+      getBaseSection(candidate.section) === baseSection &&
       (!candidate.lessonType || candidate.lessonType === 'curriculum')
     ) {
       return candidate;
@@ -105,57 +96,60 @@ const getExportLessonContent = (log: LogEntry, previous?: LogEntry): string => {
     return log.content || '';
   }
 
-  // Word must match the preview: only memo activity titles + assessment are lesson content.
-  // Hierarchy fields are shown once and repeated values are suppressed.
   const clean = (value?: string) => String(value || '').trim();
   const unique = (values: string[] = []) =>
     Array.from(new Set(values.map(clean).filter(Boolean))).slice(0, 2);
   const activities = unique(log.activitiesList);
-  const previousActivities = unique(previous?.activitiesList);
-  const sameSection = !!previous && previous.level === log.level && previous.section === log.section;
-  const sameSource =
-    sameSection &&
-    previous?.sourceSequenceId === log.sourceSequenceId &&
-    previous?.sourceResourceId === log.sourceResourceId &&
-    previous?.sourceLearningUnitId === log.sourceLearningUnitId &&
-    previous?.sourceActivityId === log.sourceActivityId &&
-    previous?.sourceActivityId2 === log.sourceActivityId2;
 
   const lines: string[] = [];
   const addLine = (label: string, value?: string) => {
     const cleanValue = clean(value);
     if (!cleanValue) return;
-    const line = label + ': ' + cleanValue;
+    const line = `<u>${label}:</u> ${cleanValue}`;
     if (!lines.includes(line)) lines.push(line);
   };
 
-  const sameMidan = sameSection && clean(previous?.midan) === clean(log.midan);
-  const sameMaqta = sameSection && clean(previous?.midan) === clean(log.midan) && clean(previous?.maqta) === clean(log.maqta);
-  const sameMawrid = sameSection && clean(previous?.midan) === clean(log.midan) && clean(previous?.maqta) === clean(log.maqta) && clean(previous?.mawrid) === clean(log.mawrid);
-  const sameTa3alom = sameSection && clean(previous?.midan) === clean(log.midan) && clean(previous?.maqta) === clean(log.maqta) && clean(previous?.mawrid) === clean(log.mawrid) && clean(previous?.ta3alom) === clean(log.ta3alom);
+  const currentMidan = clean(log.midan);
+  const prevMidan = clean(previous?.midan);
+  const currentMaqta = clean(log.maqta);
+  const prevMaqta = clean(previous?.maqta);
+  const currentMawrid = clean(log.mawrid);
+  const prevMawrid = clean(previous?.mawrid);
+  const currentTa3alom = clean(log.ta3alom);
+  const prevTa3alom = clean(previous?.ta3alom);
 
-  if (!sameMidan) addLine('الميدان', log.midan);
-  if (!sameMaqta) addLine('المقطع', log.maqta);
-  if (!sameMawrid) addLine('المورد التعلمي', log.mawrid);
-  if (!sameTa3alom) addLine('تعلم المورد', log.ta3alom);
+  // 1. الميدان: يكتب فقط عند أول ظهور له، ولا يتكرر إلا إذا وجد ميدان جديد
+  const isNewMidan = !!currentMidan && (!previous || !prevMidan || prevMidan !== currentMidan);
 
-  const activitiesChanged = !sameSection || !sameSource || previousActivities.join('|') !== activities.join('|');
-  if (activitiesChanged && activities.length) {
-    addLine('عناوين الأنشطة', activities.join(' + '));
+  // 2. المقطع: يكتب عند أول ظهور له، ولا يتكرر إلا إذا وجد مقطع جديد أو ميدان جديد
+  const isNewMaqta = !!currentMaqta && (isNewMidan || !previous || !prevMaqta || prevMaqta !== currentMaqta);
+
+  // 3. المورد التعلمي: يكتب عند أول ظهور له، ولا يتكرر إلا إذا وجد مورد جديد أو مقطع جديد
+  const isNewMawrid = !!currentMawrid && (isNewMaqta || !previous || !prevMawrid || prevMawrid !== currentMawrid);
+
+  // 4. تعلم المورد: يكتب عند أول ظهور له، ولا يتكرر إلا إذا وجد تعلم مورد جديد أو مورد جديد
+  const isNewTa3alom = !!currentTa3alom && (isNewMawrid || !previous || !prevTa3alom || prevTa3alom !== currentTa3alom);
+
+  if (isNewMidan) addLine('الميدان', currentMidan);
+  if (isNewMaqta) addLine('المقطع', currentMaqta);
+  if (isNewMawrid) addLine('المورد التعلمي', currentMawrid);
+  if (isNewTa3alom) addLine('تعلم المورد', currentTa3alom);
+
+  // 5. محتوى الحصة / الأنشطة
+  if (activities.length) {
+    addLine('محتوى الحصة / الأنشطة', activities.join(' + '));
+  } else if (!isNewMidan && !isNewMaqta && !isNewMawrid && !isNewTa3alom && log.content) {
+    lines.push(log.content);
   }
 
+  // 6. التقويم
   const assessment = clean(log.taqwim);
-  const previousAssessment = clean(previous?.taqwim);
-  const assessmentChanged =
-    !!assessment &&
-    (!sameSection || !sameSource || assessment !== previousAssessment);
-
-  if (assessmentChanged) {
+  if (assessment) {
     addLine('التقويم', assessment);
   }
 
   return lines.join('\n');
-}
+};
 
 const base64ToUint8Array = (base64: string): Uint8Array => {
   const binary = window.atob(base64);

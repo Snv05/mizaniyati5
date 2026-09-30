@@ -8,11 +8,11 @@ export const OFFICIAL_1AM_DISTRIBUTION: OfficialAnnualDistributionRow[] = [
     week: 1,
     month: "سبتمبر",
     dates: "21 − 26",
-    midan: "(I) الانسان و الصحة",
-    maqta: "(I) التغذية عند الانسان",
-    mawrid: "معالجة بيداغوجية",
-    session1: "- اول لقاء بالتلاميذ",
-    session2: "- توجيهات و نصائح",
+    midan: "",
+    maqta: "",
+    mawrid: "تعارف وتوجيهات حول الصحة المدرسية",
+    session1: "تعارف + توجيهات حول النظام الداخلي والصحة المدرسية",
+    session2: "تقويم تشخيصي وتوجيهات وقائية",
     percent: ""
   },
   {
@@ -20,11 +20,11 @@ export const OFFICIAL_1AM_DISTRIBUTION: OfficialAnnualDistributionRow[] = [
     week: 2,
     month: "سبتمبر",
     dates: "27 − 30",
-    midan: "(I) الانسان و الصحة",
-    maqta: "(I) التغذية عند الانسان",
+    midan: "",
+    maqta: "",
     mawrid: "معالجة بيداغوجية",
-    session1: "- الكفاءة الاولي : حفظ الصحة / المعيار 3",
-    session2: "- الكفاءة الاولي : حفظ الصحة / المعيار 4",
+    session1: "معالجة بيداغوجية: الكفاءة الأولى (حفظ الصحة) / معايير التقويم التشخيصي",
+    session2: "معالجة بيداغوجية: الكفاءة الأولى (حفظ الصحة) / معالجة النقائص",
     percent: ""
   },
   {
@@ -32,11 +32,11 @@ export const OFFICIAL_1AM_DISTRIBUTION: OfficialAnnualDistributionRow[] = [
     week: 3,
     month: "أكتوبر",
     dates: "06 − 10",
-    midan: "(I) الانسان و الصحة",
-    maqta: "(I) التغذية عند الانسان",
+    midan: "",
+    maqta: "",
     mawrid: "معالجة بيداغوجية",
-    session1: "- الكفاءة الثانية : حفظ المحيط / المعيار 3",
-    session2: "- الكفاءة الثانية : حفظ المحيط / المعيار 4",
+    session1: "معالجة بيداغوجية: الكفاءة الثانية (حفظ المحيط) / معايير التقويم التشخيصي",
+    session2: "معالجة بيداغوجية: الكفاءة الثانية (حفظ المحيط) / معالجة النقائص",
     percent: ""
   },
   {
@@ -415,11 +415,11 @@ export const OFFICIAL_2AM_DISTRIBUTION: OfficialAnnualDistributionRow[] = [
     week: 1,
     month: "سبتمبر",
     dates: "21-24",
-    midan: "الإنسان والمحيط",
-    maqta: "1- الوسط الحي",
-    mawrid: "01-خصائص الوسط الحي",
-    session1: "تعارف + توجيهات حول الصحة المدرسية",
-    session2: "تقويم تشخيصي + طرح الوضعية الانطلاقية للميدان + المقطع 01"
+    midan: "",
+    maqta: "",
+    mawrid: "تعارف وتوجيهات حول الصحة المدرسية",
+    session1: "تعارف + توجيهات حول الصحة المدرسية والنظام الداخلي",
+    session2: "تقويم تشخيصي وتوجيهات عامة"
   },
   {
     id: "2am-official-2",
@@ -804,11 +804,11 @@ export const OFFICIAL_3AM_DISTRIBUTION: OfficialAnnualDistributionRow[] = [
     week: 1,
     month: "سبتمبر",
     dates: "21-24",
-    midan: "الإنسان والمحيط",
-    maqta: "1- الديناميكية الداخلية للكرة الأرضية",
-    mawrid: "01-الزلازل ظاهرة طبيعية",
-    session1: "تعارف + توجيهات حول الصحة المدرسية",
-    session2: "تقويم تشخيصي + طرح الوضعية الانطلاقية للميدان + المقطع 01"
+    midan: "",
+    maqta: "",
+    mawrid: "تعارف وتوجيهات حول الصحة المدرسية",
+    session1: "تعارف + توجيهات حول الصحة المدرسية والنظام الداخلي",
+    session2: "تقويم تشخيصي وتوجيهات عامة"
   },
   {
     id: "3am-official-2",
@@ -1193,11 +1193,11 @@ export const OFFICIAL_4AM_DISTRIBUTION: OfficialAnnualDistributionRow[] = [
     week: 1,
     month: "سبتمبر",
     dates: "21-24",
-    midan: "الإنسان والصحة",
-    maqta: "1- التغذية عند الإنسان",
-    mawrid: "التقويم التشخيصي",
-    session1: "استقبال التلاميذ، تعارف",
-    session2: "تقويم تشخيصي + طرح الوضعية الانطلاقية للميدان وللمقطع التعلمي الأول"
+    midan: "",
+    maqta: "",
+    mawrid: "تعارف وتوجيهات حول الصحة المدرسية",
+    session1: "استقبال التلاميذ، تعارف وتوجيهات حول الصحة المدرسية",
+    session2: "تقويم تشخيصي وتوجيهات عامة"
   },
   {
     id: "4am-official-2",
