@@ -74,8 +74,10 @@ export function validateAndRepairPedagogicalNote(rawInput: string, fallbackLevel
     ...(sourceActivityRow.id ? { sourceId: String(sourceActivityRow.id) } : {}),
   };
 
+  const activityTraceType = ['curriculum','companionDocument','teacherGuide','memo'].includes(String(sourceActivityRow.sourceType)) ? String(sourceActivityRow.sourceType) as any : 'memo';
+  const activityTraceLabel = String(sourceActivityRow.sourceLabel || 'مصدر تربوي');
   const activityTrace = [
-    activityTitles[0] && { field: 'عنوان النشاط 1', value: activityTitles[0], sourceType: 'memo', sourceLabel: 'قاعدة المذكرات/المنهاج', ...(sourceActivityRow.id ? { sourceId: String(sourceActivityRow.id) } : {}) },
+    activityTitles[0] && { field: 'عنوان النشاط 1', value: activityTitles[0], sourceType: activityTraceType, sourceLabel: activityTraceLabel, ...(sourceActivityRow.id ? { sourceId: String(sourceActivityRow.id) } : {}) },
     activityTitles[1] && { field: 'عنوان النشاط 2', value: activityTitles[1], sourceType: 'memo', sourceLabel: 'قاعدة المذكرات/المنهاج', ...(sourceActivityRow.id ? { sourceId: String(sourceActivityRow.id) } : {}) },
     sourceAssessment && { field: 'التقويم', value: sourceAssessment, sourceType: 'memo', sourceLabel: 'قاعدة المذكرات/المنهاج', ...(sourceActivityRow.id ? { sourceId: String(sourceActivityRow.id) } : {}) },
   ].filter(Boolean) as any[];
