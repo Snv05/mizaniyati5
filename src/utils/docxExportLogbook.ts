@@ -120,7 +120,6 @@ const createEditableNotebookGrid = (content: string, textColor = "000000") => {
 const createEditableNotebookCell = (
   text: string,
   bgColor = "FFFFFF",
-  size = 18,
   widthPercent?: number,
 ) => {
   return new TableCell({
@@ -342,7 +341,7 @@ export const generateLogbookDocx = async (
         createCell(log.dateStr, false, bgColor, 1, 1, 18, AlignmentType.CENTER, 14),
         createCell(log.time, false, bgColor, 1, 1, 18, AlignmentType.CENTER, 13),
         createCell(log.section, true, bgColor, 1, 1, 20, AlignmentType.CENTER, 13),
-        createEditableNotebookCell(getExportLessonContent(log, findPreviousComparableCurriculumLog(logs, index, log)), bgColor, 18, 45),
+        createEditableNotebookCell(getExportLessonContent(log, findPreviousComparableCurriculumLog(logs, index, log)), bgColor, 45),
         createCell(log.note || '', false, bgColor, 1, 1, 18, AlignmentType.RIGHT, 15),
       ]
     }));
