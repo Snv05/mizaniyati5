@@ -41,7 +41,7 @@ import { UserProfile } from './components/UserProfile';
 import { FirebaseDataSync } from './components/FirebaseDataSync';
 import { CurriculumDatabaseManager } from './components/CurriculumDatabaseManager';
 import { loadCurriculumDatabase } from './data/curriculumDb';
-import designerPortraitImg from './assets/images/designer_portrait_1790463396414.jpg';
+import { FIXED_DESIGNER_PHOTO as designerPortraitImg } from './utils/designerPhoto';
 
 export type MainSectionType = 'home' | '1am' | '2am' | '3am' | '4am' | 'logbook' | 'settings' | 'database';
 
