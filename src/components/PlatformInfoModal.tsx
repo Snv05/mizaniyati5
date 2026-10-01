@@ -15,11 +15,8 @@ import {
   Layers,
   HeartHandshake,
   UserCheck,
-  Camera,
-  Upload,
 } from 'lucide-react';
 import designerPortraitImg from '../assets/images/designer_portrait_1790463396414.jpg';
-import { getDesignerPhoto, saveDesignerPhoto } from '../utils/designerPhoto';
 
 interface PlatformInfoModalProps {
   isOpen: boolean;
@@ -33,30 +30,6 @@ export const PlatformInfoModal: React.FC<PlatformInfoModalProps> = ({
   defaultTab = 'about',
 }) => {
   const [activeTab, setActiveTab] = useState<'about' | 'contact' | 'guide'>(defaultTab);
-  const [designerPhoto, setDesignerPhoto] = useState<string>(() => getDesignerPhoto());
-
-  React.useEffect(() => {
-    const handleUpdated = (e: any) => {
-      setDesignerPhoto(e.detail || getDesignerPhoto());
-    };
-    window.addEventListener('designer-photo-updated', handleUpdated);
-    return () => window.removeEventListener('designer-photo-updated', handleUpdated);
-  }, []);
-
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      if (dataUrl) {
-        saveDesignerPhoto(dataUrl);
-        setDesignerPhoto(dataUrl);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
   const [contactForm, setContactForm] = useState({
     name: '',
     email: '',
@@ -167,25 +140,12 @@ export const PlatformInfoModal: React.FC<PlatformInfoModalProps> = ({
               <div className="p-5 rounded-3xl bg-gradient-to-l from-emerald-50 via-white to-teal-50/60 border border-emerald-300 shadow-sm flex flex-col sm:flex-row items-center sm:items-start gap-5">
                 <div className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-3xl overflow-hidden border-4 border-emerald-600 shadow-xl ring-4 ring-emerald-200/70 shrink-0 group">
                   <img
-                    src={designerPhoto}
+                    src={designerPortraitImg}
                     alt="مصمم ومطور المنصة الأستاذ بغداد الطيب"
                     className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"
                   />
-                  <label
-                    htmlFor="upload-designer-photo-modal"
-                    className="absolute -bottom-1 -left-1 w-9 h-9 bg-emerald-700 hover:bg-emerald-800 text-white rounded-full flex items-center justify-center cursor-pointer shadow-md transition border-2 border-white hover:scale-110"
-                    title="تحديث صورة المصمم الأصلية"
-                  >
-                    <Camera className="w-4 h-4" />
-                    <input
-                      type="file"
-                      id="upload-designer-photo-modal"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handlePhotoUpload}
-                    />
-                  </label>
+                  
                 </div>
                 <div className="space-y-1.5 flex-1 text-center sm:text-right">
                   <div className="text-[11px] font-bold text-emerald-700 flex items-center justify-center sm:justify-start gap-1.5">
@@ -194,13 +154,7 @@ export const PlatformInfoModal: React.FC<PlatformInfoModalProps> = ({
                   </div>
                   <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                     <h4 className="text-[16px] font-black text-gray-900">الأستاذ المطور: بغداد الطيب</h4>
-                    <label
-                      htmlFor="upload-designer-photo-modal"
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100/80 hover:bg-emerald-200 text-emerald-900 text-[11px] font-extrabold border border-emerald-300/60 cursor-pointer transition shadow-2xs"
-                    >
-                      <Upload className="w-3 h-3" />
-                      <span>تحديث / رفع الصورة الأصلية</span>
-                    </label>
+                    
                   </div>
                   <p className="text-[12.5px] text-gray-600 leading-relaxed font-medium">
                     مبادرة بيداغوجية وطنية لرقمنة وتطوير أدوات التحضير التربوي، المذكرات النموذجية، والدفتر اليومي لمادة علوم الطبيعة والحياة لجميع مستويات التعليم المتوسط بالجزائر.
