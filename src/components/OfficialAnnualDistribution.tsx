@@ -388,8 +388,17 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, set
     }
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    try {
+      if (document.fonts?.ready) await document.fonts.ready;
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+      );
+      window.print();
+    } catch (error) {
+      console.error(error);
+      showToast("تعذر فتح نافذة الطباعة");
+    }
   };
 
   const handleExportWord = async () => {
@@ -1100,7 +1109,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, set
               <Eye className="text-indigo-600" /> معاينة التدرج السنوي
             </h2>
             <div className="flex gap-2">
-              <button onClick={handlePrint} className="px-4 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 flex items-center gap-2 transition cursor-pointer">
+              <button onClick={handleExportPdf} className="px-4 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 flex items-center gap-2 transition cursor-pointer">
                 <Printer size={18} /> طباعة
               </button>
               <button onClick={() => setShowPreview(false)} className="px-4 py-2 bg-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-300 flex items-center gap-2 transition cursor-pointer">
