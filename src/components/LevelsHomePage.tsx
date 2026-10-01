@@ -28,7 +28,7 @@ import card1amImg from '../assets/images/card_1am_plant_1790373274426.jpg';
 import card2amImg from '../assets/images/card_2am_ecosystem_1790373285211.jpg';
 import card3amImg from '../assets/images/card_3am_geology_1790373295369.jpg';
 import card4amImg from '../assets/images/card_4am_human_1790373304110.jpg';
-import designerPortraitImg from '../assets/images/designer_portrait_1790463396414.jpg';
+import { FIXED_DESIGNER_PHOTO as designerPortraitImg } from '../utils/designerPhoto';
 
 interface LevelsHomePageProps {
   onSelectYear: (level: '1am' | '2am' | '3am' | '4am', subTab?: 'memos' | 'distribution') => void;
