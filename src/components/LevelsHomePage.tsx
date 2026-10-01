@@ -31,7 +31,6 @@ import card2amImg from '../assets/images/card_2am_ecosystem_1790373285211.jpg';
 import card3amImg from '../assets/images/card_3am_geology_1790373295369.jpg';
 import card4amImg from '../assets/images/card_4am_human_1790373304110.jpg';
 import designerPortraitImg from '../assets/images/designer_portrait_1790463396414.jpg';
-import { getDesignerPhoto, saveDesignerPhoto } from '../utils/designerPhoto';
 
 interface LevelsHomePageProps {
   onSelectYear: (level: '1am' | '2am' | '3am' | '4am', subTab?: 'memos' | 'distribution') => void;
@@ -52,30 +51,6 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
   config,
   curriculumBackground,
 }) => {
-  const [designerPhoto, setDesignerPhoto] = useState<string>(() => getDesignerPhoto());
-
-  useEffect(() => {
-    const handleUpdated = (e: any) => {
-      setDesignerPhoto(e.detail || getDesignerPhoto());
-    };
-    window.addEventListener('designer-photo-updated', handleUpdated);
-    return () => window.removeEventListener('designer-photo-updated', handleUpdated);
-  }, []);
-
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      if (dataUrl) {
-        saveDesignerPhoto(dataUrl);
-        setDesignerPhoto(dataUrl);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
   // تصميم بطاقات المستويات الدراسية وفق الهوية البصرية الجديدة المستوحاة من النموذج اللوحي
   const levelThemes = [
     {
@@ -179,25 +154,12 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
           <div className="flex items-center gap-4 sm:gap-6 relative z-10 text-right">
             <div className="relative w-32 h-32 sm:w-44 sm:h-44 md:w-48 md:h-48 rounded-3xl border-4 border-emerald-600 p-1 shadow-2xl ring-4 ring-emerald-300/80 bg-white shrink-0 group">
               <img 
-                src={designerPhoto} 
+                src={designerPortraitImg} 
                 alt="مصمم المنصة الأستاذ بغداد الطيب" 
                 className="w-full h-full rounded-2xl object-cover shadow-inner"
                 referrerPolicy="no-referrer"
               />
-              <label
-                htmlFor="upload-designer-photo-banner"
-                className="absolute -bottom-2 -left-2 w-10 h-10 bg-emerald-700 hover:bg-emerald-800 text-white rounded-full flex items-center justify-center cursor-pointer shadow-lg transition border-2 border-white hover:scale-110"
-                title="تحديث صورة المصمم الأصلية"
-              >
-                <Camera className="w-5 h-5" />
-                <input
-                  type="file"
-                  id="upload-designer-photo-banner"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handlePhotoUpload}
-                />
-              </label>
+              
             </div>
             <div>
               <div className="text-[12px] sm:text-[13.5px] text-gray-500 font-bold mb-1 flex items-center gap-1.5">
@@ -205,14 +167,7 @@ export const LevelsHomePage: React.FC<LevelsHomePageProps> = ({
               </div>
               <div className="flex items-center gap-2.5">
                 <h2 className="text-2xl sm:text-3xl font-black text-gray-900 leading-tight">الأستاذ بغداد الطيب</h2>
-                <label
-                  htmlFor="upload-designer-photo-banner"
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[11.5px] font-bold border border-emerald-200/80 cursor-pointer transition shadow-2xs"
-                  title="رفع صورتك بجودتها الكاملة"
-                >
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>تغيير / تحديث الصورة</span>
-                </label>
+                
               </div>
               <div className="text-[12px] sm:text-[13px] font-extrabold text-emerald-800 bg-emerald-100/90 px-3.5 py-1.5 rounded-full inline-flex items-center gap-1.5 mt-2 border border-emerald-300/60">
                 <UserCog className="w-4 h-4" /> منصة المذكرة البيداغوجية لعلوم الطبيعة والحياة
