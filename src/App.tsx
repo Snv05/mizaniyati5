@@ -42,7 +42,6 @@ import { FirebaseDataSync } from './components/FirebaseDataSync';
 import { CurriculumDatabaseManager } from './components/CurriculumDatabaseManager';
 import { loadCurriculumDatabase } from './data/curriculumDb';
 import designerPortraitImg from './assets/images/designer_portrait_1790463396414.jpg';
-import { getDesignerPhoto } from './utils/designerPhoto';
 
 export type MainSectionType = 'home' | '1am' | '2am' | '3am' | '4am' | 'logbook' | 'settings' | 'database';
 
@@ -59,16 +58,6 @@ export const App: React.FC = () => {
   const [isCorrectionMemoOpen, setIsCorrectionMemoOpen] = useState<boolean>(false);
   const [isPedagogicalModalOpen, setIsPedagogicalModalOpen] = useState<boolean>(false);
   const [infoModalTab, setInfoModalTab] = useState<'about' | 'contact' | 'guide' | null>(null);
-
-  const [designerPhoto, setDesignerPhoto] = useState<string>(() => getDesignerPhoto());
-
-  useEffect(() => {
-    const handleUpdated = (e: any) => {
-      setDesignerPhoto(e.detail || getDesignerPhoto());
-    };
-    window.addEventListener('designer-photo-updated', handleUpdated);
-    return () => window.removeEventListener('designer-photo-updated', handleUpdated);
-  }, []);
 
   // Is current section a school year?
   const isYearSection = activeSection === '1am' || activeSection === '2am' || activeSection === '3am' || activeSection === '4am';
@@ -553,7 +542,7 @@ export const App: React.FC = () => {
             {/* Designer Badge - Always Visible */}
             <div className="flex items-center gap-2 sm:gap-2.5 bg-emerald-50/90 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-2xl border border-emerald-300 shadow-xs transition-all hover:shadow-md hover:bg-emerald-100" title="تصميم وتطوير المنصة: الأستاذ بغداد الطيب">
               <img 
-                src={designerPhoto} 
+                src={designerPortraitImg} 
                 alt="مصمم المنصة الأستاذ بغداد الطيب" 
                 className="w-12 h-12 sm:w-13 sm:h-13 rounded-2xl border-2 border-emerald-600 object-cover shadow-sm ring-2 ring-emerald-300/70 shrink-0"
                 referrerPolicy="no-referrer"
