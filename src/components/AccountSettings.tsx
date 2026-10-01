@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { MemoConfig } from '../types';
 import { TeacherOfficialStamp } from './TeacherOfficialStamp';
-import designerPortraitImg from '../assets/images/designer_portrait_1790463396414.jpg';
+import { FIXED_DESIGNER_PHOTO as designerPortraitImg } from '../utils/designerPhoto';
 
 interface AccountSettingsProps {
   config: MemoConfig;
