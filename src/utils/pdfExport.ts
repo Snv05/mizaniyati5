@@ -43,11 +43,16 @@ const prepareExportPage = (
   page.style.height = pageHeightPx + 'px';
   page.style.minHeight = pageHeightPx + 'px';
   page.style.maxWidth = 'none';
+  page.style.boxSizing = 'border-box';
   page.style.overflow = 'hidden';
+  page.style.direction = 'rtl';
+  page.style.unicodeBidi = 'plaintext';
   page.style.transform = 'none';
   page.style.backgroundColor = '#ffffff';
   page.style.setProperty('-webkit-print-color-adjust', 'exact');
   page.style.setProperty('print-color-adjust', 'exact');
+  page.style.setProperty('font-family', '"Tajawal","Cairo","Noto Sans Arabic","Segoe UI",Arial,sans-serif');
+  page.style.setProperty('text-rendering', 'optimizeLegibility');
 
   children.forEach((child) => page.appendChild(child.cloneNode(true)));
 
