@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   GraduationCap,
   CalendarDays,
@@ -21,8 +21,6 @@ import {
   CheckCircle2,
   MessageSquare,
   HelpCircle,
-  Camera,
-  Upload,
 } from 'lucide-react';
 import { LESSONS_DATA } from '../data/lessonsData';
 import { MemoConfig } from '../types';
