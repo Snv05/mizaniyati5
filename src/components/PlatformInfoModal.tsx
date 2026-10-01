@@ -16,7 +16,7 @@ import {
   HeartHandshake,
   UserCheck,
 } from 'lucide-react';
-import designerPortraitImg from '../assets/images/designer_portrait_1790463396414.jpg';
+import { FIXED_DESIGNER_PHOTO as designerPortraitImg } from '../utils/designerPhoto';
 
 interface PlatformInfoModalProps {
   isOpen: boolean;
