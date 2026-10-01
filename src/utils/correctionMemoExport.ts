@@ -27,7 +27,30 @@ export async function exportCorrectionMemoToDocx(args: {
 }
 
 export async function exportCorrectionMemoToPdf(element: HTMLElement, title: string) {
-  const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#fff', onclone: sanitizeOklchForHtml2Canvas });
+  if (document.fonts?.ready) await document.fonts.ready;
+  const canvas = await html2canvas(element, {
+    scale: Math.min(2, Math.max(1.5, window.devicePixelRatio || 1.5)),
+    useCORS: true,
+    backgroundColor: '#fff',
+    logging: false,
+    scrollX: 0,
+    scrollY: 0,
+    onclone: (doc) => {
+      sanitizeOklchForHtml2Canvas(doc);
+      const root = doc.querySelector<HTMLElement>('[data-correction-memo-root]') || doc.body;
+      root.style.direction = 'rtl';
+      root.style.boxSizing = 'border-box';
+      root.style.width = '100%';
+      root.style.maxWidth = '100%';
+      root.style.fontFamily = '"Tajawal","Cairo","Noto Sans Arabic","Arial",sans-serif';
+      root.style.textRendering = 'optimizeLegibility';
+      root.querySelectorAll<HTMLElement>('*').forEach((node) => {
+        node.style.setProperty('direction', 'rtl', 'important');
+        node.style.setProperty('-webkit-print-color-adjust', 'exact', 'important');
+        node.style.setProperty('print-color-adjust', 'exact', 'important');
+      });
+    }
+  });
   const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
   const pageW = 210, pageH = 297;
   const pxPerMm = canvas.width / pageW;
@@ -49,6 +72,6 @@ export async function exportCorrectionMemoToPdf(element: HTMLElement, title: str
 export function printCorrectionMemo(element: HTMLElement, title: string) {
   const win = window.open('', '_blank', 'noopener,noreferrer,width=900,height=1000');
   if (!win) return;
-  win.document.write(`<!doctype html><html dir="rtl"><head><title>${title}</title><style>@page{size:A4;margin:12mm}body{margin:0;background:#fff;font-family:Tajawal,Arial,sans-serif;color:#172033}.sheet{width:100%}</style></head><body><div class="sheet">${element.innerHTML}</div><script>window.onload=function(){window.print();}</script></body></html>`);
+  win.document.write(`<!doctype html><html dir="rtl"><head><title>${title}</title><style>@page{size:A4 portrait;margin:10mm}html,body{margin:0;padding:0;background:#fff;color:#172033;direction:rtl;font-family:"Tajawal","Cairo","Noto Sans Arabic","Segoe UI",Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}.sheet{width:100%;max-width:190mm;box-sizing:border-box;direction:rtl;margin:0 auto}.sheet *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}table{width:100%;border-collapse:collapse}tr,td,th{break-inside:avoid;page-break-inside:avoid}</style></head><body><div class="sheet">${element.innerHTML}</div><script>window.onload=function(){window.print();}</script></body></html>`);
   win.document.close();
 }
