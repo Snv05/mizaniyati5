@@ -21,7 +21,6 @@ import {
 } from 'lucide-react';
 import { MemoConfig } from '../types';
 import designerPortraitImg from '../assets/images/designer_portrait_1790463396414.jpg';
-import { getDesignerPhoto } from '../utils/designerPhoto';
 
 interface PlatformNavigationDrawerProps {
   isOpen: boolean;
@@ -42,16 +41,6 @@ export const PlatformNavigationDrawer: React.FC<PlatformNavigationDrawerProps> =
   onOpenInfoModal,
   config,
 }) => {
-  const [designerPhoto, setDesignerPhoto] = useState<string>(() => getDesignerPhoto());
-
-  useEffect(() => {
-    const handleUpdated = (e: any) => {
-      setDesignerPhoto(e.detail || getDesignerPhoto());
-    };
-    window.addEventListener('designer-photo-updated', handleUpdated);
-    return () => window.removeEventListener('designer-photo-updated', handleUpdated);
-  }, []);
-
   if (!isOpen) return null;
 
   const levels = [
@@ -315,7 +304,7 @@ export const PlatformNavigationDrawer: React.FC<PlatformNavigationDrawerProps> =
         <div className="p-3.5 border-t border-slate-200 bg-slate-50/90 space-y-2.5">
           <div className="flex items-center gap-3 bg-white p-3 rounded-2xl border border-emerald-200 shadow-xs">
             <img 
-              src={designerPhoto} 
+              src={designerPortraitImg} 
               alt="مصمم المنصة الأستاذ بغداد الطيب" 
               className="w-20 h-20 rounded-2xl object-cover border-2 border-emerald-600 shadow-md ring-2 ring-emerald-200 shrink-0" 
               referrerPolicy="no-referrer"
