@@ -428,7 +428,22 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, set
         @page { size: A4 ${orientation}; margin: 8mm; }
         .editable-cell:hover { background-color: rgba(0,0,0,0.02); }
         .editable-cell:focus { outline: 1px dashed #c2185b; background-color: rgba(255,255,255,0.9); }
-        .distribution-merged-vertical { writing-mode: vertical-rl; transform: rotate(180deg); min-width: 34px; white-space: normal; text-align: center; }
+        .distribution-merged-vertical { writing-mode: vertical-rl; transform: rotate(180deg); min-width: 34px; white-space: normal; text-align: center; direction: rtl; }
+        @media print {
+          .distribution-merged-vertical {
+            writing-mode: horizontal-tb !important;
+            transform: none !important;
+            min-width: 0 !important;
+            white-space: normal !important;
+            text-align: center !important;
+            direction: rtl !important;
+            unicode-bidi: plaintext !important;
+          }
+          .annual-export-page {
+            box-sizing: border-box !important;
+            overflow: hidden !important;
+          }
+        }
       `}</style>
 
       {pages.map((page, pageIndex) => (
