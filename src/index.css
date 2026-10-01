@@ -14,8 +14,8 @@ button,input,textarea,select{font-family:inherit;}
 
 @media print {
   @page {
-    size: auto;
-    margin: 8mm 8mm 10mm 8mm;
+    size: A4 portrait;
+    margin: 8mm;
   }
   @page landscape-print {
     size: A4 landscape;
@@ -28,8 +28,6 @@ button,input,textarea,select{font-family:inherit;}
   html, body {
     background: #ffffff !important;
     color: #000000 !important;
-    font-size: 11pt !important;
-    line-height: 1.35 !important;
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
