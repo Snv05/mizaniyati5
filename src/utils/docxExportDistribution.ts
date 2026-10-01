@@ -105,7 +105,9 @@ const createCell = (text: string, bold = false, bgColor?: string, columnSpan?: n
     shading: bgColor ? { fill: bgColor, type: ShadingType.CLEAR, color: "auto" } : undefined,
     margins: { top: 100, bottom: 100, left: 100, right: 100 },
     verticalAlign: VerticalAlign.CENTER,
-    textDirection: vertical ? ("tbRl" as any) : undefined,
+    // Arabic merged curriculum cells stay horizontal in Word for reliable RTL rendering.
+    // Vertical textDirection is intentionally not used because it reverses/garbles Arabic glyph order in some Word viewers.
+    textDirection: undefined,
     children: [createParagraph(text, bold, "000000", size, alignment)]
   });
 };
