@@ -844,12 +844,8 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, set
               {page.map((row, i) => {
                 const weekDisplay = row.week ? String(row.week) : '—';
                 const holidayText = row.holidayLabel || row.session1 || row.session2 || 'عطلة';
-                const isFullWeekHoliday = row.isHoliday && (
-                  row.session1 === 'عطلة الشتاء' ||
-                  row.session1 === 'عطلة الربيع' ||
-                  (!row.session1 && !row.session2) ||
-                  row.session1 === row.session2
-                );
+                // في نسخة الطباعة كل عطلة صف واحد كامل، حتى لا تدخل أي خلية عربية داخل تقسيم الصفوف.
+                const isFullWeekHoliday = !!row.isHoliday;
 
                 if (isFullWeekHoliday) {
                   return (
