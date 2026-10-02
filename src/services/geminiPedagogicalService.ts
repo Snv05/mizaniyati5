@@ -1,5 +1,6 @@
 import { PedagogicalNote, GradeLevel } from '../types/pedagogicalNote';
 import { buildGeminiSystemPrompt } from './geminiPrompts';
+import { sourcePriorityOf } from './aiSourcePriority';
 
 /**
  * معالجة وتدقيق كود الـ JSON القادم من نموذج Gemini API مع المعالجة التلقائية للأخطاء (Error Handling & Validation)
@@ -43,8 +44,17 @@ export function validateAndRepairPedagogicalNote(rawInput: string, fallbackLevel
   const visualPlan = parsed.visualPlan || {};
   const progression = Array.isArray((sourceContext as any).progression) ? (sourceContext as any).progression : [];
   const memo = Array.isArray((sourceContext as any).memo) ? (sourceContext as any).memo : [];
-  const officialRow = progression.find((row: any) => row && !row.isHoliday && !row.isExam && row.midan && row.maqta && row.mawrid) || {};
-  const memoRow = memo.find((row: any) => row && (row.midan || row.maqta || row.mawrid || row.ta3alom)) || {};
+  const topicNorm = String(fallbackTopic || '').toLowerCase().replace(/[\u064B-\u065F\u0670]/g, '').replace(/\s+/g, ' ').trim();
+  const matchesTopic = (row: any) => {
+    const values = [row?.midan, row?.maqta, row?.mawrid, row?.session1, row?.session2].map((v: any) => String(v || '').toLowerCase().replace(/[\u064B-\u065F\u0670]/g, '').replace(/\s+/g, ' ').trim());
+    return topicNorm && values.some((v: string) => v && (v.includes(topicNorm) || topicNorm.includes(v)));
+  };
+  const officialRow = progression.find((row: any) => row && !row.isHoliday && !row.isExam && row.midan && row.maqta && row.mawrid && matchesTopic(row))
+    || progression.find((row: any) => row && !row.isHoliday && !row.isExam && row.midan && row.maqta && row.mawrid)
+    || {};
+  const memoRow = memo.find((row: any) => row && matchesTopic(row) && (row.midan || row.maqta || row.mawrid || row.ta3alom))
+    || memo.find((row: any) => row && (row.midan || row.maqta || row.mawrid || row.ta3alom))
+    || {};
   const sourceField = (field: string, value: string, type: 'progression'|'memo') => ({
     field, value, sourceType: type,
     sourceLabel: type === 'progression' ? 'التدرج الرسمي' : 'قاعدة المذكرات/المنهاج',
@@ -61,7 +71,7 @@ export function validateAndRepairPedagogicalNote(rawInput: string, fallbackLevel
   ).slice(0, 2) : [];
   const primaryActivitySource = sourceActivityRows[0] || sourceActivityRow;
   const activityTitles = Array.isArray(primaryActivitySource.activityTitles)
-    ? sourceActivityRow.activityTitles.map((x: any) => String(x || '').trim()).filter(Boolean).slice(0, 2)
+    ? primaryActivitySource.activityTitles.map((x: any) => String(x || '').trim()).filter(Boolean).slice(0, 2)
     : [];
   const sourceAssessment = String(primaryActivitySource.taqwim || '').trim();
   const sourceActivityKind = ['curriculum','companionDocument','teacherGuide','memo'].includes(String(primaryActivitySource.sourceType))
@@ -90,6 +100,18 @@ export function validateAndRepairPedagogicalNote(rawInput: string, fallbackLevel
     activityTitles[1] && { field: 'عنوان النشاط 2', value: activityTitles[1], sourceType: activityTraceType, sourceLabel: activityTraceLabel, ...(activitySourceId2 ? { sourceId: activitySourceId2 } : {}) },
     sourceAssessment && { field: 'التقويم', value: sourceAssessment, sourceType: activityTraceType, sourceLabel: activityTraceLabel, ...(assessmentSourceId ? { sourceId: assessmentSourceId } : {}) },
   ].filter(Boolean) as any[];
+
+  const sourceDocuments = Array.isArray((sourceContext as any).sourceDocuments) ? (sourceContext as any).sourceDocuments : [];
+  const sourceDocumentTrace = sourceDocuments.map((doc: any) => {
+    const sourceType = String(doc?.type || 'attachment');
+    return {
+      field: 'مصدر مرفق',
+      value: String(doc?.name || '').trim(),
+      sourceType: ['curriculum','progression','companionDocument','teacherGuide','memo','attachment'].includes(sourceType) ? sourceType : 'attachment',
+      sourceLabel: String(doc?.name || 'مرفق تربوي').trim(),
+      ...(doc?.id ? { sourceId: String(doc.id) } : {}),
+    };
+  }).filter((x: any) => x.value).sort((a: any, b: any) => sourcePriorityOf(a.sourceType) - sourcePriorityOf(b.sourceType));
 
   const lockedTrace = [
     lockedField && sourceField('الميدان', lockedField, officialRow.midan ? 'progression' : 'memo'),
@@ -187,7 +209,7 @@ export function validateAndRepairPedagogicalNote(rawInput: string, fallbackLevel
     },
     researchSources: Array.isArray(parsed.researchSources) ? parsed.researchSources.map((x:any)=>({title:String(x.title||''),url:String(x.url||''),purpose:String(x.purpose||'')})).filter((x:any)=>x.title||x.url) : [],
     sourceActivities,
-    sourceTrace: [...lockedTrace, ...activityTrace, ...(Array.isArray(parsed.sourceTrace)
+    sourceTrace: [...lockedTrace, ...activityTrace, ...sourceDocumentTrace, ...(Array.isArray(parsed.sourceTrace)
       ? parsed.sourceTrace.map((x:any)=>({
           field: String(x.field || '').trim(),
           value: String(x.value || '').trim(),
