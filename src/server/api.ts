@@ -28,7 +28,7 @@ apiApp.post('/api/gemini/generate', async (req, res) => {
     if (!apiKey) {
       return res.status(503).json({ error: 'GEMINI_API_KEY is not configured on server' });
     }
-    const { prompt, question, attachments = [] } = req.body;
+    const { prompt, question, attachments = [], useWeb = false } = req.body;
     const finalPrompt = prompt || question;
     if (!finalPrompt) {
       return res.status(400).json({ error: 'Missing prompt in request' });
@@ -93,8 +93,13 @@ apiApp.post('/api/gemini/generate', async (req, res) => {
         contents: fileParts.length
           ? [{ role: 'user', parts: [{ text: finalPrompt }, ...fileParts] }]
           : finalPrompt,
+        config: { tools: useWeb ? [{ googleSearch: {} }] : undefined },
       });
-      return res.json({ text: response.text || '' });
+      const grounding = response.candidates?.[0]?.groundingMetadata;
+      const sources = Array.isArray(grounding?.groundingChunks)
+        ? grounding.groundingChunks.map((chunk: any) => chunk?.web).filter((web: any) => web?.uri).map((web: any) => ({ title: web.title || web.uri, uri: web.uri })).filter((source: any, index: number, arr: any[]) => arr.findIndex((x) => x.uri === source.uri) === index).slice(0, 10)
+        : [];
+      return res.json({ text: response.text || '', sources, webSearchQueries: grounding?.webSearchQueries || [], usedWeb: sources.length > 0 || Boolean(grounding?.webSearchQueries?.length) });
     } finally {
       await Promise.allSettled(uploadedFiles.map((file) => ai.files.delete({ name: file.name })));
     }
