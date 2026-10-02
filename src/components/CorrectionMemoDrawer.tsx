@@ -106,7 +106,7 @@ export const CorrectionMemoDrawer: React.FC<{
         lesson: currentLesson,
         curriculum: curriculumLessons,
         attachments: attachments.map(({ name, mimeType, size, dataUrl }) => ({ name, mimeType, size, dataUrl })),
-        sourceDocuments: sourceDocuments.map(({ name, mimeType, dataUrl, category }) => ({ name, type: category || 'memo', text: mimeType === 'text/plain' ? atob(dataUrl.split(',')[1] || '') : undefined })),
+        sourceDocuments: sourceDocuments.filter(item => item.category && item.category !== 'exam').map(({ name, mimeType, dataUrl, category }) => ({ name, type: category as 'curriculum' | 'companion' | 'teacher-guide' | 'memo', text: mimeType === 'text/plain' ? atob(dataUrl.split(',')[1] || '') : undefined })),
       };
       const analysis = await analyzeCorrectionSource(request);
       if (!analysis) {
