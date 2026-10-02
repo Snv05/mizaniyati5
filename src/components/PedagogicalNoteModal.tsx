@@ -39,6 +39,7 @@ import {
   listMemoAttachments,
   saveMemoAttachment,
   deleteMemoAttachment,
+  listMemoSourceDocuments,
   MAX_ATTACHMENT_BYTES,
   MAX_TOTAL_ATTACHMENT_BYTES,
 } from '../services/memoAttachmentStore';
@@ -75,6 +76,8 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
   const [copied, setCopied] = useState<boolean>(false);
   const [attachments, setAttachments] = useState<MemoAttachment[]>([]);
   const [savedAttachments, setSavedAttachments] = useState<MemoAttachment[]>([]);
+  const [sourceLibrary, setSourceLibrary] = useState<MemoAttachment[]>([]);
+  const [selectedSourceIds, setSelectedSourceIds] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [useWebResearch, setUseWebResearch] = useState(true);
   const [labBlock, setLabBlock] = useState<ExpertLabBlock | null>(null);
@@ -88,8 +91,8 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
     const pending = consumePendingExpertLabBlock();
     if (pending) setLabBlock(pending);
     const unsubscribe = subscribeExpertLab(block => { if (block) setLabBlock(block); });
-    listMemoAttachments()
-      .then(setSavedAttachments)
+    Promise.all([listMemoAttachments(), listMemoSourceDocuments()])
+      .then(([attachments, sources]) => { setSavedAttachments(attachments); setSourceLibrary(sources); })
       .catch((error) => console.error('[memo-attachments]', error));
     return unsubscribe;
   }, [isOpen]);
@@ -205,10 +208,12 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
           title: a.title || '',
         })).filter((a: any) => a.title).slice(0, 8) : [],
       }));
+      const selectedLibrarySources = sourceLibrary.filter(item => selectedSourceIds.includes(item.id));
+      const allGenerationAttachments = [...attachments, ...selectedLibrarySources].slice(0, 10);
       const generated = await generatePedagogicalNote(
         selectedGrade,
         topic.trim(),
-        attachments.map(({ name, mimeType, size, dataUrl }) => ({ name, mimeType, size, dataUrl })),
+        allGenerationAttachments.map(({ name, mimeType, size, dataUrl }) => ({ name, mimeType, size, dataUrl })),
         useWebResearch,
         selectedModel?.sections || [],
         {
@@ -220,7 +225,7 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
             status: selectedModel.status,
             sections: selectedModel.sections,
           }] : [],
-          sourceDocuments: attachments.map((item) => ({
+          sourceDocuments: allGenerationAttachments.map((item) => ({
             id: item.id,
             name: item.name,
             mimeType: item.mimeType,
@@ -296,6 +301,23 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
           >
             <X size={18} />
           </button>
+        </div>
+
+        <div className="bg-indigo-50/60 border-b border-indigo-100 p-3 print:hidden">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <div className="text-xs font-black text-indigo-900">المصادر المرجعية المعتمدة</div>
+              <div className="text-[10px] text-slate-500">اختر المصادر المحفوظة التي يجب أن يعتمد عليها التوليد.</div>
+            </div>
+            <button type="button" onClick={async()=>setSourceLibrary(await listMemoSourceDocuments())} className="text-[10px] font-black text-indigo-700">تحديث</button>
+          </div>
+          {sourceLibrary.length ? <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-1.5 mt-2">
+            {sourceLibrary.slice(0,15).map(item => <label key={item.id} className="flex items-center gap-2 bg-white border rounded-lg p-2 text-[10px] cursor-pointer">
+              <input type="checkbox" checked={selectedSourceIds.includes(item.id)} onChange={e=>setSelectedSourceIds(prev=>e.target.checked ? [...prev,item.id] : prev.filter(id=>id!==item.id))}/>
+              <span className="truncate flex-1 font-bold">{item.name}</span>
+              <span className="text-indigo-700">{item.category==='curriculum'?'منهاج':item.category==='companion'?'وثيقة مرافقة':item.category==='teacher-guide'?'دليل أستاذ':'مذكرة'}</span>
+            </label>)}
+          </div> : <div className="mt-2 text-[10px] text-slate-500">لم تُضف مصادر إلى المكتبة بعد. يمكن رفعها من مكتبة المصادر داخل مذكرة التصحيح.</div>}
         </div>
 
         {/* Generator Controls Bar */}
