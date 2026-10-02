@@ -430,12 +430,16 @@ apiApp.post('/api/gemini/generate-pedagogical-note', async (req, res) => {
       if (item.mimeType === 'text/plain') {
         return res.status(400).json({ error: 'الملفات النصية غير مدعومة بعد في التوليد المرفق.' });
       }
-      attachmentParts.push({
-        inlineData: {
-          mimeType: item.mimeType,
-          data: dataUrl.slice(prefix.length),
-        },
-      });
+      const sourceMeta = Array.isArray(sourceContext?.sourceDocuments)
+        ? sourceContext.sourceDocuments.find((doc: any) => String(doc?.name || '') === String(item?.name || ''))
+        : null;
+      const classified = sourceMeta?.type
+        ? { kind: String(sourceMeta.type), role: String(sourceMeta.type === 'curriculum' ? 'المنهاج والتدرج' : sourceMeta.type === 'companion' || sourceMeta.type === 'companionDocument' ? 'الوثيقة المرافقة' : sourceMeta.type === 'teacher-guide' || sourceMeta.type === 'teacherGuide' ? 'كتاب دليل الأستاذ' : 'مذكرة/مرجع تربوي'), priority: Number(sourceMeta.priority || 5) }
+        : classifyAttachment(item);
+      attachmentParts.push(
+        { text: `المرفق المرجعي التالي مصنف رسمياً للاستخدام في التوليد: ${classified.role}. اعتبره مصدراً ${classified.priority <= 2 ? 'أعلى أولوية' : 'مرجعياً مكملاً'}، ولا تنسب إليه معلومة غير موجودة فيه. اسم الملف: ${String(item.name || 'مرفق')}` },
+        { inlineData: { mimeType: item.mimeType, data: dataUrl.slice(prefix.length) } }
+      );
     }
 
     const ai = new GoogleGenAI({
