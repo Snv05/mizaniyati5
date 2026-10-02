@@ -526,6 +526,16 @@ function formatDateToIsoString(d: Date): string {
   return d.toISOString().split('T')[0];
 }
 
+const LOGBOOK_ARABIC_MONTHS = ['جانفي','فيفري','مارس','أفريل','ماي','جوان','جويلية','أوت','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+
+function formatLogbookDateLabel(dateStr: string): string {
+  const match = String(dateStr || '').match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);
+  if (!match) return dateStr || '';
+  const monthIndex = Number(match[2]) - 1;
+  if (monthIndex < 0 || monthIndex > 11) return dateStr;
+  return `${match[3]} ${LOGBOOK_ARABIC_MONTHS[monthIndex]} ${match[1]}`;
+}
+
 /**
  * دمج الحصص التابعة لنفس القسم (مثل: فوج 1 وفوج 2 لنفس القسم) في خانة واحدة
  * يدمج التوقيت معاً (08:00 - 09:00 ف1 / 09:00 - 10:00 ف2) والمحتوى واحد
@@ -3152,8 +3162,8 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
 
                 tableBodyRows.push(
                   <tr key={r.id} className="bg-white">
-                    <td className="logbook-grid-cell border border-zinc-300 px-2 py-2 text-center font-mono text-[10px] text-zinc-800 w-[92px]" dir="ltr">
-                      {r.dateStr}
+                    <td className="logbook-grid-cell border border-zinc-300 px-2 py-2 text-center font-mono text-[10px] text-zinc-800 w-[92px]">
+                      {formatLogbookDateLabel(r.dateStr)}
                     </td>
                     <td className="logbook-grid-cell border border-zinc-300 px-2 py-2 text-center font-mono text-[10px] text-zinc-800 w-[88px]" dir="ltr">
                       {r.time}
@@ -3189,7 +3199,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
               return (
                 <div
                   key={pageIdx}
-                  className="print-page grid-paper-bg shadow-[0_16px_45px_rgba(20,110,100,0.12)] rounded-[8px] border border-[#d8eee9] overflow-hidden mx-auto mb-8 bg-[#fffdf8]"
+                  data-preview-export-page="true"\n                  className="print-page grid-paper-bg shadow-[0_16px_45px_rgba(20,110,100,0.12)] rounded-[8px] border border-[#d8eee9] overflow-hidden mx-auto mb-8 bg-[#fffdf8]"
                   style={{
                     width: `${pageDimensions.w}mm`,
                     height: `${pageDimensions.h}mm`,
