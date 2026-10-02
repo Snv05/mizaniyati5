@@ -22,7 +22,10 @@ import {
   Trash2,
   RotateCcw,
   XCircle,
-  Search
+  Search,
+  ShieldCheck,
+  AlertTriangle,
+  BrainCircuit
 } from 'lucide-react';
 import { PedagogicalNote, GradeLevel } from '../types/pedagogicalNote';
 import { generatePedagogicalNote } from '../services/geminiPedagogicalService';
@@ -84,10 +87,14 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
   const [showModelLibrary, setShowModelLibrary] = useState(false);
   const [modelQuery, setModelQuery] = useState('');
   const [selectedModel, setSelectedModel] = useState<ScienceMemoModel | null>(null);
+  const [aiProviderStatus, setAiProviderStatus] = useState<{primary:string|null;available:string[];freeFirst:boolean}|null>(null);
+  const [showAiCenter, setShowAiCenter] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
+    fetch('/api/ai/providers').then(r=>r.ok?r.json():null).then(data=>data&&setAiProviderStatus(data)).catch(()=>null);
     const pending = consumePendingExpertLabBlock();
     if (pending) setLabBlock(pending);
     const unsubscribe = subscribeExpertLab(block => { if (block) setLabBlock(block); });
@@ -244,6 +251,11 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
         }
       );
       setNote(generated);
+      const suggestions: string[] = [];
+      if (!generated.sourceActivities?.length) suggestions.push('لم يتم العثور على عناوين أنشطة موثقة في المصادر المختارة؛ راجع المذكرات أو دليل الأستاذ قبل إضافة نشاط.');
+      if (!generated.researchSources?.length && useWebResearch) suggestions.push('لم تُثبت مصادر ويب في هذه النتيجة؛ لا تضف مرجعاً خارجياً إلا بعد التحقق منه.');
+      if ((generated.sourceTrace || []).some((x: any) => x.sourceType === 'ai')) suggestions.push('توجد عناصر موسومة باقتراح AI — تحتاج مراجعة الأستاذ.');
+      setAiSuggestions(suggestions);
       showToast('تم توليد المذكرة البيداغوجية الرسمية بنجاح 🌟');
     } catch (error: any) {
       console.error(error);
@@ -318,6 +330,32 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
               <span className="text-indigo-700">{item.category==='curriculum'?'منهاج':item.category==='companion'?'وثيقة مرافقة':item.category==='teacher-guide'?'دليل أستاذ':'مذكرة'}</span>
             </label>)}
           </div> : <div className="mt-2 text-[10px] text-slate-500">لم تُضف مصادر إلى المكتبة بعد. يمكن رفعها من مكتبة المصادر داخل مذكرة التصحيح.</div>}
+        </div>
+
+        <div className="bg-slate-50 border-b border-slate-200 p-3 print:hidden">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <button type="button" onClick={()=>setShowAiCenter(v=>!v)} className="flex items-center gap-2 rounded-xl bg-white border border-slate-200 px-3 py-2 text-xs font-black text-slate-800">
+              <BrainCircuit size={16}/> مركز الذكاء الاصطناعي
+            </button>
+            <div className="flex items-center gap-2 text-[10px] font-bold">
+              <span className="flex items-center gap-1"><ShieldCheck size={13}/> المزود: {aiProviderStatus?.primary || 'غير محدد'}</span>
+              <span className="text-slate-500">المتاح: {(aiProviderStatus?.available || []).join('، ') || '—'}</span>
+            </div>
+          </div>
+          {showAiCenter && <div className="mt-3 grid md:grid-cols-3 gap-2">
+            <div className="bg-white rounded-xl border p-3">
+              <div className="font-black text-xs mb-1">حالة المصادر</div>
+              <div className="text-[10px] text-slate-600">المنهاج/التدرج ← الوثيقة المرافقة ← دليل الأستاذ ← المذكرات ← الويب ← AI.</div>
+            </div>
+            <div className="bg-white rounded-xl border p-3">
+              <div className="font-black text-xs mb-1">اقتراحات التطوير</div>
+              {aiSuggestions.length ? aiSuggestions.map((s,i)=><div key={i} className="text-[10px] text-amber-800 flex gap-1 mt-1"><AlertTriangle size={12}/><span>{s}</span></div>) : <div className="text-[10px] text-emerald-700">لا توجد تنبيهات حالياً.</div>}
+            </div>
+            <div className="bg-white rounded-xl border p-3">
+              <div className="font-black text-xs mb-1">وضع التحقق</div>
+              <div className="text-[10px] text-slate-600">المعلومات الرسمية لا يستبدلها AI أو الويب. أي اقتراح غير موثق يبقى بانتظار اعتماد الأستاذ.</div>
+            </div>
+          </div>}
         </div>
 
         {/* Generator Controls Bar */}
