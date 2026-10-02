@@ -1419,8 +1419,16 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
         }
 
         // في الحصص المنهجية لا نأخذ session1/session2 من التدرج كنص نشاط.
-        // نأخذ عنوان النشاط والتقويم من المذكرة المرتبطة فقط.
-        const memoActivityIndex = sessionOrdinal === 0 ? 0 : 1;
+        // نأخذ عنوان النشاط من المذكرة المرتبطة فقط، مع احترام معرف النشاط إن وُجد.
+        const annualSessionTitle = String(
+          (sessionOrdinal === 0 ? annualItem?.session1 : annualItem?.session2) || ''
+        ).trim();
+        const linkedActivityIndex = linkedSourceActivityId
+          ? (res.sourceActivityIds || []).findIndex(id => id === linkedSourceActivityId)
+          : -1;
+        const memoActivityIndex = linkedActivityIndex >= 0
+          ? linkedActivityIndex
+          : (sessionOrdinal === 0 ? 0 : 1);
         const memoActivityTitle = String(
           res.activities?.[memoActivityIndex] ||
           res.activities?.[0] ||
@@ -1435,7 +1443,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           section: sess.section || 'قسم غير محدد',
           level: lvl,
           content: currentLessonType !== 'curriculum'
-            ? (scheduledTitle || res.formattedText || '')
+            ? (annualSessionTitle || res.formattedText || '')
             : memoActivityTitle,
           // الهرمية من التدرج فقط: الميدان/المقطع/المورد/تعلم المورد.
           midan: annualItem !== null && annualItem !== undefined ? String(annualItem.midan || '') : '',
@@ -1445,7 +1453,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           // الأنشطة + التقويم من المذكرة فقط في الحصص المنهجية.
           activitiesList: currentLessonType === 'curriculum'
             ? (memoActivityTitle ? [memoActivityTitle] : [])
-            : (scheduledTitle ? [scheduledTitle] : []),
+            : (annualSessionTitle ? [annualSessionTitle] : []),
           taqwim: currentLessonType === 'curriculum'
             ? String(res.taqwim || '')
             : String(annualItem?.taqwim || res.taqwim || ''),
