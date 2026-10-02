@@ -8,6 +8,7 @@ export interface CorrectionMemoRequest {
   curriculum: LessonMemo[];
   attachments?: PedagogicalAttachmentInput[];
   sourceAnalysis?: CorrectionSourceAnalysis;
+  sourceDocuments?: Array<{ name: string; type: 'curriculum' | 'companion' | 'teacher-guide' | 'memo' | 'teacher-attachment'; text?: string; url?: string }>;
 }
 
 const compact = (value: unknown, max = 1200): string => {
@@ -80,7 +81,9 @@ export async function generateCorrectionMemo(request: CorrectionMemoRequest): Pr
   const prompt = [
     'أنت أداة مستقلة متخصصة فقط في إعداد مذكرة تصحيح لأساتذة علوم الطبيعة والحياة في التعليم المتوسط بالجزائر.',
     'هذه الأداة ليست المساعد الذكي العام ولا تستعمل طلباته أو واجهته.',
-    'المصدر الأول هو ورقة الفرض/الاختبار نفسها (النص والتحليل المرفق)، ثم بيانات المنصة الرسمية للسياق العلمي.',
+    'ترتيب مصادر التصحيح إلزامي: (1) ورقة الفرض/الاختبار نفسها، (2) المنهاج الرسمي والتدرج، (3) الوثيقة المرافقة، (4) كتاب دليل الأستاذ، (5) المذكرات/الموارد التربوية، (6) الويب عند الحاجة فقط، (7) الذكاء الاصطناعي للاقتراحات التي تحتاج مراجعة الأستاذ.',
+    'لا تعتبر معلومة مثبتة لمجرد معرفة النموذج بها؛ إذا لم يمكن ربطها بمصدر، وسمها: «اقتراح AI — يحتاج مراجعة الأستاذ».',
+    'إذا كان نص السؤال أو الوثيقة غير واضح، لا تخمّن واكتب «يحتاج مراجعة الأستاذ».',
     'إذا تعارض سياق المنصة مع نص الورقة فلا تغيّر نص الورقة؛ نبّه إلى التعارض فقط.',
     '',
     'قواعد صارمة:',
@@ -99,6 +102,9 @@ export async function generateCorrectionMemo(request: CorrectionMemoRequest): Pr
     'نوع التقييم: ' + request.examType,
     'نص ورقة التقييم:',
     request.examText.trim() || 'لا يوجد نص ملصوق؛ ورقة التقييم موجودة في المرفقات ويجب استخراج الأسئلة والنقاط والوثائق منها دون تخمين.',
+    '',
+    'المصادر الإضافية المتاحة للتصحيح:',
+    JSON.stringify(request.sourceDocuments || [], null, 2),
     '',
     'نتيجة تحليل المصدر الأولي (إن وُجدت):',
     request.sourceAnalysis
