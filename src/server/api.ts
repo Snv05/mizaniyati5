@@ -284,6 +284,13 @@ apiApp.post('/api/gemini/smart-assistant', async (req, res) => {
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('[Smart Assistant Error]:', message);
+    const normalized = message.toLowerCase();
+    if (normalized.includes('401') || normalized.includes('403') || normalized.includes('api key') || normalized.includes('permission') || normalized.includes('unauthorized')) {
+      return res.status(503).json({
+        error: 'مفتاح Gemini موجود لكنه غير صالح أو غير مصرح به. أنشئ/حدّث مفتاح Gemini المصرح به في Google AI Studio، ثم ضعه في أسرار النشر باسم GEMINI_API_KEY أو GOOGLE_API_KEY.',
+        code: 'GEMINI_AUTH_ERROR',
+      });
+    }
     return res.status(500).json({ error: message });
   }
 });
