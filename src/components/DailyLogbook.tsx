@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { generateLogbookDocx } from "../utils/docxExportLogbook";
+import { generatePreviewMatchDocx } from "../utils/docxExportLogbook";
 import { generatePreviewMatchPdf } from "../utils/pdfExportLogbook";
 import {
   BookOpen,
@@ -1560,14 +1560,16 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
         showToast('ولّد الدفتر أولاً قبل تصدير Word');
         return;
       }
-      const blob = await generateLogbookDocx(
-        rows,
-        config,
-        gridRows,
-        holidays,
-        assignedLevels,
-        orientation
-      );
+      if (!isPreviewModalOpen || previewMode !== 'all') {
+        setPreviewMode('all');
+        setIsPreviewModalOpen(true);
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      if (document.fonts?.ready) await document.fonts.ready;
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      const pages = Array.from(document.querySelectorAll<HTMLElement>('[data-preview-export-page="true"]'));
+      if (!pages.length) throw new Error('تعذر العثور على صفحات الدفتر للتصدير');
+      const blob = await generatePreviewMatchDocx(pages, orientation);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -1654,23 +1656,20 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
 
   const paginatedPages = useMemo(() => {
     const pages: LogEntry[][] = [];
-    let page: LogEntry[] = [];
     weeklyGroups.forEach((group) => {
-      if (page.length && page.length + group.rows.length > ROWS_PER_PAGE) {
-        pages.push(page);
-        page = [];
-      }
-      if (group.rows.length > ROWS_PER_PAGE) {
-        for (let i = 0; i < group.rows.length; i += ROWS_PER_PAGE) {
-          if (page.length) { pages.push(page); page = []; }
-          pages.push(group.rows.slice(i, i + ROWS_PER_PAGE));
-        }
+      const weekRows = group.rows;
+      // كل أسبوع = صفحتان متتاليتان. إذا تجاوزت الحصص 24 صفاً نضيف صفحات لاحقة فقط عند الحاجة.
+      pages.push(weekRows.slice(0, ROWS_PER_PAGE));
+      if (weekRows.length <= ROWS_PER_PAGE * 2) {
+        pages.push(weekRows.slice(ROWS_PER_PAGE, ROWS_PER_PAGE * 2));
       } else {
-        page.push(...group.rows);
+        for (let i = ROWS_PER_PAGE; i < weekRows.length; i += ROWS_PER_PAGE) {
+          if (i === ROWS_PER_PAGE) continue;
+          pages.push(weekRows.slice(i, i + ROWS_PER_PAGE));
+        }
       }
     });
-    if (page.length) pages.push(page);
-    return pages;
+    return pages.filter((page) => page.length > 0);
   }, [weeklyGroups]);
 
   const levelDistributionSummary = useMemo(() => {
@@ -1695,32 +1694,6 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
     );
     return count;
   }, [gridRows]);
-
-  const handleManualLessonContentChange = (rowId: string, value: string) => {
-    setRows((prev) => prev.map((row) => row.id === rowId ? { ...row, manualContent: value } : row));
-  };
-
-  const handleAddLessonToWeek = (weekKey: string) => {
-    const weekRows = rows.filter((row) => getSchoolWeekKey(row.dateStr) === weekKey);
-    if (!weekRows.length) return;
-    const source = weekRows[weekRows.length - 1];
-    const newRow: LogEntry = {
-      ...source,
-      id: 'manual-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
-      content: '',
-      manualContent: '',
-      activitiesList: [],
-      taqwim: '',
-      lessonType: 'curriculum',
-      sourceSequenceId: undefined,
-      sourceResourceId: undefined,
-      sourceLearningUnitId: undefined,
-      sourceActivityId: undefined,
-      sourceActivityId2: undefined,
-    };
-    setRows((prev) => [...prev, newRow]);
-    showToast('تمت إضافة حصة مستقلة إلى الأسبوع ' + getSchoolWeekNumber(source.dateStr, startDate));
-  };
 
   // Timetable row modifications
   const handleCellChange = (rowId: string, day: string, value: string) => {
@@ -2247,7 +2220,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
 
           <div className="flex justify-between items-center text-[9px] text-zinc-500 pt-2 border-t border-zinc-100">
             <span>الصفحة الأولى (الغلاف واستعمال الزمن الرسمي)</span>
-            <span className="font-bold text-zinc-700">صفحة 1 من {getTotalLogbookPages(rows.length)}</span>
+            <span className="font-bold text-zinc-700">صفحة 1 من {paginatedPages.length}</span>
             <span>الجمهورية الجزائرية الديمقراطية الشعبية 🇩🇿</span>
           </div>
 
@@ -3092,7 +3065,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                 {rows.length > 0 && (
                   <div className="text-[11px] text-center bg-white border border-emerald-200 rounded-lg py-2 font-bold text-[#064e3b] space-y-1">
                     <div>
-                      {rows.length} حصة • {paginatedPages.length} صفحة • A4 / 12 صفاً • {orientation === 'landscape' ? 'أفقي' : 'عمودي'}
+                      {rows.length} حصة • {paginatedPages.length} صفحة • A4 • كل أسبوع = صفحتان • 12 صفاً لكل صفحة • {orientation === 'landscape' ? 'أفقي' : 'عمودي'}
                     </div>
                     <div className="text-[10px] text-zinc-600 font-medium">
                       المستويات المسندة في الدفتر: {levelDistributionSummary}
@@ -3111,7 +3084,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
             <div className="flex items-center gap-2">
               <FileStack className="w-4 h-4 text-[#064e3b]" />
               <span>
-                معاينة الدفتر اليومي ({paginatedPages.length} صفحة) — A4 • 12 صفاً • {orientation === 'landscape' ? 'أفقي' : 'عمودي'} •{' '}
+                معاينة الدفتر اليومي ({paginatedPages.length} صفحة) — A4 • كل أسبوع = صفحتان • 12 صفاً لكل صفحة • {orientation === 'landscape' ? 'أفقي' : 'عمودي'} •{' '}
                 {paginatedPages.length > 0 ? formatPageNumberLabel(0, paginatedPages.length) : 'جاهز للتوليد'}
               </span>
             </div>
@@ -3139,34 +3112,6 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
               <div className="mt-1 text-[10px] leading-5 max-h-20 overflow-auto">{curriculumAudit.errors.slice(0, 8).join(' • ')}</div>
             )}
           </div>
-
-          {weeklyGroups.length > 0 && (
-            <section className="mb-5 space-y-3" dir="rtl">
-              <div className="flex items-center justify-between bg-white border border-emerald-200 rounded-xl px-4 py-3">
-                <div><div className="font-extrabold text-[#064e3b]">فصل الأسابيع وتعديل الحصص</div><div className="text-[10px] text-zinc-500 mt-1">كل أسبوع مستقل. التعديل أو إضافة حصة هنا لا يغيّر أي أسبوع آخر.</div></div>
-                <span className="text-[10px] bg-emerald-50 border border-emerald-200 text-emerald-800 px-2 py-1 rounded-full font-bold">{weeklyGroups.length} أسبوع</span>
-              </div>
-              {weeklyGroups.map((group) => (
-                <div key={group.weekKey} className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm">
-                  <div className="bg-[#064e3b] text-white px-4 py-2.5 flex items-center justify-between gap-3">
-                    <div className="font-extrabold text-[12px]">الأسبوع {group.weekNumber}</div>
-                    <div className="text-[10px] opacity-90">{group.weekKey} • {group.rows.length} حصة</div>
-                    <button type="button" onClick={() => handleAddLessonToWeek(group.weekKey)} className="mr-auto inline-flex items-center gap-1 bg-white text-[#064e3b] px-2.5 py-1.5 rounded-lg text-[10px] font-extrabold"><Plus className="w-3 h-3" /> إضافة حصة</button>
-                  </div>
-                  <div className="divide-y divide-zinc-100">
-                    {group.rows.map((row) => (
-                      <div key={row.id} className="p-3 grid grid-cols-1 md:grid-cols-[90px_100px_90px_1fr] gap-2 items-start">
-                        <div className="text-[10px] font-bold text-zinc-600 bg-zinc-50 border rounded-lg px-2 py-2 text-center">{row.dateStr}</div>
-                        <div className="text-[10px] font-bold text-zinc-600 bg-zinc-50 border rounded-lg px-2 py-2 text-center" dir="ltr">{row.time}</div>
-                        <div className="text-[10px] font-bold text-zinc-700 bg-zinc-50 border rounded-lg px-2 py-2 text-center">{row.section}</div>
-                        <textarea value={row.manualContent ?? ''} onChange={(e) => handleManualLessonContentChange(row.id, e.target.value)} placeholder="اكتب محتوى هذه الحصة فقط..." rows={2} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-[11px] leading-5 outline-none focus:border-emerald-500 resize-y" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </section>
-          )}
 
           {/* Empty State Card */}
           {paginatedPages.length === 0 && (
@@ -3375,7 +3320,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                       </div>
                       <div className="px-4 pb-2 flex justify-center items-center border-t border-zinc-100 pt-2">
                         <span className="bg-zinc-900 text-white px-4 py-1 rounded-full font-bold text-[11px]">
-                           صفحة {pageIdx + 2} من {getTotalLogbookPages(rows.length)}
+                           صفحة {pageIdx + 2} من {paginatedPages.length}
                         </span>
                       </div>
                       <div className="h-1 flex -mx-[1px]">
@@ -3765,7 +3710,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
 
                         <div className="px-4 pb-2 flex justify-center items-center border-t border-zinc-100 pt-2">
                           <span className="bg-zinc-900 text-white px-4 py-1 rounded-full font-bold text-[11px]">
-                            {formatPageNumberLabel(previewMode === 'single' ? 1 : pageIdx + 1, getTotalLogbookPages(rows.length))}
+                            {formatPageNumberLabel(previewMode === 'single' ? 1 : pageIdx + 1, paginatedPages.length)}
                           </span>
                         </div>
 
