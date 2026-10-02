@@ -1660,11 +1660,10 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
       const weekRows = group.rows;
       // كل أسبوع = صفحتان متتاليتان. إذا تجاوزت الحصص 24 صفاً نضيف صفحات لاحقة فقط عند الحاجة.
       pages.push(weekRows.slice(0, ROWS_PER_PAGE));
-      if (weekRows.length <= ROWS_PER_PAGE * 2) {
+      if (weekRows.length <= ROWS_PER_PAGE * 2 - 1) {
         pages.push(weekRows.slice(ROWS_PER_PAGE, ROWS_PER_PAGE * 2 - 1));
       } else {
-        for (let i = ROWS_PER_PAGE; i < weekRows.length; i += ROWS_PER_PAGE) {
-          if (i === ROWS_PER_PAGE) continue;
+        for (let i = ROWS_PER_PAGE * 2 - 1; i < weekRows.length; i += ROWS_PER_PAGE) {
           pages.push(weekRows.slice(i, i + ROWS_PER_PAGE));
         }
       }
