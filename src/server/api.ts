@@ -104,7 +104,6 @@ apiApp.post('/api/gemini/generate', async (req, res) => {
 apiApp.post('/api/gemini/smart-assistant', async (req, res) => {
   try {
     const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return res.status(503).json({ error: 'GEMINI_API_KEY is not configured on server' });
 
     const {
       question,
@@ -220,6 +219,13 @@ apiApp.post('/api/gemini/smart-assistant', async (req, res) => {
       String(question).slice(0, 12000),
     ].join('\n\n');
 
+    // عند غياب المرفقات والبحث الويب، يسمح الممر النصي باستخدام مزود بديل.
+    if (attachmentInputs.length === 0 && !useWeb) {
+      const generated = await generateTextWithGateway(context);
+      return res.json({ text: generated.text, provider: generated.provider, sources: [], webSearchQueries: [], usedWeb: false, usedAttachments: [] });
+    }
+
+    if (!apiKey) return res.status(503).json({ error: 'Gemini مطلوب لتحليل المرفقات أو البحث الويب.' });
     const ai = new GoogleGenAI({ apiKey, httpOptions: { headers: { 'User-Agent': 'aistudio-build' } } });
     const uploadedFiles: any[] = [];
 
