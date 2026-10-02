@@ -471,7 +471,7 @@ const AUTO_FILLED_TIMETABLE_ROWS: TimetableGridRow[] = EMPTY_TIMETABLE_ROWS.map(
   cells: createEmptyDayCells(),
 }));
 
-const LOGBOOK_DATA_VERSION = '2026-09-28-official-v20';
+const LOGBOOK_DATA_VERSION = '2026-10-02-progression-master-memo-activities-v21';
 const ROWS_PER_PAGE = 12;
 const getPageDimensions = (orientation: 'portrait' | 'landscape') => orientation === 'landscape' ? { w: 297, h: 210 } : { w: 210, h: 297 };
 const PRINT_MARGIN = '14mm';
@@ -638,21 +638,23 @@ function buildHierarchicalContent(
   // 2. المقطع: يكتب عند أول ظهور له، ولا يتكرر إلا إذا وجد مقطع جديد أو ميدان جديد
   const isNewMaqta = !!currentMaqta && (isNewMidan || !previous || !prevMaqta || prevMaqta !== currentMaqta);
 
-  // 3. المورد التعلمي: يكتب عند أول ظهور له، ولا يتكرر إلا إذا وجد مورد جديد أو مقطع جديد
+  // 3. المورد التعلمي + 4. تعلم المورد:
+  // حسب قاعدة الدفتر الجديدة، هذان العنصران يُكتبان دائماً مع الأنشطة
+  // لأنهما يحددان المورد الذي تُستخرج منه الأنشطة في المذكرة.
   const isNewMawrid = !!currentMawrid && (isNewMaqta || !previous || !prevMawrid || prevMawrid !== currentMawrid);
-
-  // 4. تعلم المورد: يكتب عند أول ظهور له، ولا يتكرر إلا إذا وجد تعلم مورد جديد أو مورد جديد
   const isNewTa3alom = !!currentTa3alom && (isNewMawrid || !previous || !prevTa3alom || prevTa3alom !== currentTa3alom);
 
   if (isNewMidan) addLine('الميدان', currentMidan);
   if (isNewMaqta) addLine('المقطع', currentMaqta);
-  if (isNewMawrid) addLine('المورد التعلمي', currentMawrid);
-  if (isNewTa3alom) addLine('تعلم المورد', currentTa3alom);
 
-  // 5. محتوى الحصة (الأنشطة المنجزة في هذه الحصة بالتحديد)
+  // المورد التعلمي وتعلم المورد لا يُخفَيان بسبب التكرار؛ يُعرضان في كل حصة منهجية.
+  if (currentMawrid) addLine('المورد التعلمي', currentMawrid);
+  if (currentTa3alom) addLine('تعلم المورد', currentTa3alom);
+
+  // 5. الأنشطة: مصدرها المذكرة فقط، وبحد أقصى عنواني النشاطين كما في المذكرة.
   if (activities.length) {
-    addLine('محتوى الحصة / الأنشطة', activities.join(' + '));
-  } else if (!isNewMidan && !isNewMaqta && !isNewMawrid && !isNewTa3alom && row.content) {
+    addLine('الأنشطة', activities.join(' + '));
+  } else if (!isNewMidan && !isNewMaqta && row.content) {
     parts.push(row.content);
   }
 
@@ -754,11 +756,11 @@ const normalizeDailyLogbookRows = (
 
     return {
       ...row,
-      // نحافظ على بيانات التدرج التي وُلّد بها الصف؛ المذكرة هنا للربط والتحقق فقط.
-      midan: row.midan !== undefined ? clean(row.midan) : clean(resource.midan),
-      maqta: row.maqta !== undefined ? clean(row.maqta) : clean(resource.maqta),
-      mawrid: row.mawrid !== undefined ? clean(row.mawrid) : clean(resource.mawrid),
-      ta3alom: row.ta3alom !== undefined ? clean(row.ta3alom) : clean(resource.ta3alom),
+      // التدرج هو المصدر الوحيد للهرمية. المذكرة لا تُرجع أي قيمة إلى الميدان/المقطع/المورد/تعلم المورد.
+      midan: clean(row.midan),
+      maqta: clean(row.maqta),
+      mawrid: clean(row.mawrid),
+      ta3alom: clean(row.ta3alom),
       activitiesList: row.activitiesList?.length ? row.activitiesList.map(clean).filter(Boolean).slice(0, 2) : activities,
       sourceSequenceId: resource.sourceSequenceId || row.sourceSequenceId,
       sourceResourceId: resource.sourceResourceId || row.sourceResourceId,
@@ -1381,15 +1383,19 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
             } else {
               const scheduled = findLessonForScheduledSource(bank, annualItem, ordinal);
               if (scheduled) {
+                // التدرج هو المصدر الرئيسي للهرمية، والمذكرة هي المصدر الوحيد لعناوين الأنشطة والتقويم.
                 res = scheduled;
                 linkedSourceSequenceId = annualItem.sourceSequenceId || scheduled.sourceSequenceId;
                 linkedSourceResourceId = annualItem.sourceResourceId || scheduled.sourceResourceId;
                 linkedSourceLearningUnitId = annualItem.sourceLearningUnitId || scheduled.sourceLearningUnitId;
-                linkedSourceActivityId = ordinal === 0 ? scheduled.sourceActivityIds?.[0] : (scheduled.sourceActivityIds?.[1] || scheduled.sourceActivityIds?.[0]);
+                const activityIndex = ordinal === 0
+                  ? Math.max(0, scheduled.sourceActivityIds?.findIndex(id => id === annualItem.sourceActivityId) ?? 0)
+                  : Math.max(0, scheduled.sourceActivityIds?.findIndex(id => id === annualItem.sourceActivityId2) ?? 1);
+                linkedSourceActivityId = scheduled.sourceActivityIds?.[activityIndex] || annualItem.sourceActivityId || annualItem.sourceActivityId2;
                 linkedSourceActivityId2 = undefined;
                 currentLessonType = 'curriculum';
               } else {
-                // الربط مطابق للتدرج السنوي
+                // إذا تعذر ربط المذكرة، لا نُنشئ نشاطاً من نص التدرج؛ نحافظ فقط على هرمية التدرج.
                 res = {
                   level: lvl,
                   memoNumber: '',
@@ -1397,9 +1403,9 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                   maqta: annualItem.maqta || '',
                   mawrid: annualItem.mawrid || '',
                   ta3alom: annualItem.learningUnit || '',
-                  formattedText: scheduledTitle || 'محتوى الحصة غير مرتبط بالمذكرة',
-                  activities: scheduledTitle ? [scheduledTitle] : [],
-                  taqwim: annualItem.taqwim || ''
+                  formattedText: '',
+                  activities: [],
+                  taqwim: ''
                 };
                 linkedSourceSequenceId = annualItem.sourceSequenceId;
                 linkedSourceResourceId = annualItem.sourceResourceId;
@@ -1412,8 +1418,13 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           }
         }
 
-        const scheduledActivityTitle = String(
-          (sessionOrdinal === 0 ? annualItem?.session1 : annualItem?.session2) || ''
+        // في الحصص المنهجية لا نأخذ session1/session2 من التدرج كنص نشاط.
+        // نأخذ عنوان النشاط والتقويم من المذكرة المرتبطة فقط.
+        const memoActivityIndex = sessionOrdinal === 0 ? 0 : 1;
+        const memoActivityTitle = String(
+          res.activities?.[memoActivityIndex] ||
+          res.activities?.[0] ||
+          ''
         ).trim();
 
         generated.push({
@@ -1423,22 +1434,21 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
           time: sess.time,
           section: sess.section || 'قسم غير محدد',
           level: lvl,
-          content: scheduledActivityTitle || res.formattedText,
-          // بيانات دفتر الدرس الأساسية مصدرها التدرج السنوي المحفوظ:
-          // الحصة الأولى = session1 (ساعة 1 للقسم)، الحصة الثانية = session2 (ساعة 2 لنفس القسم)
-          midan: annualItem !== null && annualItem !== undefined && annualItem.midan !== undefined ? annualItem.midan : res.midan,
-          maqta: annualItem !== null && annualItem !== undefined && annualItem.maqta !== undefined ? annualItem.maqta : res.maqta,
-          mawrid: annualItem !== null && annualItem !== undefined && annualItem.mawrid !== undefined ? annualItem.mawrid : res.mawrid,
-          ta3alom: annualItem !== null && annualItem !== undefined && annualItem.learningUnit !== undefined ? annualItem.learningUnit : (res.ta3alom || ''),
-          activitiesList: (() => {
-            if (scheduledActivityTitle) return [scheduledActivityTitle];
-            if (res.activities?.length) {
-              const act = res.activities[sessionOrdinal % res.activities.length] || res.activities[0];
-              if (act) return [act];
-            }
-            return [];
-          })(),
-          taqwim: sessionOrdinal === 1 ? (annualItem?.taqwim || res.taqwim || '') : (res.taqwim || ''),
+          content: currentLessonType !== 'curriculum'
+            ? (scheduledTitle || res.formattedText || '')
+            : memoActivityTitle,
+          // الهرمية من التدرج فقط: الميدان/المقطع/المورد/تعلم المورد.
+          midan: annualItem !== null && annualItem !== undefined ? String(annualItem.midan || '') : '',
+          maqta: annualItem !== null && annualItem !== undefined ? String(annualItem.maqta || '') : '',
+          mawrid: annualItem !== null && annualItem !== undefined ? String(annualItem.mawrid || '') : '',
+          ta3alom: annualItem !== null && annualItem !== undefined ? String(annualItem.learningUnit || '') : '',
+          // الأنشطة + التقويم من المذكرة فقط في الحصص المنهجية.
+          activitiesList: currentLessonType === 'curriculum'
+            ? (memoActivityTitle ? [memoActivityTitle] : [])
+            : (scheduledTitle ? [scheduledTitle] : []),
+          taqwim: currentLessonType === 'curriculum'
+            ? String(res.taqwim || '')
+            : String(annualItem?.taqwim || res.taqwim || ''),
           sourceSequenceId: linkedSourceSequenceId,
           sourceResourceId: linkedSourceResourceId,
           sourceLearningUnitId: linkedSourceLearningUnitId,
