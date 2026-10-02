@@ -271,8 +271,6 @@ button,input,textarea,select{font-family:inherit;}
     display: table-cell !important;
     direction: rtl !important;
     unicode-bidi: plaintext !important;
-    writing-mode: horizontal-tb !important;
-    text-orientation: mixed !important;
     transform: none !important;
     letter-spacing: 0 !important;
     text-shadow: none !important;
@@ -336,8 +334,6 @@ button,input,textarea,select{font-family:inherit;}
   .annual-export-page .distribution-print-rtl {
     direction: rtl !important;
     unicode-bidi: plaintext !important;
-    writing-mode: horizontal-tb !important;
-    text-orientation: mixed !important;
     transform: none !important;
     letter-spacing: 0 !important;
     text-shadow: none !important;
