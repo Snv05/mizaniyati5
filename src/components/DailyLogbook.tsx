@@ -1661,7 +1661,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
       // كل أسبوع = صفحتان متتاليتان. إذا تجاوزت الحصص 24 صفاً نضيف صفحات لاحقة فقط عند الحاجة.
       pages.push(weekRows.slice(0, ROWS_PER_PAGE));
       if (weekRows.length <= ROWS_PER_PAGE * 2) {
-        pages.push(weekRows.slice(ROWS_PER_PAGE, ROWS_PER_PAGE * 2));
+        pages.push(weekRows.slice(ROWS_PER_PAGE, ROWS_PER_PAGE * 2 - 1));
       } else {
         for (let i = ROWS_PER_PAGE; i < weekRows.length; i += ROWS_PER_PAGE) {
           if (i === ROWS_PER_PAGE) continue;
@@ -1669,7 +1669,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
         }
       }
     });
-    return pages.filter((page) => page.length > 0);
+    return pages;
   }, [weeklyGroups]);
 
   const levelDistributionSummary = useMemo(() => {
@@ -3671,7 +3671,7 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                                   </React.Fragment>
                                 );
                               })}
-                              {Array.from({ length: Math.max(0, ROWS_PER_PAGE - pageRows.length) }).map((_, emptyIdx) => (
+                              {Array.from({ length: Math.max(0, ROWS_PER_PAGE - pageRows.length - (pageIdx % 2 === 1 ? 1 : 0)) }).map((_, emptyIdx) => (
                                 <tr key={`empty-p-${emptyIdx}`} className="bg-white">
                                   <td className="border border-zinc-300 h-[32px]" />
                                   <td className="border border-zinc-300" />
@@ -3680,6 +3680,15 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                                   <td className="border border-zinc-300" />
                                 </tr>
                               ))}
+                              {pageIdx % 2 === 1 && (
+                                <tr className="bg-emerald-50/30">
+                                  <td className="border border-emerald-200 h-[32px]" />
+                                  <td className="border border-emerald-200" />
+                                  <td className="border border-emerald-200" />
+                                  <td className="border border-emerald-200 text-center text-[9px] text-emerald-700 font-bold">خانة فارغة لإضافة حصة نهاية الأسبوع</td>
+                                  <td className="border border-emerald-200" />
+                                </tr>
+                              )}
                             </tbody>
                           </table>
                         </div>
