@@ -1,6 +1,6 @@
 import { OfficialAnnualDistributionRow } from '../data/officialAnnualDistributionData';
 
-export const ANNUAL_SCHEDULE_DATA_VERSION = '2026-2027-official-all-levels-v33';
+export const ANNUAL_SCHEDULE_DATA_VERSION = '2026-2027-official-all-levels-v34';
 export const ANNUAL_STORAGE_KEY = 'algeria_sciences_annual_dist_v6';
 
 export const ARABIC_MONTH_NAMES = [
