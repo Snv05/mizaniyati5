@@ -130,6 +130,7 @@ export async function generateCorrectionMemo(request: CorrectionMemoRequest): Pr
         attachments: (request.attachments || []).map(({ name, mimeType, size, dataUrl }) => ({
           name, mimeType, size, dataUrl,
         })),
+        useWeb: true,
       }),
     });
     if (!response.ok) return null;
