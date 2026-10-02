@@ -74,6 +74,7 @@ const [expertMode, setExpertMode] = useState(true);
   const [showKnowledge, setShowKnowledge] = useState(false);
   const [knowledgeDetails, setKnowledgeDetails] = useState<{ sources: { label: string; url: string; priority?: string }[]; updates: { title: string; summary: string; date: string; sourceTitle?: string; sourceUrl?: string; confidence?: string }[] } | null>(null);
   const [knowledgeStatus, setKnowledgeStatus] = useState<{ updatedAt: string | null; updateCount: number; lastRefresh?: { at?: string; resultCount?: number; searchUsed?: boolean } | null } | null>(null);
+  const [assistantStatus, setAssistantStatus] = useState<{ ready: boolean; geminiConfigured: boolean; fallbackConfigured: boolean; webAndFileFeatures: boolean; message: string } | null>(null);
 
   const [labBlocks, setLabBlocks] = useState<ExpertLabBlock[]>(() => {
     try {
@@ -137,6 +138,10 @@ const [expertMode, setExpertMode] = useState(true);
   useEffect(() => {
     if (!isOpen) return;
     let cancelled = false;
+    fetch('/api/gemini/assistant-status')
+      .then(async (res) => res.ok ? res.json() : null)
+      .then((data) => { if (!cancelled && data) setAssistantStatus(data); })
+      .catch(() => { /* status is optional */ });
     fetch('/api/gemini/knowledge-status')
       .then(async (res) => res.ok ? res.json() : null)
       .then((data) => { if (!cancelled && data) setKnowledgeStatus(data); })
@@ -278,7 +283,7 @@ const [expertMode, setExpertMode] = useState(true);
       const errorMsg: Message = {
         id: (Date.now() + 1).toString(),
         sender: 'ai',
-        text: 'تعذر الوصول إلى المساعد الذكي حالياً. تحقق من إعداد GEMINI_API_KEY أو حاول مرة أخرى.',
+        text: assistantStatus?.message || 'تعذر الوصول إلى المساعد الذكي حالياً. تحقق من إعداد مفتاح Gemini على الخادم ثم حاول مرة أخرى.',
         timestamp: new Date().toLocaleTimeString('ar-DZ', { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages((prev) => [...prev, errorMsg]);
@@ -319,6 +324,8 @@ const [expertMode, setExpertMode] = useState(true);
                 <span>{knowledgeLabel}</span>
                 <span>•</span>
                 <span>{knowledgeStatus?.updateCount ?? 0} مستجدات</span>
+                <span>•</span>
+                <span className={assistantStatus?.webAndFileFeatures ? 'text-emerald-700' : 'text-amber-700'}>{assistantStatus?.webAndFileFeatures ? 'ويب + ملفات جاهزان' : 'الويب/الملفات يحتاجان إعداد Gemini'}</span>
               </div>
             </div>
           </div>
