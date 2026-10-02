@@ -23,7 +23,7 @@ const preparePageForExport = (source: HTMLElement, orientation: LogbookOrientati
   page.style.borderRadius = "0";
   page.style.margin = "0";
   page.style.transform = "none";
-  page.style.backgroundColor = "#ffffff";
+  page.style.backgroundColor = "transparent";
   page.style.width = orientation === "landscape" ? "297mm" : "210mm";
   page.style.height = orientation === "landscape" ? "210mm" : "297mm";
   page.style.minHeight = page.style.height;
@@ -43,7 +43,7 @@ const preparePageForExport = (source: HTMLElement, orientation: LogbookOrientati
   host.style.width = targetWidth;
   host.style.height = targetHeight;
   host.style.overflow = "hidden";
-  host.style.background = "#ffffff";
+  host.style.background = "transparent";
   host.style.zIndex = "-9999";
   host.style.pointerEvents = "none";
   host.style.opacity = "1";
@@ -87,7 +87,7 @@ export const generatePreviewMatchPdf = async (
         scale: 1.5,
         useCORS: true,
         allowTaint: false,
-        backgroundColor: "#ffffff",
+        backgroundColor: null,
         logging: false,
         imageTimeout: 10000,
         scrollX: 0,
