@@ -7,7 +7,6 @@ import { LESSONS_2AM } from '../data/lessons2am';
 import { LESSONS_3AM } from '../data/lessons3am';
 import { LESSONS_4AM } from '../data/lessons4am';
 import { generateAnnualDistribution, AnnualCalendarEvent } from '../utils/annualDistributionGenerator';
-import { generateDistributionPdf } from '../utils/pdfExportDistribution';
 import { 
   OFFICIAL_1AM_DISTRIBUTION, 
   OFFICIAL_2AM_DISTRIBUTION, 
@@ -372,24 +371,41 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, set
     }
   };
 
+  const waitForAnnualPrintFonts = async () => {
+    if (document.fonts?.load) {
+      await Promise.all([
+        document.fonts.load('400 16px "Cairo"', 'العلوم الطبيعية والحياة'),
+        document.fonts.load('700 16px "Cairo"', 'التدرج السنوي لبناء التعلمات'),
+      ]);
+    }
+    if (document.fonts?.ready) await document.fonts.ready;
+  };
+
+  const printAnnualDistribution = async () => {
+    await waitForAnnualPrintFonts();
+    await new Promise<void>(resolve =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+    );
+    window.print();
+  };
+
   const handleExportPdf = async () => {
     try {
-      if (document.fonts?.ready) await document.fonts.ready;
-      const container = document.querySelector<HTMLElement>('#official-distribution-content');
-      const allFound = container
-        ? Array.from(container.querySelectorAll<HTMLElement>('.annual-export-page'))
-        : Array.from(document.querySelectorAll<HTMLElement>('.annual-export-page'));
-      const pagesForExport = allFound.slice(0, pages.length);
-      await generateDistributionPdf(pagesForExport, orientation);
-      showToast("تم تصدير التدرج السنوي بنفس ألوان وخط وجدول المعاينة (PDF)");
+      await printAnnualDistribution();
+      showToast("تم فتح معاينة الطباعة: اختر حفظ كـ PDF");
     } catch (error) {
       console.error(error);
-      showToast("حدث خطأ أثناء تصدير PDF");
+      showToast("حدث خطأ أثناء تجهيز الطباعة/PDF");
     }
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    try {
+      await printAnnualDistribution();
+    } catch (error) {
+      console.error(error);
+      showToast("حدث خطأ أثناء تجهيز الطباعة");
+    }
   };
 
   const handleExportWord = async () => {
@@ -411,7 +427,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, set
   };
 
   const DocumentPages = () => (
-    <div id="official-distribution-content" className={`relative bg-transparent flex flex-col items-center p-4 print:p-0 print:bg-white w-full ${orientation === 'landscape' ? 'print-orientation-landscape' : ''}`}>
+    <div id="official-distribution-content" dir="rtl" className={`relative bg-transparent flex flex-col items-center p-4 print:p-0 print:bg-white w-full ${orientation === 'landscape' ? 'print-orientation-landscape' : ''}`}>
       {curriculumBackground && (
         <div
           className="absolute inset-0 pointer-events-none z-0 rounded-2xl overflow-hidden print:hidden"
@@ -425,10 +441,8 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, set
         />
       )}
       <style>{`
-        @page { size: A4 ${orientation}; margin: 8mm; }
         .editable-cell:hover { background-color: rgba(0,0,0,0.02); }
         .editable-cell:focus { outline: 1px dashed #c2185b; background-color: rgba(255,255,255,0.9); }
-        .distribution-merged-vertical { writing-mode: vertical-rl; transform: rotate(180deg); min-width: 34px; white-space: normal; text-align: center; }
       `}</style>
 
       {pages.map((page, pageIndex) => (
@@ -512,7 +526,7 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, set
           </div>
 
           {/* Table */}
-          <table className="w-full border-collapse border border-black text-center text-[10.5px] leading-tight">
+          <table className="distribution-screen-table w-full border-collapse border border-black text-center text-[10.5px] leading-tight">
             <thead>
               {level === '4am' ? (
                 <>
@@ -782,6 +796,92 @@ export const OfficialAnnualDistribution: React.FC<Props> = ({ level, config, set
                     >
                       {(row as any).percent || '—'}
                     </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+
+          {/* نسخة الطباعة: جدول مسطح بدون rowspan/كتابة عمودية، حتى يبقى تشكيل العربية أصلياً عند window.print(). */}
+          <table
+            className="annual-distribution-print-table distribution-print-rtl"
+            dir="rtl"
+            aria-label="التدرج السنوي للطباعة"
+          >
+            <thead>
+              {level === '4am' ? (
+                <tr className="bg-[#f0fdf4] text-gray-900 font-black">
+                  <th className="border border-black p-1">الأشهر</th>
+                  <th className="border border-black p-1">الأسابيع</th>
+                  <th className="border border-black p-1 bg-[#e5f7f3] text-[#075e57]">الميدان</th>
+                  <th className="border border-black p-1 bg-[#fff1d6] text-[#8a5a00]">المقطع التعلمي</th>
+                  <th className="border border-black p-1">المورد المعرفي</th>
+                  <th className="border border-black p-1">الحصة الأولى</th>
+                  <th className="border border-black p-1">الحصة الثانية</th>
+                  <th className="border border-black p-1">النسبة</th>
+                </tr>
+              ) : (
+                <>
+                  <tr className="bg-[#dff6f0] text-[#075e57] font-black">
+                    <th colSpan={8} className="border border-[#b8dcd6] p-2 text-center">
+                      الميدان: {Array.from(new Set(page.map(row => row.midan).filter(Boolean))).join('  |  ') || '—'}
+                    </th>
+                  </tr>
+                  <tr className="bg-[#f8f8f8] font-black">
+                    <th className="border border-black p-1">الشهر</th>
+                    <th className="border border-black p-1">التاريخ</th>
+                    <th className="border border-black p-1 bg-[#e5f7f3] text-[#075e57]">الميدان</th>
+                    <th className="border border-black p-1 bg-[#fff1d6] text-[#8a5a00]">المقطع التعلمي</th>
+                    <th className="border border-black p-1">المورد المعرفي</th>
+                    <th className="border border-black p-1">الحصة الأولى</th>
+                    <th className="border border-black p-1">الحصة الثانية</th>
+                    <th className="border border-black p-1">النسبة</th>
+                  </tr>
+                </>
+              )}
+            </thead>
+            <tbody>
+              {page.map((row, i) => {
+                const weekDisplay = row.week ? String(row.week) : '—';
+                const holidayText = row.holidayLabel || row.session1 || row.session2 || 'عطلة';
+                const isFullWeekHoliday = row.isHoliday && (
+                  row.session1 === 'عطلة الشتاء' ||
+                  row.session1 === 'عطلة الربيع' ||
+                  (!row.session1 && !row.session2) ||
+                  row.session1 === row.session2
+                );
+
+                if (isFullWeekHoliday) {
+                  return (
+                    <tr key={`print-holiday-${row.id || i}`}>
+                      <td colSpan={8} className="distribution-print-holiday border border-black p-2">
+                        {row.month} — {weekDisplay} — {row.dates || '—'} — {holidayText}
+                      </td>
+                    </tr>
+                  );
+                }
+
+                if (row.isExam) {
+                  return (
+                    <tr key={`print-exam-${row.id || i}`}>
+                      <td colSpan={8} className="distribution-print-exam border border-black p-2">
+                        {row.month} — {weekDisplay} — {row.dates || '—'} — {row.session1 || row.mawrid || 'إختبارات الفصل'}
+                      </td>
+                    </tr>
+                  );
+                }
+
+                const cellBase = "distribution-print-rtl border border-black p-1 align-middle text-center";
+                return (
+                  <tr key={`print-row-${row.id || i}`}>
+                    <td className={`${cellBase}`}>{row.month || '—'}</td>
+                    <td className={`${cellBase}`}>{row.dates || '—'}{row.week ? ` — ${row.week}` : ''}</td>
+                    <td className={`${cellBase} bg-[#e5f7f3]/70 text-[#075e57] font-bold`}>{row.midan || '—'}</td>
+                    <td className={`${cellBase} bg-[#fff1d6]/70 text-[#8a5a00] font-bold`}>{row.maqta || '—'}</td>
+                    <td className={`${cellBase} font-bold text-gray-900`}>{row.mawrid || '—'}</td>
+                    <td className={`${cellBase} text-right`}>{(row.session1 || '').trim() || (row.taqwim ? `تقويم: ${row.taqwim}` : '—')}</td>
+                    <td className={`${cellBase} text-right`}>{(row.session2 || '').trim() || (row.taqwim ? `تقويم: ${row.taqwim}` : '—')}</td>
+                    <td className={`${cellBase} font-black`}>{(row as any).percent || (row.isHoliday ? 'عطلة' : '—')}</td>
                   </tr>
                 );
               })}
