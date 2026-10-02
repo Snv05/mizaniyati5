@@ -22,7 +22,7 @@ export const OFFICIAL_1AM_DISTRIBUTION: OfficialAnnualDistributionRow[] = [
     dates: "27 − 30",
     midan: "",
     maqta: "",
-    mawrid: "معالجة بيداغوجية",
+    mawrid: "",
     session1: "الحفظ والصحة — المعيار 3، المعيار 4",
     session2: "الحفظ والمحيط — المعيار 1: تحديد خصائص النباتات ومظاهر تكيفها في أوساطها واحتياجاتها",
     taqwim: "المعيار 3، المعيار 4 / المعيار 1",
