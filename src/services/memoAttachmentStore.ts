@@ -49,7 +49,7 @@ export function validateMemoAttachment(file: File): void {
     throw new Error('نوع الملف غير مسموح. المدعوم: JPG/PNG/WEBP/GIF/PDF/TXT.');
   }
   if (file.size > MAX_ATTACHMENT_BYTES) {
-    throw new Error('حجم الملف يتجاوز 6MB.');
+    throw new Error('حجم الملف يتجاوز 15MB.');
   }
 }
 
