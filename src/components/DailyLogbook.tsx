@@ -3233,7 +3233,8 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
               return (
                 <div
                   key={pageIdx}
-                  data-preview-export-page="true"\n                  className="print-page grid-paper-bg shadow-[0_16px_45px_rgba(20,110,100,0.12)] rounded-[8px] border border-[#d8eee9] overflow-hidden mx-auto mb-8 bg-[#fffdf8]"
+                  data-preview-export-page="true"
+                  className="print-page grid-paper-bg shadow-[0_16px_45px_rgba(20,110,100,0.12)] rounded-[8px] border border-[#d8eee9] overflow-hidden mx-auto mb-8 bg-[#fffdf8]"
                   style={{
                     width: `${pageDimensions.w}mm`,
                     height: `${pageDimensions.h}mm`,
