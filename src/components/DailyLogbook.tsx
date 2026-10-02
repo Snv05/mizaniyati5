@@ -949,17 +949,14 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
     return () => window.removeEventListener('school-calendar-updated', handleCalendarUpdated);
   }, [startDate]);
 
-  // عند تغيير السنة الدراسية في الإعدادات، تحديث تاريخ بداية الدفتر والعطل الرسمية تلقائياً
+  // عند تغيير السنة الدراسية لا نعيد كتابة تاريخ بداية الدفتر الذي اختاره الأستاذ.
+  // تاريخ البداية يُشتق افتراضياً مرة واحدة فقط عند عدم وجود إعداد محفوظ، ثم يبقى قابلاً للتعديل.
   useEffect(() => {
-    if (!config.schoolYear) return;
-    const newEntry = deriveDefaultSchoolEntryDate(config.schoolYear);
-    if (newEntry) {
-      setStartDate(newEntry);
-      const settings = getDefaultCalendarSettings(config.schoolYear, newEntry);
-      syncCalendarToDailyLogbook(newEntry, settings);
-      syncCalendarToAllLevels(settings);
-    }
-  }, [config.schoolYear]);
+    if (!config.schoolYear || !startDate) return;
+    const settings = getDefaultCalendarSettings(config.schoolYear, startDate);
+    syncCalendarToDailyLogbook(startDate, settings);
+    syncCalendarToAllLevels(settings);
+  }, [config.schoolYear]); 
 
   // Generated Daily Log Entries
   const [rows, setRows] = useState<LogEntry[]>([]);
