@@ -103,7 +103,7 @@ apiApp.post('/api/gemini/generate', async (req, res) => {
 // المساعد الذكي المتقدم: المنهاج + المذكرات + الوثائق المرفقة + الويب
 apiApp.post('/api/gemini/smart-assistant', async (req, res) => {
   try {
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '';
 
     const {
       question,
@@ -229,7 +229,7 @@ apiApp.post('/api/gemini/smart-assistant', async (req, res) => {
       return res.json({ text: generated.text, provider: generated.provider, sources: [], webSearchQueries: [], usedWeb: false, usedAttachments: [] });
     }
 
-    if (!apiKey) return res.status(503).json({ error: 'Gemini مطلوب لتحليل المرفقات أو البحث الويب.' });
+    if (!apiKey) return res.status(503).json({ error: 'لم يتم إعداد مفتاح Gemini على الخادم. أضف GEMINI_API_KEY أو GOOGLE_API_KEY في أسرار النشر.' });
     const ai = new GoogleGenAI({ apiKey, httpOptions: { headers: { 'User-Agent': 'aistudio-build' } } });
     const uploadedFiles: any[] = [];
 
@@ -286,6 +286,23 @@ apiApp.post('/api/gemini/smart-assistant', async (req, res) => {
     console.error('[Smart Assistant Error]:', message);
     return res.status(500).json({ error: message });
   }
+});
+
+// صحة مزود المساعد الذكي: لا يعيد المفتاح أو أي سر.
+apiApp.get('/api/gemini/assistant-status', (_req, res) => {
+  const geminiConfigured = Boolean(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY);
+  const fallbackConfigured = Boolean(process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY || process.env.HF_TOKEN);
+  res.json({
+    ready: geminiConfigured || fallbackConfigured,
+    geminiConfigured,
+    fallbackConfigured,
+    webAndFileFeatures: geminiConfigured,
+    message: geminiConfigured
+      ? 'المساعد الخبير جاهز مع تحليل الملفات والبحث في الويب.'
+      : fallbackConfigured
+        ? 'المساعد النصي جاهز، لكن البحث في الويب وتحليل الملفات يحتاجان Gemini.'
+        : 'لم يتم إعداد مزود ذكاء اصطناعي على الخادم.',
+  });
 });
 
 // حالة قاعدة المعرفة المستمرة للمساعد الذكي
