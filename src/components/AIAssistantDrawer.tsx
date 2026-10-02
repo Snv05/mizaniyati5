@@ -280,10 +280,13 @@ const [expertMode, setExpertMode] = useState(true);
       setIsTyping(false);
     } catch (error) {
       console.error('[smart-ai]', error);
+      const errorText = error instanceof Error && error.message
+        ? error.message
+        : (assistantStatus?.message || 'تعذر الوصول إلى المساعد الذكي حالياً. تحقق من إعداد مفتاح Gemini على الخادم ثم حاول مرة أخرى.');
       const errorMsg: Message = {
         id: (Date.now() + 1).toString(),
         sender: 'ai',
-        text: assistantStatus?.message || 'تعذر الوصول إلى المساعد الذكي حالياً. تحقق من إعداد مفتاح Gemini على الخادم ثم حاول مرة أخرى.',
+        text: errorText,
         timestamp: new Date().toLocaleTimeString('ar-DZ', { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages((prev) => [...prev, errorMsg]);
