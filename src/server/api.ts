@@ -6,6 +6,7 @@ import { Buffer } from 'node:buffer';
 import fs from 'node:fs';
 import { buildGeminiSystemPrompt } from '../services/geminiPrompts';
 import { generateTextWithGateway, getAIProviderStatus } from './aiGateway';
+import { sourcePriorityOf } from '../services/aiSourcePriority';
 
 dotenv.config();
 
@@ -401,6 +402,15 @@ apiApp.post('/api/gemini/generate-pedagogical-note', async (req, res) => {
       return res.status(400).json({ error: 'عدد المرفقات المسموح به هو 6 كحد أقصى.' });
     }
 
+    const classifyAttachment = (item: any) => {
+      const name = String(item?.name || '').toLowerCase();
+      if (/منهاج|programme|curriculum/.test(name)) return { kind: 'curriculum', role: 'المنهاج الرسمي', priority: sourcePriorityOf('curriculum') };
+      if (/مرافق|مرافقة|document.*accompagn|companion/.test(name)) return { kind: 'companionDocument', role: 'الوثيقة المرافقة', priority: sourcePriorityOf('companionDocument') };
+      if (/دليل.*أستاذ|أستاذ.*دليل|guide.*prof|teacher.*guide/.test(name)) return { kind: 'teacherGuide', role: 'كتاب دليل الأستاذ', priority: sourcePriorityOf('teacherGuide') };
+      if (/مذكر|memo|fiche/.test(name)) return { kind: 'memo', role: 'مذكرة/مورد تربوي', priority: sourcePriorityOf('memo') };
+      return { kind: 'attachment', role: 'وثيقة مرفقة من الأستاذ', priority: sourcePriorityOf('attachment') };
+    };
+
     let totalLength = 0;
     const attachmentParts: any[] = [];
     for (const item of attachments) {
@@ -441,14 +451,6 @@ apiApp.post('/api/gemini/generate-pedagogical-note', async (req, res) => {
     });
 
     const safeModelSections = Array.isArray(modelSections) ? modelSections.slice(0, 30).map(String) : [];
-    const classifyAttachment = (item: any) => {
-      const name = String(item?.name || '').toLowerCase();
-      if (/منهاج|programme|curriculum/.test(name)) return { kind: 'curriculum', role: 'المنهاج الرسمي', priority: 1 };
-      if (/مرافق|مرافقة|document.*accompagn|companion/.test(name)) return { kind: 'companionDocument', role: 'الوثيقة المرافقة', priority: 3 };
-      if (/دليل.*أستاذ|أستاذ.*دليل|guide.*prof|teacher.*guide/.test(name)) return { kind: 'teacherGuide', role: 'كتاب دليل الأستاذ', priority: 4 };
-      if (/مذكر|memo|fiche/.test(name)) return { kind: 'memo', role: 'مذكرة/مورد تربوي', priority: 5 };
-      return { kind: 'attachment', role: 'وثيقة مرفقة من الأستاذ', priority: 6 };
-    };
 
     const safeSourceContext = sourceContext && typeof sourceContext === 'object'
       ? {
@@ -485,15 +487,17 @@ apiApp.post('/api/gemini/generate-pedagogical-note', async (req, res) => {
     const systemPrompt = buildGeminiSystemPrompt(gradeLevel, topic, safeModelSections) + `\n\n${provenanceInstruction}\nسياق المصادر الداخلي المرسل من الواجهة:\n${JSON.stringify(safeSourceContext, null, 2).slice(0, 50000)}\n\nقاعدة المعرفة الداخلية الحالية:\n${JSON.stringify(getKnowledgeSnapshot(), null, 2).slice(0, 30000)}`;
     const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
+    const userInstruction = `قم بتوليد المذكرة البيداغوجية الرسمية التامة لمستوى [${gradeLevel}] في مادة علوم الطبيعة والحياة حول: "${topic}". التزم بإخراج كائن JSON فقط طبقاً للشروط والتعليمات. إذا وُجدت مصادر مرفقة، اعتبرها مصادر الأستاذ ولا تخترع بيانات مخالفة لها.`;
+
+    // بدون مرفقات وبدون بحث ويب يمكن استخدام أي مزود نصي مهيأ، مما يمنع توقف المنصة عند انتهاء حصة Gemini.
+    if (attachmentParts.length === 0 && !useWebResearch) {
+      const generated = await generateTextWithGateway(`${systemPrompt}\n\n${userInstruction}`);
+      return res.json({ json: generated.text, provider: generated.provider, usedWeb: false });
+    }
+
     const response = await ai.models.generateContent({
       model,
-      contents: [{
-        role: 'user',
-        parts: [
-          { text: `قم بتوليد المذكرة البيداغوجية الرسمية التامة لمستوى [${gradeLevel}] في مادة علوم الطبيعة والحياة حول: "${topic}". التزم بإخراج كائن JSON فقط طبقاً للشروط والتعليمات. إذا وُجدت مصادر مرفقة، اعتبرها مصادر الأستاذ ولا تخترع بيانات مخالفة لها.` },
-          ...attachmentParts,
-        ],
-      }],
+      contents: [{ role: 'user', parts: [{ text: userInstruction }, ...attachmentParts] }],
       config: {
         systemInstruction: systemPrompt,
         responseMimeType: 'application/json',
@@ -501,7 +505,20 @@ apiApp.post('/api/gemini/generate-pedagogical-note', async (req, res) => {
       },
     });
 
-    return res.json({ json: response.text || '' });
+    const grounding = response.candidates?.[0]?.groundingMetadata;
+    const sources = Array.isArray(grounding?.groundingChunks)
+      ? grounding.groundingChunks.map((chunk: any) => chunk?.web).filter((web: any) => web?.uri)
+          .map((web: any) => ({ title: web.title || web.uri, uri: web.uri }))
+          .filter((source: any, index: number, arr: any[]) => arr.findIndex((x) => x.uri === source.uri) === index)
+          .slice(0, 10)
+      : [];
+    return res.json({
+      json: response.text || '',
+      provider: 'gemini',
+      sources,
+      webSearchQueries: grounding?.webSearchQueries || [],
+      usedWeb: sources.length > 0 || Boolean(grounding?.webSearchQueries?.length),
+    });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     console.error('[Gemini Pedagogical Note Server Error]:', message);
