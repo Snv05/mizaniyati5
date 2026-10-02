@@ -7,6 +7,7 @@ export interface MemoAttachment {
   size: number;
   dataUrl: string;
   source: 'file' | 'paste';
+  category?: 'exam' | 'curriculum' | 'companion' | 'teacher-guide' | 'memo';
   createdAt: number;
 }
 
@@ -86,6 +87,11 @@ export async function saveMemoAttachment(attachment: MemoAttachment): Promise<vo
     throw new Error('المساحة المحلية للمرفقات ممتلئة. احذف مرفقًا قديمًا ثم أعد المحاولة.');
   }
   await STORE.setItem(attachment.id, attachment);
+}
+
+export async function listMemoSourceDocuments(): Promise<MemoAttachment[]> {
+  const all = await listMemoAttachments();
+  return all.filter(item => item.category && item.category !== 'exam');
 }
 
 export async function listMemoAttachments(): Promise<MemoAttachment[]> {
