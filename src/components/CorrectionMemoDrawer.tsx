@@ -3,7 +3,7 @@ import { ClipboardCheck, FileDown, Printer, Sparkles, X, Paperclip, FileUp, Rota
 import { LessonMemo, MemoConfig } from '../types';
 import { analyzeCorrectionSource, generateCorrectionMemo, CorrectionSourceAnalysis } from '../services/correctionMemoAi';
 import { exportCorrectionMemoToDocx, exportCorrectionMemoToPdf, printCorrectionMemo } from '../utils/correctionMemoExport';
-import { MemoAttachment, fileToMemoAttachment, listMemoAttachments, saveMemoAttachment, deleteMemoAttachment, MAX_TOTAL_ATTACHMENT_BYTES } from '../services/memoAttachmentStore';
+import { MemoAttachment, fileToMemoAttachment, listMemoAttachments, listMemoSourceDocuments, saveMemoAttachment, deleteMemoAttachment, MAX_TOTAL_ATTACHMENT_BYTES } from '../services/memoAttachmentStore';
 
 export const CorrectionMemoDrawer: React.FC<{
   isOpen: boolean;
@@ -21,12 +21,14 @@ export const CorrectionMemoDrawer: React.FC<{
   const [correctionSources, setCorrectionSources] = useState<Array<{ title: string; uri: string }>>([]);
   const [attachments, setAttachments] = useState<MemoAttachment[]>([]);
   const [savedAttachments, setSavedAttachments] = useState<MemoAttachment[]>([]);
+  const [sourceDocuments, setSourceDocuments] = useState<MemoAttachment[]>([]);
+  const [sourceCategory, setSourceCategory] = useState<'curriculum' | 'companion' | 'teacher-guide' | 'memo'>('curriculum');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isOpen) return;
-    listMemoAttachments().then(setSavedAttachments).catch(() => undefined);
+    Promise.all([listMemoAttachments(), listMemoSourceDocuments()]).then(([attachments, sources]) => { setSavedAttachments(attachments); setSourceDocuments(sources); }).catch(() => undefined);
   }, [isOpen]);
 
   const addFiles = async (files: FileList | File[]) => {
@@ -42,6 +44,7 @@ export const CorrectionMemoDrawer: React.FC<{
           if (total > MAX_TOTAL_ATTACHMENT_BYTES) return prev;
           return [...prev, attachment].slice(0, 6);
         });
+        attachment.category = 'exam';
         await saveMemoAttachment(attachment);
         setSavedAttachments(await listMemoAttachments());
         // وجود المرفق يكفي كمصدر؛ لا نضع نصاً وهمياً داخل ورقة التقييم.
@@ -103,6 +106,7 @@ export const CorrectionMemoDrawer: React.FC<{
         lesson: currentLesson,
         curriculum: curriculumLessons,
         attachments: attachments.map(({ name, mimeType, size, dataUrl }) => ({ name, mimeType, size, dataUrl })),
+        sourceDocuments: sourceDocuments.map(({ name, mimeType, dataUrl, category }) => ({ name, type: category || 'memo', text: mimeType === 'text/plain' ? atob(dataUrl.split(',')[1] || '') : undefined })),
       };
       const analysis = await analyzeCorrectionSource(request);
       if (!analysis) {
@@ -173,6 +177,27 @@ export const CorrectionMemoDrawer: React.FC<{
             <div className="rounded-xl bg-teal-50/70 border border-teal-100 p-3 text-sm leading-7">
               <div className="font-black text-teal-900 mb-1">المصدر المرتبط بالتصحيح</div>
               <div>{context}</div>
+            </div>
+
+            <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-3 space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div><div className="text-xs font-black text-indigo-900">مكتبة المصادر التربوية</div><div className="text-[10px] text-slate-500">أضف هنا المصادر التي يعتمد عليها التصحيح، ولا تُعامل كأنها ورقة الفرض.</div></div>
+                <label className="flex items-center gap-1 text-[10px] font-bold">
+                  <span>نوع المصدر</span>
+                  <select value={sourceCategory} onChange={e => setSourceCategory(e.target.value as typeof sourceCategory)} className="border rounded-lg bg-white px-2 py-1.5">
+                    <option value="curriculum">المنهاج والتدرج</option>
+                    <option value="companion">الوثيقة المرافقة</option>
+                    <option value="teacher-guide">دليل الأستاذ</option>
+                    <option value="memo">مذكرة/مرجع تربوي</option>
+                  </select>
+                </label>
+                <button type="button" onClick={() => {
+                  const input = document.createElement('input'); input.type='file'; input.accept='application/pdf,text/plain,image/jpeg,image/png,image/webp'; input.multiple=true;
+                  input.onchange = async () => { if (!input.files) return; for (const file of Array.from(input.files)) { try { const a=await fileToMemoAttachment(file); a.category=sourceCategory; await saveMemoAttachment(a); } catch {} } setSourceDocuments(await listMemoSourceDocuments()); };
+                  input.click();
+                }} className="px-3 py-1.5 rounded-lg bg-indigo-700 text-white text-[11px] font-black"><FileUp className="inline w-3.5 h-3.5 ml-1" />إضافة مصدر</button>
+              </div>
+              {sourceDocuments.length > 0 ? <div className="grid sm:grid-cols-2 gap-1.5">{sourceDocuments.slice(0,12).map(item => <div key={item.id} className="bg-white border rounded-lg px-2 py-1.5 text-[10px] flex items-center gap-2"><span className="truncate flex-1 font-bold">{item.name}</span><span className="text-indigo-700">{item.category==='curriculum'?'منهاج':item.category==='companion'?'مرافقة':item.category==='teacher-guide'?'دليل':'مذكرة'}</span><button type="button" onClick={async()=>{await deleteMemoAttachment(item.id);setSourceDocuments(await listMemoSourceDocuments());}}><Trash2 size={12} className="text-red-500"/></button></div>)}</div> : <div className="text-[10px] text-slate-500">لا توجد مصادر إضافية محفوظة بعد.</div>}
             </div>
 
             <div className="rounded-xl border border-dashed border-teal-200 bg-teal-50/40 p-3 space-y-2">
