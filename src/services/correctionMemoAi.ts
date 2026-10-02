@@ -44,6 +44,13 @@ const buildCurriculumContext = ({ lesson, curriculum }: CorrectionMemoRequest) =
   return JSON.stringify(relevant, null, 2);
 };
 
+export interface CorrectionMemoResult {
+  text: string;
+  sources: Array<{ title: string; uri: string }>;
+  usedWeb: boolean;
+  webSearchQueries: string[];
+}
+
 export interface CorrectionSourceAnalysis {
   title?: string;
   exercises: Array<{
@@ -77,7 +84,7 @@ export async function analyzeCorrectionSource(request: CorrectionMemoRequest): P
   }
 }
 
-export async function generateCorrectionMemo(request: CorrectionMemoRequest): Promise<string | null> {
+export async function generateCorrectionMemo(request: CorrectionMemoRequest): Promise<CorrectionMemoResult | null> {
   const prompt = [
     'أنت أداة مستقلة متخصصة فقط في إعداد مذكرة تصحيح لأساتذة علوم الطبيعة والحياة في التعليم المتوسط بالجزائر.',
     'هذه الأداة ليست المساعد الذكي العام ولا تستعمل طلباته أو واجهته.',
@@ -127,7 +134,9 @@ export async function generateCorrectionMemo(request: CorrectionMemoRequest): Pr
     });
     if (!response.ok) return null;
     const data = await response.json();
-    return typeof data.text === 'string' && data.text.trim() ? data.text.trim() : null;
+    return typeof data.text === 'string' && data.text.trim()
+      ? { text: data.text.trim(), sources: Array.isArray(data.sources) ? data.sources : [], usedWeb: Boolean(data.usedWeb), webSearchQueries: Array.isArray(data.webSearchQueries) ? data.webSearchQueries : [] }
+      : null;
   } catch (error) {
     console.error('[correction-memo] generation failed', error);
     return null;
