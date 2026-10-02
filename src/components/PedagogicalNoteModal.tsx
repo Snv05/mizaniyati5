@@ -262,7 +262,7 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
       });
       setSuggestionReport(report);
       const suggestions: string[] = [];
-      if (!generated.sourceActivities?.length) suggestions.push('لم يتم العثور على عناوين أنشطة موثقة في المصادر المختارة؛ راجع المذكرات أو دليل الأستاذ قبل إضافة نشاط.');
+      if (!generated.sourceActivities?.title1 && !generated.sourceActivities?.title2 && !generated.sourceActivities?.assessment) suggestions.push('لم يتم العثور على عناوين أنشطة موثقة في المصادر المختارة؛ راجع المذكرات أو دليل الأستاذ قبل إضافة نشاط.');
       if (!generated.researchSources?.length && useWebResearch) suggestions.push('لم تُثبت مصادر ويب في هذه النتيجة؛ لا تضف مرجعاً خارجياً إلا بعد التحقق منه.');
       if ((generated.sourceTrace || []).some((x: any) => x.sourceType === 'ai')) suggestions.push('توجد عناصر موسومة باقتراح AI — تحتاج مراجعة الأستاذ.');
       setAiSuggestions(suggestions);
