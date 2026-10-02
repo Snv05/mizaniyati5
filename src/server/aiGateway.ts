@@ -4,8 +4,10 @@ dotenv.config();
 
 export type ServerAIProvider = 'gemini' | 'openai' | 'anthropic' | 'huggingface';
 
+const getGeminiApiKey = () => process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '';
+
 const configured = (provider: ServerAIProvider) => {
-  if (provider === 'gemini') return Boolean(process.env.GEMINI_API_KEY);
+  if (provider === 'gemini') return Boolean(getGeminiApiKey());
   if (provider === 'openai') return Boolean(process.env.OPENAI_API_KEY);
   if (provider === 'anthropic') return Boolean(process.env.ANTHROPIC_API_KEY);
   return Boolean(process.env.HF_TOKEN);
@@ -24,7 +26,7 @@ const providerOrder = (): ServerAIProvider[] => {
 };
 
 async function callGemini(prompt: string): Promise<string> {
-  const ai = new GoogleGenAI({ apiKey: String(process.env.GEMINI_API_KEY) });
+  const ai = new GoogleGenAI({ apiKey: getGeminiApiKey() });
   const response = await ai.models.generateContent({
     model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
     contents: prompt,
