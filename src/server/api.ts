@@ -5,6 +5,7 @@ import { GoogleGenAI, createPartFromUri } from '@google/genai';
 import { Buffer } from 'node:buffer';
 import fs from 'node:fs';
 import { buildGeminiSystemPrompt } from '../services/geminiPrompts';
+import { generateTextWithGateway, getAIProviderStatus } from './aiGateway';
 
 dotenv.config();
 
@@ -21,91 +22,79 @@ const getKnowledgeSnapshot = () => {
 
 apiApp.use(express.json({ limit: '40mb' }));
 
+// حالة مزودي الذكاء الاصطناعي المتاحين على الخادم.
+apiApp.get('/api/ai/providers', (_req, res) => res.json(getAIProviderStatus()));
+
 // نقطة نهاية لمعالجة طلبات المساعد البيداغوجي الذكي على جانب الخادم
 apiApp.post('/api/gemini/generate', async (req, res) => {
   try {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return res.status(503).json({ error: 'GEMINI_API_KEY is not configured on server' });
-    }
     const { prompt, question, attachments = [], useWeb = false } = req.body;
-    const finalPrompt = prompt || question;
-    if (!finalPrompt) {
-      return res.status(400).json({ error: 'Missing prompt in request' });
-    }
+    const finalPrompt = String(prompt || question || '').trim();
+    if (!finalPrompt) return res.status(400).json({ error: 'Missing prompt in request' });
 
     const allowedAttachmentTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf']);
-    if (!Array.isArray(attachments) || attachments.length > 6) {
-      return res.status(400).json({ error: 'Too many attachments' });
-    }
+    if (!Array.isArray(attachments) || attachments.length > 6) return res.status(400).json({ error: 'Too many attachments' });
 
-    const attachmentInputs: Array<{ mimeType: string; base64: string; displayName: string }> = [];
-    let attachmentSize = 0;
-    for (const item of attachments) {
-      if (!item || !allowedAttachmentTypes.has(item.mimeType)) {
-        return res.status(400).json({ error: 'Unsupported attachment type' });
-      }
-      const dataUrl = String(item.dataUrl || '');
-      const prefix = `data:${item.mimeType};base64,`;
-      if (!dataUrl.startsWith(prefix)) {
-        return res.status(400).json({ error: 'Invalid attachment data' });
-      }
-      attachmentSize += dataUrl.length;
-      if (dataUrl.length > 20_000_000 || attachmentSize > 32_000_000) {
-        return res.status(400).json({ error: 'Attachments are too large' });
-      }
-      attachmentInputs.push({
-        mimeType: item.mimeType,
-        base64: dataUrl.slice(prefix.length),
-        displayName: String(item.name || `correction-source-${attachmentInputs.length + 1}`),
-      });
-    }
+    // عند وجود صور/PDF نستخدم Gemini لأنه مزود الرؤية المهيأ في المنصة.
+    // لا نرسل المرفقات تلقائياً إلى مزود بديل حفاظاً على الخصوصية وتوافق الصيغ.
+    if (attachments.length > 0) {
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) return res.status(503).json({ error: 'GEMINI_API_KEY مطلوب لتحليل الصور وPDF.' });
 
-    const ai = new GoogleGenAI({
-      apiKey,
-      httpOptions: {
-        headers: {
-          'User-Agent': 'aistudio-build',
-        },
-      },
-    });
-
-    const uploadedFiles: any[] = [];
-    try {
-      for (const item of attachmentInputs) {
-        const file = await ai.files.upload({
-          file: new Blob([Buffer.from(item.base64, 'base64')], { type: item.mimeType }),
-          config: { mimeType: item.mimeType, displayName: item.displayName },
+      const attachmentInputs: Array<{ mimeType: string; base64: string; displayName: string }> = [];
+      let attachmentSize = 0;
+      for (const item of attachments) {
+        if (!item || !allowedAttachmentTypes.has(item.mimeType)) return res.status(400).json({ error: 'Unsupported attachment type' });
+        const dataUrl = String(item.dataUrl || '');
+        const prefix = `data:${item.mimeType};base64,`;
+        if (!dataUrl.startsWith(prefix)) return res.status(400).json({ error: 'Invalid attachment data' });
+        attachmentSize += dataUrl.length;
+        if (dataUrl.length > 20_000_000 || attachmentSize > 32_000_000) return res.status(400).json({ error: 'Attachments are too large' });
+        attachmentInputs.push({
+          mimeType: item.mimeType,
+          base64: dataUrl.slice(prefix.length),
+          displayName: String(item.name || `correction-source-${attachmentInputs.length + 1}`),
         });
-        let info = file;
-        for (let attempt = 0; attempt < 20 && info.state === 'PROCESSING'; attempt++) {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-          info = await ai.files.get({ name: file.name });
-        }
-        if (info.state === 'FAILED') throw new Error(`فشل تجهيز المرفق: ${item.displayName}`);
-        uploadedFiles.push(info);
       }
 
-      const fileParts = uploadedFiles.map((file) => createPartFromUri(file.uri, file.mimeType));
-      const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-      const response = await ai.models.generateContent({
-        model,
-        contents: fileParts.length
-          ? [{ role: 'user', parts: [{ text: finalPrompt }, ...fileParts] }]
-          : finalPrompt,
-        config: { tools: useWeb ? [{ googleSearch: {} }] : undefined },
-      });
-      const grounding = response.candidates?.[0]?.groundingMetadata;
-      const sources = Array.isArray(grounding?.groundingChunks)
-        ? grounding.groundingChunks.map((chunk: any) => chunk?.web).filter((web: any) => web?.uri).map((web: any) => ({ title: web.title || web.uri, uri: web.uri })).filter((source: any, index: number, arr: any[]) => arr.findIndex((x) => x.uri === source.uri) === index).slice(0, 10)
-        : [];
-      return res.json({ text: response.text || '', sources, webSearchQueries: grounding?.webSearchQueries || [], usedWeb: sources.length > 0 || Boolean(grounding?.webSearchQueries?.length) });
-    } finally {
-      await Promise.allSettled(uploadedFiles.map((file) => ai.files.delete({ name: file.name })));
+      const ai = new GoogleGenAI({ apiKey, httpOptions: { headers: { 'User-Agent': 'aistudio-build' } } });
+      const uploadedFiles: any[] = [];
+      try {
+        for (const item of attachmentInputs) {
+          const file = await ai.files.upload({
+            file: new Blob([Buffer.from(item.base64, 'base64')], { type: item.mimeType }),
+            config: { mimeType: item.mimeType, displayName: item.displayName },
+          });
+          let info = file;
+          for (let attempt = 0; attempt < 20 && info.state === 'PROCESSING'; attempt++) {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            info = await ai.files.get({ name: file.name });
+          }
+          if (info.state === 'FAILED') throw new Error(`فشل تجهيز المرفق: ${item.displayName}`);
+          uploadedFiles.push(info);
+        }
+        const response = await ai.models.generateContent({
+          model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+          contents: [{ role: 'user', parts: [{ text: finalPrompt }, ...uploadedFiles.map((file) => createPartFromUri(file.uri, file.mimeType))] }],
+          config: { tools: useWeb ? [{ googleSearch: {} }] : undefined },
+        });
+        const grounding = response.candidates?.[0]?.groundingMetadata;
+        const sources = Array.isArray(grounding?.groundingChunks)
+          ? grounding.groundingChunks.map((chunk: any) => chunk?.web).filter((web: any) => web?.uri)
+              .map((web: any) => ({ title: web.title || web.uri, uri: web.uri }))
+              .filter((source: any, index: number, arr: any[]) => arr.findIndex((x) => x.uri === source.uri) === index).slice(0, 10)
+          : [];
+        return res.json({ text: response.text || '', provider: 'gemini', sources, webSearchQueries: grounding?.webSearchQueries || [], usedWeb: sources.length > 0 || Boolean(grounding?.webSearchQueries?.length) });
+      } finally {
+        await Promise.allSettled(uploadedFiles.map((file) => ai.files.delete({ name: file.name })));
+      }
     }
+
+    const generated = await generateTextWithGateway(finalPrompt);
+    return res.json({ text: generated.text, provider: generated.provider, sources: [], webSearchQueries: [], usedWeb: false });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[Gemini API Server Error]:', message);
+    console.error('[AI Gateway Error]:', message);
     return res.status(500).json({ error: message });
   }
 });
