@@ -18,6 +18,7 @@ export const CorrectionMemoDrawer: React.FC<{
   const [correction, setCorrection] = useState('');
   const [busy, setBusy] = useState(false);
   const [sourceAnalysis, setSourceAnalysis] = useState<CorrectionSourceAnalysis | null>(null);
+  const [correctionSources, setCorrectionSources] = useState<Array<{ title: string; uri: string }>>([]);
   const [attachments, setAttachments] = useState<MemoAttachment[]>([]);
   const [savedAttachments, setSavedAttachments] = useState<MemoAttachment[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -94,6 +95,7 @@ export const CorrectionMemoDrawer: React.FC<{
     setBusy(true);
     setCorrection('');
     setSourceAnalysis(null);
+    setCorrectionSources([]);
     try {
       const request = {
         examType,
@@ -109,7 +111,8 @@ export const CorrectionMemoDrawer: React.FC<{
       }
       setSourceAnalysis(analysis);
       const result = await generateCorrectionMemo(request);
-      setCorrection(result || 'تعذر إنشاء مذكرة التصحيح بعد قراءة المصدر. راجع العناصر غير الواضحة ثم أعد المحاولة.');
+      setCorrection(result?.text || 'تعذر إنشاء مذكرة التصحيح بعد قراءة المصدر. راجع العناصر غير الواضحة ثم أعد المحاولة.');
+      setCorrectionSources(result?.sources || []);
     } catch {
       setCorrection('تعذر إنشاء مذكرة التصحيح. أعد المحاولة.');
     } finally {
@@ -121,6 +124,7 @@ export const CorrectionMemoDrawer: React.FC<{
     setExamText('');
     setCorrection('');
     setSourceAnalysis(null);
+    setCorrectionSources([]);
     setAttachments([]);
   };
 
@@ -272,6 +276,23 @@ export const CorrectionMemoDrawer: React.FC<{
                 </div>
 
                 <div className="whitespace-pre-wrap leading-8 text-[14px]">{correction}</div>
+
+                <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50/60 p-3 text-xs leading-6">
+                  <div className="font-black text-amber-900 mb-1">من أين جاء التصحيح؟</div>
+                  <div>الأولوية: ورقة التقييم → المنهاج والتدرج → الوثيقة المرافقة → دليل الأستاذ → المذكرات التربوية → الويب عند الحاجة → اقتراحات الذكاء الاصطناعي مع مراجعة الأستاذ.</div>
+                  {correctionSources.length > 0 ? (
+                    <div className="mt-2 space-y-1">
+                      <div className="font-bold">مصادر الويب المستخدمة:</div>
+                      {correctionSources.map((source, index) => (
+                        <a key={source.uri + index} href={source.uri} target="_blank" rel="noreferrer" className="block text-teal-800 underline truncate">{index + 1}. {source.title}</a>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="mt-1 text-slate-600">لم يُستخدم مصدر ويب مباشر في هذه النتيجة؛ اعتمد التصحيح على ورقة التقييم وسياق المنصة، مع وجوب مراجعة الأستاذ قبل الاعتماد.</div>
+                  )}
+                </div>
+
+
 
                 <div className="mt-8 pt-3 border-t border-slate-200 text-xs text-slate-500 flex justify-between gap-3">
                   <span>مذكرة تصحيح</span>
