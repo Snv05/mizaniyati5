@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import { GoogleGenAI } from '@google/genai';
 dotenv.config();
 
 export type ServerAIProvider = 'gemini' | 'openai' | 'anthropic' | 'huggingface';
@@ -21,6 +22,15 @@ const providerOrder = (): ServerAIProvider[] => {
     .filter(Boolean) as ServerAIProvider[];
   return [...new Set([...requested, ...fallback])].filter(configured);
 };
+
+async function callGemini(prompt: string): Promise<string> {
+  const ai = new GoogleGenAI({ apiKey: String(process.env.GEMINI_API_KEY) });
+  const response = await ai.models.generateContent({
+    model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+    contents: prompt,
+  });
+  return String(response.text || '');
+}
 
 async function callOpenAI(prompt: string): Promise<string> {
   const response = await fetch(process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1/chat/completions', {
@@ -74,7 +84,8 @@ export async function generateTextWithGateway(prompt: string): Promise<{ text: s
   for (const provider of providerOrder()) {
     try {
       let text = '';
-      if (provider === 'openai') text = await callOpenAI(prompt);
+      if (provider === 'gemini') text = await callGemini(prompt);
+      else if (provider === 'openai') text = await callOpenAI(prompt);
       else if (provider === 'anthropic') text = await callAnthropic(prompt);
       else if (provider === 'huggingface') text = await callHuggingFace(prompt);
       else continue;
