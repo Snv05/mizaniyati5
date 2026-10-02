@@ -451,6 +451,7 @@ export interface LogEntry {
   wasail?: string;
   lessonType?: 'curriculum' | 'introductory' | 'opening' | 'health' | 'remediation' | 'assessment' | 'holiday';
   taqwim?: string;
+  manualContent?: string;
   sourceSequenceId?: string;
   sourceResourceId?: string;
   sourceLearningUnitId?: string;
@@ -471,7 +472,7 @@ const AUTO_FILLED_TIMETABLE_ROWS: TimetableGridRow[] = EMPTY_TIMETABLE_ROWS.map(
   cells: createEmptyDayCells(),
 }));
 
-const LOGBOOK_DATA_VERSION = '2026-10-02-progression-master-memo-activities-v21';
+const LOGBOOK_DATA_VERSION = '2026-10-02-progression-master-memo-activities-v22-week-isolation';
 const ROWS_PER_PAGE = 12;
 const getPageDimensions = (orientation: 'portrait' | 'landscape') => orientation === 'landscape' ? { w: 297, h: 210 } : { w: 210, h: 297 };
 const PRINT_MARGIN = '14mm';
@@ -483,6 +484,15 @@ function getSchoolWeekKey(dateStr: string): string {
   if (Number.isNaN(d.getTime())) return dateStr;
   d.setDate(d.getDate() - d.getDay());
   return formatDateToIsoString(d);
+}
+
+function getSchoolWeekNumber(dateStr: string, startDate: string): number {
+  const start = new Date(startDate + 'T12:00:00');
+  const current = new Date(dateStr + 'T12:00:00');
+  if (Number.isNaN(start.getTime()) || Number.isNaN(current.getTime())) return 1;
+  start.setDate(start.getDate() - start.getDay());
+  const diff = Math.floor((current.getTime() - start.getTime()) / 86400000);
+  return Math.max(1, Math.floor(diff / 7) + 1);
 }
 
 function getTotalLogbookPages(rowCount: number): number {
@@ -612,6 +622,7 @@ function buildHierarchicalContent(
   row: LogEntry,
   previous?: LogEntry
 ): string {
+  if (row.manualContent?.trim()) return row.manualContent.trim();
   if (row.lessonType && row.lessonType !== 'curriculum') {
     return row.content || '';
   }
@@ -1626,13 +1637,41 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
     }
   };
 
+  const weeklyGroups = useMemo(() => {
+    const groups = new Map<string, LogEntry[]>();
+    [...rows].sort((a, b) => a.dateStr.localeCompare(b.dateStr) || a.time.localeCompare(b.time)).forEach((row) => {
+      const key = getSchoolWeekKey(row.dateStr);
+      const current = groups.get(key) || [];
+      current.push(row);
+      groups.set(key, current);
+    });
+    return Array.from(groups.entries()).map(([weekKey, weekRows]) => ({
+      weekKey,
+      weekNumber: getSchoolWeekNumber(weekRows[0]?.dateStr || startDate, startDate),
+      rows: weekRows,
+    }));
+  }, [rows, startDate]);
+
   const paginatedPages = useMemo(() => {
     const pages: LogEntry[][] = [];
-    for (let i = 0; i < rows.length; i += ROWS_PER_PAGE) {
-      pages.push(rows.slice(i, i + ROWS_PER_PAGE));
-    }
+    let page: LogEntry[] = [];
+    weeklyGroups.forEach((group) => {
+      if (page.length && page.length + group.rows.length > ROWS_PER_PAGE) {
+        pages.push(page);
+        page = [];
+      }
+      if (group.rows.length > ROWS_PER_PAGE) {
+        for (let i = 0; i < group.rows.length; i += ROWS_PER_PAGE) {
+          if (page.length) { pages.push(page); page = []; }
+          pages.push(group.rows.slice(i, i + ROWS_PER_PAGE));
+        }
+      } else {
+        page.push(...group.rows);
+      }
+    });
+    if (page.length) pages.push(page);
     return pages;
-  }, [rows]);
+  }, [weeklyGroups]);
 
   const levelDistributionSummary = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -1656,6 +1695,32 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
     );
     return count;
   }, [gridRows]);
+
+  const handleManualLessonContentChange = (rowId: string, value: string) => {
+    setRows((prev) => prev.map((row) => row.id === rowId ? { ...row, manualContent: value } : row));
+  };
+
+  const handleAddLessonToWeek = (weekKey: string) => {
+    const weekRows = rows.filter((row) => getSchoolWeekKey(row.dateStr) === weekKey);
+    if (!weekRows.length) return;
+    const source = weekRows[weekRows.length - 1];
+    const newRow: LogEntry = {
+      ...source,
+      id: 'manual-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+      content: '',
+      manualContent: '',
+      activitiesList: [],
+      taqwim: '',
+      lessonType: 'curriculum',
+      sourceSequenceId: undefined,
+      sourceResourceId: undefined,
+      sourceLearningUnitId: undefined,
+      sourceActivityId: undefined,
+      sourceActivityId2: undefined,
+    };
+    setRows((prev) => [...prev, newRow]);
+    showToast('تمت إضافة حصة مستقلة إلى الأسبوع ' + getSchoolWeekNumber(source.dateStr, startDate));
+  };
 
   // Timetable row modifications
   const handleCellChange = (rowId: string, day: string, value: string) => {
@@ -3075,6 +3140,34 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
             )}
           </div>
 
+          {weeklyGroups.length > 0 && (
+            <section className="mb-5 space-y-3" dir="rtl">
+              <div className="flex items-center justify-between bg-white border border-emerald-200 rounded-xl px-4 py-3">
+                <div><div className="font-extrabold text-[#064e3b]">فصل الأسابيع وتعديل الحصص</div><div className="text-[10px] text-zinc-500 mt-1">كل أسبوع مستقل. التعديل أو إضافة حصة هنا لا يغيّر أي أسبوع آخر.</div></div>
+                <span className="text-[10px] bg-emerald-50 border border-emerald-200 text-emerald-800 px-2 py-1 rounded-full font-bold">{weeklyGroups.length} أسبوع</span>
+              </div>
+              {weeklyGroups.map((group) => (
+                <div key={group.weekKey} className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm">
+                  <div className="bg-[#064e3b] text-white px-4 py-2.5 flex items-center justify-between gap-3">
+                    <div className="font-extrabold text-[12px]">الأسبوع {group.weekNumber}</div>
+                    <div className="text-[10px] opacity-90">{group.weekKey} • {group.rows.length} حصة</div>
+                    <button type="button" onClick={() => handleAddLessonToWeek(group.weekKey)} className="mr-auto inline-flex items-center gap-1 bg-white text-[#064e3b] px-2.5 py-1.5 rounded-lg text-[10px] font-extrabold"><Plus className="w-3 h-3" /> إضافة حصة</button>
+                  </div>
+                  <div className="divide-y divide-zinc-100">
+                    {group.rows.map((row) => (
+                      <div key={row.id} className="p-3 grid grid-cols-1 md:grid-cols-[90px_100px_90px_1fr] gap-2 items-start">
+                        <div className="text-[10px] font-bold text-zinc-600 bg-zinc-50 border rounded-lg px-2 py-2 text-center">{row.dateStr}</div>
+                        <div className="text-[10px] font-bold text-zinc-600 bg-zinc-50 border rounded-lg px-2 py-2 text-center" dir="ltr">{row.time}</div>
+                        <div className="text-[10px] font-bold text-zinc-700 bg-zinc-50 border rounded-lg px-2 py-2 text-center">{row.section}</div>
+                        <textarea value={row.manualContent ?? ''} onChange={(e) => handleManualLessonContentChange(row.id, e.target.value)} placeholder="اكتب محتوى هذه الحصة فقط..." rows={2} className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-[11px] leading-5 outline-none focus:border-emerald-500 resize-y" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </section>
+          )}
+
           {/* Empty State Card */}
           {paginatedPages.length === 0 && (
             <div
@@ -3613,8 +3706,10 @@ export const DailyLogbook: React.FC<DailyLogbookProps> = ({
                                 return (
                                   <React.Fragment key={r.id}>
                                     {isNewWeek && (
-                                      <tr className="bg-white">
-                                        <td colSpan={5} className="border-0 h-[8px]" />
+                                      <tr className="bg-emerald-50">
+                                        <td colSpan={5} className="border border-emerald-200 px-3 py-1.5 text-right text-[10px] font-extrabold text-emerald-800">
+                                          بداية أسبوع مستقل — الأسبوع {getSchoolWeekNumber(r.dateStr, startDate)}
+                                        </td>
                                       </tr>
                                     )}
                                     <tr className="bg-white">
