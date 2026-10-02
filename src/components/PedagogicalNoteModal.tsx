@@ -29,6 +29,9 @@ import {
 } from 'lucide-react';
 import { PedagogicalNote, GradeLevel } from '../types/pedagogicalNote';
 import { generatePedagogicalNote } from '../services/geminiPedagogicalService';
+import { buildMemoSuggestionReport, MemoSuggestion } from '../services/memoSuggestionEngine';
+import { recordSuggestionDecision } from '../services/memoLearningStore';
+import { sourcePriorityOf } from '../services/aiSourcePriority';
 import { MemoConfig } from '../types';
 import { TeacherOfficialStamp } from './TeacherOfficialStamp';
 import { getScienceMemoModels, getMemoModelStatusLabel, ScienceMemoModel } from '../services/scienceMemoModelLibrary';
@@ -90,6 +93,7 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
   const [aiProviderStatus, setAiProviderStatus] = useState<{primary:string|null;available:string[];freeFirst:boolean}|null>(null);
   const [showAiCenter, setShowAiCenter] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+  const [suggestionReport, setSuggestionReport] = useState<ReturnType<typeof buildMemoSuggestionReport> | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -232,11 +236,11 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
             status: selectedModel.status,
             sections: selectedModel.sections,
           }] : [],
-          sourceDocuments: allGenerationAttachments.map((item) => ({
-            id: item.id,
-            name: item.name,
-            mimeType: item.mimeType,
-          })),
+          sourceDocuments: allGenerationAttachments.map((item) => {
+            const category = item.category;
+            const type = category === 'curriculum' ? 'curriculum' : category === 'companion' ? 'companionDocument' : category === 'teacher-guide' ? 'teacherGuide' : category === 'memo' ? 'memo' : 'attachment';
+            return { id: item.id, name: item.name, mimeType: item.mimeType, type, priority: sourcePriorityOf(type) };
+          }),
           officialSources: buildOfficialSourceContext(),
           sourcePolicy: {
             order: ['curriculum', 'progression', 'companionDocument', 'teacherGuide', 'memo', 'attachment', 'web', 'library', 'ai'],
@@ -251,12 +255,18 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
         }
       );
       setNote(generated);
+      const report = buildMemoSuggestionReport(selectedGrade, topic.trim(), generated, {
+        progression,
+        memo,
+        sourceDocuments: allGenerationAttachments,
+      });
+      setSuggestionReport(report);
       const suggestions: string[] = [];
       if (!generated.sourceActivities?.length) suggestions.push('لم يتم العثور على عناوين أنشطة موثقة في المصادر المختارة؛ راجع المذكرات أو دليل الأستاذ قبل إضافة نشاط.');
       if (!generated.researchSources?.length && useWebResearch) suggestions.push('لم تُثبت مصادر ويب في هذه النتيجة؛ لا تضف مرجعاً خارجياً إلا بعد التحقق منه.');
       if ((generated.sourceTrace || []).some((x: any) => x.sourceType === 'ai')) suggestions.push('توجد عناصر موسومة باقتراح AI — تحتاج مراجعة الأستاذ.');
       setAiSuggestions(suggestions);
-      showToast('تم توليد المذكرة البيداغوجية الرسمية بنجاح 🌟');
+      showToast(report.suggestions.length ? 'تم التوليد مع اقتراحات تحقق تحتاج مراجعة الأستاذ.' : 'تم توليد المذكرة البيداغوجية الرسمية بنجاح 🌟');
     } catch (error: any) {
       console.error(error);
       showToast(error.message || 'تعذر توليد المذكرة، يرجى المحاولة ثانية');
@@ -342,19 +352,36 @@ export const PedagogicalNoteModal: React.FC<Props> = ({
               <span className="text-slate-500">المتاح: {(aiProviderStatus?.available || []).join('، ') || '—'}</span>
             </div>
           </div>
-          {showAiCenter && <div className="mt-3 grid md:grid-cols-3 gap-2">
-            <div className="bg-white rounded-xl border p-3">
-              <div className="font-black text-xs mb-1">حالة المصادر</div>
-              <div className="text-[10px] text-slate-600">المنهاج/التدرج ← الوثيقة المرافقة ← دليل الأستاذ ← المذكرات ← الويب ← AI.</div>
+          {showAiCenter && <div className="mt-3 space-y-2">
+            <div className="grid md:grid-cols-3 gap-2">
+              <div className="bg-white rounded-xl border p-3">
+                <div className="font-black text-xs mb-1">حالة المصادر</div>
+                <div className="text-[10px] text-slate-600">المنهاج/التدرج ← الوثيقة المرافقة ← دليل الأستاذ ← المذكرات ← الويب ← AI.</div>
+              </div>
+              <div className="bg-white rounded-xl border p-3">
+                <div className="font-black text-xs mb-1">اقتراحات التطوير</div>
+                {aiSuggestions.length ? aiSuggestions.map((s,i)=><div key={i} className="text-[10px] text-amber-800 flex gap-1 mt-1"><AlertTriangle size={12}/><span>{s}</span></div>) : <div className="text-[10px] text-emerald-700">لا توجد تنبيهات حالياً.</div>}
+              </div>
+              <div className="bg-white rounded-xl border p-3">
+                <div className="font-black text-xs mb-1">وضع التحقق</div>
+                <div className="text-[10px] text-slate-600">{suggestionReport?.verificationStatus === 'verified' ? 'المصادر متوافقة في البيانات المتاحة.' : 'توجد عناصر تحتاج مراجعة؛ لا يتم تعديل البيانات الرسمية تلقائياً.'}</div>
+              </div>
             </div>
-            <div className="bg-white rounded-xl border p-3">
-              <div className="font-black text-xs mb-1">اقتراحات التطوير</div>
-              {aiSuggestions.length ? aiSuggestions.map((s,i)=><div key={i} className="text-[10px] text-amber-800 flex gap-1 mt-1"><AlertTriangle size={12}/><span>{s}</span></div>) : <div className="text-[10px] text-emerald-700">لا توجد تنبيهات حالياً.</div>}
-            </div>
-            <div className="bg-white rounded-xl border p-3">
-              <div className="font-black text-xs mb-1">وضع التحقق</div>
-              <div className="text-[10px] text-slate-600">المعلومات الرسمية لا يستبدلها AI أو الويب. أي اقتراح غير موثق يبقى بانتظار اعتماد الأستاذ.</div>
-            </div>
+            {suggestionReport?.suggestions.length ? <div className="bg-white rounded-xl border p-3 space-y-2">
+              <div className="font-black text-xs">مقترحات قابلة للتعلم من قرار الأستاذ</div>
+              {suggestionReport.suggestions.map((item: MemoSuggestion) => <div key={item.id} className="border rounded-lg p-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div><div className="text-[10px] font-black text-slate-900">{item.title}</div><div className="text-[10px] text-slate-600">{item.description}</div></div>
+                  <span className="text-[9px] bg-slate-100 rounded px-1.5 py-0.5">{item.sourceLabel}</span>
+                </div>
+                <div className="text-[9px] text-slate-500 mt-1">لماذا؟ {item.reason}</div>
+                <div className="flex gap-1 mt-2">
+                  <button type="button" onClick={async()=>{await recordSuggestionDecision({suggestionId:item.id,category:item.category,decision:'accepted',gradeLevel:selectedGrade,topic:topic.trim(),sourceType:item.sourceType});showToast('تم تسجيل اعتماد الاقتراح؛ لم يتم تعديل المصدر الرسمي تلقائياً.');}} className="px-2 py-1 rounded bg-emerald-700 text-white text-[9px] font-black">اعتماد</button>
+                  <button type="button" onClick={async()=>{await recordSuggestionDecision({suggestionId:item.id,category:item.category,decision:'rejected',gradeLevel:selectedGrade,topic:topic.trim(),sourceType:item.sourceType});showToast('تم تسجيل رفض الاقتراح للتعلم المستقبلي.');}} className="px-2 py-1 rounded bg-white border text-slate-700 text-[9px] font-black">رفض</button>
+                  <button type="button" onClick={async()=>{const edited=window.prompt('اكتب التعديل المقترح:',item.description);if(edited!==null){await recordSuggestionDecision({suggestionId:item.id,category:item.category,decision:'edited',gradeLevel:selectedGrade,topic:topic.trim(),sourceType:item.sourceType,editedText:edited});showToast('تم تسجيل تعديلك كتعلم للمقترحات القادمة.');}}} className="px-2 py-1 rounded bg-amber-50 border border-amber-200 text-amber-800 text-[9px] font-black">تعديل</button>
+                </div>
+              </div>)}
+            </div> : null}
           </div>}
         </div>
 
