@@ -1,3 +1,5 @@
+@import "@fontsource/cairo/400.css";
+@import "@fontsource/cairo/700.css";
 @import "tailwindcss";
 
 :root { --platform-ink:#172033; --platform-teal:#0f766e; --platform-teal-dark:#115e59; }
@@ -217,5 +219,128 @@ button,input,textarea,select{font-family:inherit;}
       linear-gradient(to right, rgba(20, 110, 100, 0.16) 1px, transparent 1px),
       linear-gradient(to bottom, rgba(20, 110, 100, 0.16) 1px, transparent 1px) !important;
     background-size: 6px 6px !important;
+  }
+}
+
+
+/* تدرج سنوي: نسخة الطباعة تعتمد على DOM الأصلي للمتصفح، بدون canvas. */
+.annual-distribution-print-table { display: none; }
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  .distribution-screen-table { display: none !important; }
+
+  .annual-distribution-print-table {
+    display: table !important;
+    width: 100% !important;
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+    table-layout: fixed !important;
+    direction: rtl !important;
+    unicode-bidi: plaintext !important;
+    font-family: "Cairo", sans-serif !important;
+    font-size: 9.5pt !important;
+    line-height: 1.25 !important;
+    color: #111827 !important;
+    background: #fff !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  .annual-distribution-print-table thead {
+    display: table-header-group !important;
+  }
+
+  .annual-distribution-print-table tbody {
+    display: table-row-group !important;
+  }
+
+  .annual-distribution-print-table tr {
+    display: table-row !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    page-break-after: auto !important;
+  }
+
+  .annual-distribution-print-table th,
+  .annual-distribution-print-table td {
+    display: table-cell !important;
+    direction: rtl !important;
+    unicode-bidi: plaintext !important;
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
+    transform: none !important;
+    letter-spacing: 0 !important;
+    text-shadow: none !important;
+    text-transform: none !important;
+    word-break: normal !important;
+    overflow-wrap: anywhere !important;
+    white-space: normal !important;
+    vertical-align: middle !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  .annual-distribution-print-table .distribution-print-holiday {
+    background: #000 !important;
+    color: #fff !important;
+    font-weight: 800 !important;
+    text-align: center !important;
+    direction: rtl !important;
+    unicode-bidi: plaintext !important;
+    letter-spacing: 0 !important;
+    white-space: normal !important;
+  }
+
+  .annual-distribution-print-table .distribution-print-exam {
+    background: #064e3b !important;
+    color: #fff !important;
+    font-weight: 800 !important;
+    text-align: center !important;
+  }
+
+  .annual-export-page {
+    box-sizing: border-box !important;
+    width: 190mm !important;
+    min-height: 277mm !important;
+    max-width: 190mm !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    overflow: visible !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .annual-export-page + .annual-export-page {
+    break-before: page !important;
+    page-break-before: always !important;
+  }
+
+  .annual-export-page table,
+  .annual-export-page tr,
+  .annual-export-page td,
+  .annual-export-page th {
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  .annual-export-page .distribution-print-rtl {
+    direction: rtl !important;
+    unicode-bidi: plaintext !important;
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
+    transform: none !important;
+    letter-spacing: 0 !important;
+    text-shadow: none !important;
+    text-transform: none !important;
   }
 }
